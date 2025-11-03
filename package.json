@@ -1,7 +1,9 @@
 {
+  "type": "module",
   "name": "tesla",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",

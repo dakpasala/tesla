@@ -1,7 +1,9 @@
 {
+  "type": "module",
   "name": "tesla",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
@@ -10,9 +12,10 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native/new-app-screen": "0.82.0",
+    "dotenv": "^17.2.3",
     "react": "19.1.1",
     "react-native": "0.82.0",
-    "@react-native/new-app-screen": "0.82.0",
     "react-native-safe-area-context": "^5.5.2"
   },
   "devDependencies": {

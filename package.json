@@ -13,10 +13,17 @@
   },
   "dependencies": {
     "@react-native/new-app-screen": "0.82.0",
+<<<<<<< HEAD
+    "react": "19.1.1",
+    "react-native": "0.82.0",
+    "react-native-safe-area-context": "^5.5.2",
+    "redis": "^5.9.0"
+=======
     "dotenv": "^17.2.3",
     "react": "19.1.1",
     "react-native": "0.82.0",
     "react-native-safe-area-context": "^5.5.2"
+>>>>>>> master
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

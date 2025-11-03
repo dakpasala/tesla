@@ -8,6 +8,15 @@ export async function getDirections(origin, destination, mode = "driving") {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
 
+  // Debug: Log the response status
+  if (data.status !== "OK") {
+    throw new Error(`API Error: ${data.status} - ${data.error_message || "No error message"}`);
+  }
+
+  if (!data.routes || data.routes.length === 0) {
+    throw new Error("No routes found");
+  }
+
   return data.routes.map(route => ({
     summary: route.summary,
     distance: route.legs[0].distance.text,

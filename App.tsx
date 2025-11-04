@@ -46,7 +46,9 @@ export default function App() {
           ]}
         >
           <Text style={styles.logo}>⚡</Text>
-          <Text style={styles.title}>Welcome to Tesla Project</Text>
+          <Text style={styles.title}>
+            Welcome to Tesla but with husky Project
+          </Text>
           <Text style={styles.subtitle}>Innovation. Speed. Elegance.</Text>
         </Animated.View>
       </View>
@@ -66,7 +68,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 70,
-    color: '#E82127', 
+    color: '#E82127',
     marginBottom: 12,
   },
   title: {

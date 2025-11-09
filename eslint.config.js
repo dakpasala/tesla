@@ -1,3 +1,4 @@
+// eslint.config.js
 import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
@@ -7,9 +8,7 @@ export default [
   prettierConfig,
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
-    plugins: {
-      prettier,
-    },
+    plugins: { prettier },
     rules: {
       'prettier/prettier': 'error',
       'no-unused-vars': 'warn',
@@ -18,23 +17,16 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: {
-        __DEV__: 'readonly',
-        fetch: 'readonly',
-        console: 'readonly',
-        global: 'readonly',
-        process: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
-        jest: 'readonly',
-        test: 'readonly',
-        expect: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-      },
+      globals: { __DEV__: 'readonly' },
+    },
+  },
+  {
+    files: ['src/apps/server/**/*'],
+    languageOptions: {
+      sourceType: 'module',
+    },
+    linterOptions: {
+      // Keep RN-specific rules out of server if you later add them
     },
   },
 ];

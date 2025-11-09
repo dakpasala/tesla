@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
+  "workspaces": [
+    "src/apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
@@ -12,7 +16,12 @@
     "start": "react-native start",
     "test": "jest",
     "prepare": "husky",
-    "postinstall": "husky install"
+    "postinstall": "husky install",
+    "mobile:start": "yarn workspace mobile start",
+    "mobile:android": "yarn workspace mobile android",
+    "mobile:ios": "yarn workspace mobile ios",
+    "server:dev": "yarn workspace server dev",
+    "server:start": "yarn workspace server start"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -23,13 +32,7 @@
     ]
   },
   "dependencies": {
-    "@react-native/new-app-screen": "0.82.0",
-    "lint-staged": "^16.2.6",
-    "node-fetch": "^3.3.2",
-    "react": "19.1.1",
-    "react-native": "0.82.0",
-    "react-native-safe-area-context": "^5.5.2",
-    "redis": "^5.9.0"
+    "lint-staged": "^16.2.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

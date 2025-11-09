@@ -1,9 +1,22 @@
+const fs = require('fs');
 const path = require('path');
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
 const projectRoot = __dirname;
-// monorepo root is three levels up: repo/src/apps/mobile → repo
-const monorepoRoot = path.resolve(projectRoot, '../../..');
+function findRepoRoot(dir) {
+  while (dir !== path.parse(dir).root) {
+    const pkg = path.join(dir, 'package.json');
+    if (fs.existsSync(pkg)) {
+      try {
+        const json = JSON.parse(fs.readFileSync(pkg, 'utf8'));
+        if (json.workspaces) return dir;
+      } catch {}
+    }
+    dir = path.dirname(dir);
+  }
+  return path.resolve(projectRoot, '..');
+}
+const monorepoRoot = findRepoRoot(projectRoot);
 
 module.exports = mergeConfig(getDefaultConfig(projectRoot), {
   projectRoot,

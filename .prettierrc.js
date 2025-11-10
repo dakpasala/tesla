@@ -1,5 +1,3 @@
-module.exports = {
-  arrowParens: 'avoid',
-  singleQuote: true,
-  trailingComma: 'all',
-};
+export const arrowParens = 'avoid';
+export const singleQuote = true;
+export const trailingComma = 'all';

@@ -1,6 +1,6 @@
 // src/db/mssql.js
-import sql from "mssql";
-import dotenv from "dotenv";
+import sql from 'mssql';
+import dotenv from 'dotenv';
 
 dotenv.config(); // load .env
 
@@ -18,16 +18,16 @@ const config = {
 
 export async function testConnection() {
   try {
-    console.log("🔌 Connecting to MSSQL...");
+    console.log('🔌 Connecting to MSSQL...');
     const pool = await sql.connect(config);
-    console.log("✅ Connected!");
+    console.log('✅ Connected!');
 
-    const result = await pool.request().query("SELECT * FROM users");
-    console.log("📊 Query result:");
+    const result = await pool.request().query('SELECT * FROM users');
+    console.log('📊 Query result:');
     console.table(result.recordset);
 
     await sql.close();
   } catch (err) {
-    console.error("❌ SQL Connection Error:", err);
+    console.error('❌ SQL Connection Error:', err);
   }
 }

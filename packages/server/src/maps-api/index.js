@@ -1,7 +1,7 @@
-import { getAllTransportOptions } from "./directions.js";
+import { getAllTransportOptions } from './directions.js';
 
-const origin = "123 Main St, San Jose, CA";
-const destination = "3500 Deer Creek Rd, Palo Alto, CA"; 
+const origin = '123 Main St, San Jose, CA';
+const destination = '3500 Deer Creek Rd, Palo Alto, CA';
 
 (async () => {
   const routes = await getAllTransportOptions(origin, destination);

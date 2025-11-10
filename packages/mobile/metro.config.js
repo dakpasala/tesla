@@ -10,7 +10,9 @@ function findRepoRoot(dir) {
       try {
         const json = JSON.parse(fs.readFileSync(pkg, 'utf8'));
         if (json.workspaces) return dir;
-      } catch {}
+      } catch {
+        // ignore invalid json
+      }
     }
     dir = path.dirname(dir);
   }

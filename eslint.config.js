@@ -2,6 +2,8 @@ import globals from 'globals';
 import js from '@eslint/js';
 import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
+import react from 'eslint-plugin-react';
+import reactNative from 'eslint-plugin-react-native';
 
 export default [
   js.configs.recommended,
@@ -23,6 +25,31 @@ export default [
       },
     },
   },
+  // react files
+  {
+    files: ['packages/mobile/**/*.{js,jsx,ts,tsx}'],
+    plugins: {
+      react,
+      'react-native': reactNative,
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+    rules: {
+      'react/jsx-uses-react': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-vars': 'error', // This fixes the false positives!
+    },
+    languageOptions: {
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+  },
   // Server-specific config
   {
     files: ['packages/server/**/*.{js,jsx,ts,tsx}'],
@@ -30,34 +57,57 @@ export default [
       sourceType: 'module',
       globals: {
         ...globals.node,
-        process: 'readonly', // Fix for 'process' is not defined
+        process: 'readonly',
       },
     },
   },
   // Test files config
   {
-    files: ['**/*.test.{js,jsx,ts,tsx}', '**/__tests__/**/*.{js,jsx,ts,tsx}'],
+    files: [
+      '**/*.test.{js,jsx,ts,tsx}',
+      '**/__tests__/**/*.{js,jsx,ts,tsx}',
+      '**/jest.setup.js',
+    ],
     languageOptions: {
+      sourceType: 'module',
       globals: {
-        ...globals.jest, // Fix for 'jest' is not defined
+        ...globals.jest,
+        global: 'readonly', // Fix for 'global' is not defined
       },
     },
   },
-  // Config files (metro, babel, jest configs)
+  // Metro config specifically (if it uses module.exports)
   {
-    files: [
-      '**/metro.config.js',
-      '**/babel.config.js',
-      '**/jest.config.js',
-      '**/*.config.{js,ts}',
-    ],
+    files: ['**/metro.config.js'],
     languageOptions: {
-      sourceType: 'commonjs', // Config files often use CommonJS
+      sourceType: 'commonjs',
       globals: {
         ...globals.node,
-        module: 'readonly', // Fix for 'module' is not defined
-        require: 'readonly', // Fix for 'require' is not defined
+        module: 'readonly',
+        require: 'readonly',
         __dirname: 'readonly',
+      },
+    },
+  },
+  // Other config files that might use ESM
+  {
+    files: ['**/babel.config.js', '**/jest.config.js', '**/*.config.{js,ts}'],
+    languageOptions: {
+      sourceType: 'module', // Changed to module
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  // TypeScript files
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
     },
   },

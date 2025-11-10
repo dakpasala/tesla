@@ -6,4 +6,16 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-plugins { id("com.facebook.react.settings") }
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand()
+}
+
+includeBuild("../../../node_modules/@react-native/gradle-plugin")
+
+rootProject.name = "tesla"
+include(":app")

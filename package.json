@@ -1,55 +1,41 @@
 {
   "name": "tesla",
+  "type": "module",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "android": "react-native run-android",
-    "ios": "react-native run-ios",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
-    "start": "react-native start",
-    "test": "jest",
+    "test": "yarn workspaces run test",
     "prepare": "husky",
-    "postinstall": "husky install"
+    "mobile:start": "yarn workspace mobile start",
+    "mobile:android": "yarn workspace mobile android",
+    "mobile:ios": "yarn workspace mobile ios",
+    "server:dev": "yarn workspace server dev",
+    "server:start": "yarn workspace server start"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
       "prettier --write"
     ],
     "*.{css,scss,md,json,html}": [
       "prettier --write"
     ]
   },
-  "dependencies": {
-    "@react-native/new-app-screen": "0.82.0",
-    "lint-staged": "^16.2.6",
-    "node-fetch": "^3.3.2",
-    "react": "19.1.1",
-    "react-native": "0.82.0",
-    "react-native-safe-area-context": "^5.5.2",
-    "redis": "^5.9.0"
-  },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
-    "@babel/preset-env": "^7.25.3",
-    "@babel/runtime": "^7.25.0",
-    "@react-native-community/cli": "20.0.0",
-    "@react-native-community/cli-platform-android": "20.0.0",
-    "@react-native-community/cli-platform-ios": "20.0.0",
-    "@react-native/babel-preset": "0.82.0",
-    "@react-native/eslint-config": "0.82.0",
-    "@react-native/metro-config": "0.82.0",
-    "@react-native/typescript-config": "0.82.0",
-    "@types/jest": "^29.5.13",
-    "@types/react": "^19.1.1",
-    "@types/react-test-renderer": "^19.1.0",
     "eslint": "^8.19.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.5.0",
     "husky": "^9.1.7",
     "jest": "^29.6.3",
-    "prettier": "2.8.8",
-    "react-test-renderer": "19.1.1",
+    "lint-staged": "^16.2.6",
+    "prettier": "3.3.3",
     "typescript": "^5.8.3"
   },
   "engines": {

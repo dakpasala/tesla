@@ -1,11 +1,14 @@
 {
   "name": "server",
+  "type": "module",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
   "scripts": {
     "dev": "node --watch ./src/index.js",
-    "start": "node ./src/index.js"
+    "start": "node ./src/index.js",
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "cross-env NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -13,5 +16,12 @@
     "mssql": "^10.0.2",
     "node-fetch": "^3.3.2",
     "redis": "^5.9.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "cross-env": "^10.1.0",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
   }
 }

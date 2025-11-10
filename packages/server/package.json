@@ -13,5 +13,11 @@
     "mssql": "^10.0.2",
     "node-fetch": "^3.3.2",
     "redis": "^5.9.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
   }
 }

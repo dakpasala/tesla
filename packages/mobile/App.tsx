@@ -51,11 +51,13 @@ export default function App() {
             { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
           ]}
         >
-          <Text style={styles.logo}>⚡</Text>
-          <Text style={styles.title}>
+          <Text style={[styles.logo, { color: colors.logo_color }]}>⚡</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
             Welcome to Tesla but with husky Project
           </Text>
-          <Text style={styles.subtitle}>Innovation. Speed. Elegance.</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Innovation. Speed. Elegance.
+          </Text>
         </Animated.View>
       </View>
     </SafeAreaProvider>
@@ -65,7 +67,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
   },

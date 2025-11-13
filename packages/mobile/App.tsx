@@ -9,10 +9,14 @@ import {
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+// TEST
+import { useTheme } from './theme/useTheme';
+
 export default function App() {
   const isDarkMode = useColorScheme() === 'dark';
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  const { colors } = useTheme(); // TEST
 
   useEffect(() => {
     Animated.sequence([
@@ -36,9 +40,11 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor="#000"
+        backgroundColor={colors.background} // TEST
+        // backgroundColor="#000"
       />
-      <View style={styles.container}>
+      {/* <View style={styles.container}> */}
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Animated.View
           style={[
             styles.inner,

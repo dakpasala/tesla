@@ -2755,7 +2755,7 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../../node_modules/react-native/ReactCommon`)
   - RNGestureHandler (from `../../../node_modules/react-native-gesture-handler`)
-  - RNReanimated (from `../node_modules/react-native-reanimated`)
+  - RNReanimated (from `../../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../../node_modules/react-native-screens`)
   - RNWorklets (from `../../../node_modules/react-native-worklets`)
   - SocketRocket (~> 0.7.1)
@@ -2916,7 +2916,7 @@ EXTERNAL SOURCES:
   RNGestureHandler:
     :path: "../../../node_modules/react-native-gesture-handler"
   RNReanimated:
-    :path: "../node_modules/react-native-reanimated"
+    :path: "../../../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../../../node_modules/react-native-screens"
   RNWorklets:
@@ -2999,7 +2999,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 89fd37fe167462f854e43bf738c137f274d1ca0d
   ReactCommon: 17f21c8e189e290113e40fd8652758ec9694897b
   RNGestureHandler: 927ba2c590c8973f24624f1c1279be08a22ec58d
-  RNReanimated: 82b1eb39634ea4cfac9cfb4de5669e97ab75aa9c
+  RNReanimated: c98f39cf13ab277e8db5dc422f3060aaf0684e25
   RNScreens: 3693ec4bbc0065151b843269e50e9807644e9918
   RNWorklets: 089683f4a4564f30393d32352d41d9e92c3e5a55
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748

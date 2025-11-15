@@ -78,3 +78,6 @@ yarn-error.log
 
 # Env
 .env
+
+# If this project uses Yarn, prefer Yarn lockfile and ignore package-lock.json
+package-lock.json

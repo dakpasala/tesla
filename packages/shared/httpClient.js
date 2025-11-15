@@ -1,61 +1,65 @@
-// packages/shared/api/httpClient.js
+// packages/shared/httpClient.js
 
-const DEFAULT_BASE_URL = process.env.TESLA_API_URL || "http://localhost:3000";
+const DEFAULT_BASE_URL = "http://localhost:3000";
 
-function normalizeBaseUrl(url) {
-  return url.replace(/\/+$/, ""); // remove trailing slash
+function cleanBase(url) {
+  return url.replace(/\/+$/, "");
 }
 
-export function createApiClient(baseUrl = DEFAULT_BASE_URL) {
-  const base = normalizeBaseUrl(baseUrl);
+function buildQueryString(query) {
+  if (!query) return "";
+  const search = new URLSearchParams();
+  Object.entries(query).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) search.append(k, String(v));
+  });
+  return "?" + search.toString();
+}
 
-  async function request(path, options = {}) {
-    const {
-      method = "GET",
-      query,
-      body,
-      headers = {},
-    } = options;
+export async function httpRequest(path, options = {}) {
+  const {
+    method = "GET",
+    query,
+    body,
+    headers = {},
+    baseUrl = DEFAULT_BASE_URL,
+  } = options;
 
-    const url = new URL(base + path);
+  const url = cleanBase(baseUrl) + path + buildQueryString(query);
 
-    if (query) {
-      Object.entries(query)
-        .filter(([, v]) => v !== undefined && v !== null)
-        .forEach(([k, v]) => url.searchParams.set(k, String(v)));
-    }
+  const init = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+      ...headers,
+    },
+  };
 
-    const init = {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        ...headers,
-      },
-    };
-
-    if (body !== undefined && body !== null) {
-      init.body = JSON.stringify(body);
-    }
-
-    const res = await fetch(url.toString(), init);
-    const text = await res.text();
-    let data;
-
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = text;
-    }
-
-    if (!res.ok) {
-      const err = new Error(data?.error || `Request failed with ${res.status}`);
-      err.status = res.status;
-      err.data = data;
-      throw err;
-    }
-
-    return data;
+  if (body !== undefined) {
+    init.body = JSON.stringify(body);
   }
 
-  return { request };
+  let res;
+  try {
+    res = await fetch(url, init);
+  } catch (err) {
+    throw new Error(`Network error: ${err.message}`);
+  }
+
+  const text = await res.text();
+  let data;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const error = new Error(data?.error || `Request failed with ${res.status}`);
+    error.status = res.status;
+    error.data = data;
+    throw error;
+  }
+
+  return data;
 }

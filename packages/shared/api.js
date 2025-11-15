@@ -22,7 +22,7 @@ export function getDirections(origin, destination, mode = "driving") {
 export function getCommutePlan(params) {
   return httpRequest("/tripshot/commutePlan", {
     method: "POST",
-    query: params, // your backend uses req.query
+    query: params,
   });
 }
 

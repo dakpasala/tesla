@@ -79,5 +79,5 @@ yarn-error.log
 # Env
 .env
 
-# If this project uses Yarn, prefer Yarn lockfile and ignore package-lock.json
+# Package-lock.json (just in case to prevent commits)
 package-lock.json

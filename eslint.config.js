@@ -4,6 +4,8 @@ import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
 import react from 'eslint-plugin-react';
 import reactNative from 'eslint-plugin-react-native';
+import tsParser from '@typescript-eslint/parser';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 export default [
   js.configs.recommended,
@@ -48,6 +50,26 @@ export default [
           jsx: true,
         },
       },
+    },
+  },
+  // TypeScript files
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      sourceType: 'module',
+      parser: tsParser,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      // Add TypeScript-specific rules here if needed
+      // '@typescript-eslint/no-unused-vars': 'warn',
     },
   },
   // Server-specific config

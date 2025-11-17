@@ -78,3 +78,6 @@ yarn-error.log
 
 # Env
 .env
+
+# Package-lock.json (just in case to prevent commits)
+package-lock.json

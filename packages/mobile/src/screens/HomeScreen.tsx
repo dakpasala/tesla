@@ -16,6 +16,7 @@ export default function HomeScreen() {
         title="Go to Profile"
         onPress={() => navigation.navigate('Profile')}
       />
+      <Button title="Open Map" onPress={() => navigation.navigate('Map')} />
     </View>
   );
 }

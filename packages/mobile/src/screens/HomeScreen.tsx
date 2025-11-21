@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, ScrollView } from 'react-native';
+import { View, Text, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -11,7 +11,7 @@ export default function HomeScreen() {
   const [showCarPreview, setShowCarPreview] = useState(false);
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <View style={{ flex: 1 }}>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <Text>Home Screen</Text>
         <Button
@@ -35,7 +35,7 @@ export default function HomeScreen() {
           </React.Suspense>
         ) : null}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 

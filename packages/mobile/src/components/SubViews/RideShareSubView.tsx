@@ -25,7 +25,7 @@ interface RideShareSubViewProps {
 const DEFAULT_ITEMS: RideOption[] = [
   {
     id: '1',
-    provider: 'UberX',
+    provider: 'Lyft',
     remaining: '30m',
     arrival: '1:03 PM',
     seatsLeft: 2,
@@ -39,14 +39,14 @@ const DEFAULT_ITEMS: RideOption[] = [
   },
   {
     id: '3',
-    provider: 'Vanpool',
+    provider: 'Liftango',
     remaining: '12m',
     arrival: '12:45 PM',
     seatsLeft: 0,
   },
   {
     id: '4',
-    provider: 'Carpool',
+    provider: 'Go Tesla',
     remaining: '2m',
     arrival: '12:35 - 12:40 PM',
     seatsLeft: 3,

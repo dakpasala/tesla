@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ type RideOption = {
   seatsLeft: number;
 };
 
-interface CarSubViewProps {
+interface RideShareSubViewProps {
   initialItems?: RideOption[];
   onSelect?: (item: RideOption) => void;
 }
@@ -46,17 +46,43 @@ const DEFAULT_ITEMS: RideOption[] = [
   },
   {
     id: '4',
-    provider: 'SharedRide',
+    provider: 'Carpool',
     remaining: '2m',
     arrival: '12:35 - 12:40 PM',
     seatsLeft: 3,
   },
 ];
 
-export default function CarSubView({
+export default function RideShareSubView({
   initialItems = DEFAULT_ITEMS,
   onSelect,
-}: CarSubViewProps) {
+}: RideShareSubViewProps) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState(() => {
+    const now = new Date();
+    const formatted = now.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    return `Leave Now: ${formatted}`;
+  });
+
+  const PRESET_TIMES = ['Leave Now', '12:45 PM', '1:00 PM', '1:15 PM'];
+
+  function selectTime(option: string) {
+    if (option === 'Leave Now') {
+      const now = new Date();
+      const formatted = now.toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+      setSelectedLeave(`Leave Now: ${formatted}`);
+    } else {
+      setSelectedLeave(`Leave At: ${option}`);
+    }
+    setDropdownOpen(false);
+  }
+
   const renderItem: ListRenderItem<RideOption> = ({ item }) => (
     <TouchableOpacity
       style={styles.item}
@@ -89,6 +115,35 @@ export default function CarSubView({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Rideshare</Text>
+
+      <View style={styles.dropdownWrap}>
+        <TouchableOpacity
+          style={styles.dropdownButton}
+          onPress={() => setDropdownOpen(v => !v)}
+          accessibilityRole="button"
+        >
+          <Text style={styles.dropdownText}>{selectedLeave}</Text>
+          <Text style={styles.dropdownCaret}>{dropdownOpen ? '▴' : '▾'}</Text>
+        </TouchableOpacity>
+
+        {dropdownOpen ? (
+          <View style={styles.dropdownMenu}>
+            {PRESET_TIMES.map(opt => (
+              <TouchableOpacity
+                key={opt}
+                style={styles.dropdownItem}
+                onPress={() => selectTime(opt)}
+              >
+                <Text style={styles.dropdownItemText}>
+                  {opt === 'Leave Now'
+                    ? `Leave Now (${new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })})`
+                    : opt}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
+      </View>
       <FlatList
         data={initialItems}
         keyExtractor={i => i.id}
@@ -170,5 +225,46 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#eee',
     marginVertical: 6,
+  },
+  dropdownWrap: {
+    marginBottom: 8,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#f6f6f6',
+    alignSelf: 'flex-start',
+    minWidth: 140,
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: '#111',
+  },
+  dropdownCaret: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 8,
+  },
+  dropdownMenu: {
+    marginTop: 6,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#eee',
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
+    minWidth: 140,
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#222',
   },
 });

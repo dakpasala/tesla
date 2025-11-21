@@ -8,7 +8,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [showCarPreview, setShowCarPreview] = useState(false);
+  const [showRideSharePreview, setShowRideSharePreview] = useState(false);
 
   return (
     <View style={{ flex: 1 }}>
@@ -22,16 +22,19 @@ export default function HomeScreen() {
         <View style={{ height: 20 }} />
 
         <Button
-          title={showCarPreview ? 'Hide Car Sub-view' : 'Show Car Sub-view'}
-          onPress={() => setShowCarPreview(prev => !prev)}
+          title={
+            showRideSharePreview
+              ? 'Hide Rideshare Sub-view'
+              : 'Show Rideshare Sub-view'
+          }
+          onPress={() => setShowRideSharePreview(prev => !prev)}
         />
 
         <View style={{ height: 12 }} />
 
-        {showCarPreview ? (
-          // Lazy-load
+        {showRideSharePreview ? (
           <React.Suspense fallback={<Text>Loading sub-view...</Text>}>
-            <CarPreviewHost />
+            <RideSharePreviewHost />
           </React.Suspense>
         ) : null}
       </View>
@@ -39,14 +42,16 @@ export default function HomeScreen() {
   );
 }
 
-function CarPreviewHost() {
-  // Avoiding extra bundle cost unless we use the preview
-  const CarSubView = require('../components/SubViews/CarSubView').default;
+function RideSharePreviewHost() {
+  const RideShareSubView =
+    require('../components/SubViews/RideShareSubView').default;
 
   return (
     <View style={{ width: '100%', padding: 16 }}>
-      <CarSubView
-        onSelect={(item: any) => console.log('Car selected (preview):', item)}
+      <RideShareSubView
+        onSelect={(item: any) =>
+          console.log('Rideshare selected (preview):', item)
+        }
       />
     </View>
   );

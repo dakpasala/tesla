@@ -27,8 +27,8 @@ export default function WalkScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center',
+    // alignItems: 'center', 
+    // justifyContent: 'center',
   },
   title: {
     fontSize: 22,

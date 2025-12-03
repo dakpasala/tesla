@@ -1,7 +1,7 @@
 // import React from 'react';
 // import { View, Text, Button, StyleSheet } from 'react-native';
 import React, { useRef, useState } from 'react';
-import { View, Text, Button, StyleSheet, Image, Pressable } from 'react-native';
+import { View, Text, Button, StyleSheet, Image, Pressable, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -17,11 +17,19 @@ export default function BusScreen(
     const navigation = useNavigation<NavigationProp>();
     const modalRef = useRef<Modalize>(null);
     const [screen, setScreen] = useState<"bus" | "home">("bus");
+
+    const items = [];
+    for (let i = 0; i<40; i++){
+      items.push(<Text key = {i} style={{ paddingVertical: 20}}>Item {i}</Text>);
+    }
   return (
 
-    <View style={styles.container}>
+    <View style={{ alignItems: 'center'}}>
       <Text>BUS</Text>
-        </View>
+      {items}
+    </View>
+
+    
   );
 }
 
@@ -29,8 +37,8 @@ export default function BusScreen(
 const styles = StyleSheet.create({
   container: {
     flex: 1, 
-    alignItems: 'center', 
-    justifyContent: 'center',
+    // alignItems: 'center', 
+    // justifyContent: 'center',
   },
   title: {
     fontSize: 22,

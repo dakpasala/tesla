@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  ListRenderItem,
-  Image,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
 type RideOption = {
   id: string;
@@ -83,34 +75,39 @@ export default function RideShareSubView({
     setDropdownOpen(false);
   }
 
-  const renderItem: ListRenderItem<RideOption> = ({ item }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => onSelect && onSelect(item)}
-      accessibilityRole="button"
-      accessibilityHint={`Opens details for ${item.provider}`}
-    >
-      <View style={styles.itemRow}>
-        <Image
-          source={require('../../assets/images/car_symbol.png')}
-          style={styles.icon}
-          resizeMode="contain"
-        />
+  function renderRow(item: RideOption) {
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.item}
+        onPress={() => onSelect && onSelect(item)}
+        accessibilityRole="button"
+        accessibilityHint={`Opens details for ${item.provider}`}
+      >
+        <View style={styles.itemRow}>
+          <Image
+            source={require('../../assets/car.png')}
+            style={styles.icon}
+            resizeMode="contain"
+          />
 
-        <View style={{ flex: 1 }}>
-          <Text style={styles.remainingText}>{item.remaining}</Text>
-          <Text style={styles.providerText}>{item.provider}</Text>
-          <Text style={styles.arrivalText}>Arrives {item.arrival}</Text>
-        </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.remainingText}>{item.remaining}</Text>
+            <Text style={styles.providerText}>{item.provider}</Text>
+            <Text style={styles.arrivalText}>Arrives {item.arrival}</Text>
+          </View>
 
-        <View style={[styles.badge, item.seatsLeft === 0 && styles.badgeFull]}>
-          <Text style={styles.badgeText}>
-            {item.seatsLeft > 0 ? `${item.seatsLeft} seats` : 'Full'}
-          </Text>
+          <View
+            style={[styles.badge, item.seatsLeft === 0 && styles.badgeFull]}
+          >
+            <Text style={styles.badgeText}>
+              {item.seatsLeft > 0 ? `${item.seatsLeft} seats` : 'Full'}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -144,13 +141,14 @@ export default function RideShareSubView({
           </View>
         ) : null}
       </View>
-      <FlatList
-        data={initialItems}
-        keyExtractor={i => i.id}
-        renderItem={renderItem}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-        contentContainerStyle={styles.listContent}
-      />
+      <View style={styles.listContent}>
+        {initialItems.map(i => (
+          <View key={i.id}>
+            {renderRow(i)}
+            <View style={styles.separator} />
+          </View>
+        ))}
+      </View>
     </View>
   );
 }

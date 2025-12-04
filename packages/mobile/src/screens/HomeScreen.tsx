@@ -11,6 +11,8 @@ import TrainScreen from '../screens/Train';
 import WalkScreen from '../screens/Walk';
 import RideShareSubView from '../components/SubViews/RideShareSubView';
 
+import { useTheme } from '../../theme/useTheme';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function HomeScreen() {
@@ -28,6 +30,8 @@ export default function HomeScreen() {
       </Text>
     );
   }
+
+  const { colors } = useTheme();
 
   return (
     <View style={{ flex: 1 }}>

@@ -2,7 +2,7 @@ import express from 'express';
 import {
   getAllTransportOptions,
   getDirections,
-} from '../maps-api/directions.js';
+} from '../services/maps/directionsService.js';
 
 const router = express.Router();
 

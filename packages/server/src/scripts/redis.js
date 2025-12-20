@@ -2,16 +2,9 @@ import { getRedisClient } from '../services/redis/redisClient.js';
 
 async function run() {
   try {
-    const client = await getRedisClient();
-    console.log('Connected.');
-
-    await client.set('test:script', 'OK', { EX: 30 });
-    const val = await client.get('test:script');
-    console.log('Value:', val);
-
-    await client.del('test:script');
-    await client.quit();
-    console.log('Done.');
+    const redis = await getRedisClient();
+    const pong = await redis.ping();
+    console.log('PING ->', pong);
   } catch (e) {
     console.error('Redis script error:', e.message);
   }

@@ -1,5 +1,5 @@
 // src/db/test.js
-import { testConnection, getUsers } from '../services/db/mssqlPool.js';
+import { testConnection, getUsers } from '../../services/db/mssqlPool.js';
 
 async function run() {
   try {

@@ -17,6 +17,15 @@ const config = {
   options: { encrypt: false, trustServerCertificate: true },
 };
 
+export async function addUser(name) {
+  const pool = await sql.connect(config);
+  await pool
+    .request()
+    .input('name', sql.VarChar, name)
+    .query('INSERT INTO users (name) VALUES (@name)');
+  await sql.close();
+}
+
 export async function getPool() {
   return sql.connect(config);
 }

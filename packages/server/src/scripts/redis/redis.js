@@ -1,4 +1,4 @@
-import { getRedisClient } from '../services/redis/redisClient.js';
+import { getRedisClient } from '../../services/redis/redisClient.js';
 
 async function run() {
   try {

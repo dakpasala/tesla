@@ -6,16 +6,18 @@ const THRESHOLDS = [50, 25, 10, 5, 0];
 function getPollingIntervalMs() {
   const hour = new Date().getHours();
 
-  if (hour >= 8 && hour < 10) return 5000;
-  if (hour >= 7 && hour < 8) return 60000;
-  if (hour >= 10 && hour < 12) return 60000;
+  if (hour >= 0 && hour < 24) return 5000;
+
+//   if (hour >= 8 && hour < 10) return 5000;
+//   if (hour >= 7 && hour < 8) return 60000;
+//   if (hour >= 10 && hour < 12) return 60000;
   return null;
 }
 
 async function fetchParkingAvailability() {
   const pool = await getPool();
   const result = await pool.request().query(`
-    SELECT lot_name, available
+    SELECT lot_name, availability
     FROM parking_availability
     WHERE lot_name IN ('SAP Lot', 'DC Lot')
   `);
@@ -36,22 +38,26 @@ async function checkParkingAvailability() {
 
   for (const row of rows) {
     const lot = row.lot_name;
-    const available = row.available;
+    const available = row.availability;
 
     const key = `parking:last_threshold:${lot}`;
     const last = await redis.get(key);
     const lastThreshold = last ? Number(last) : null;
 
-    const crossed = THRESHOLDS.find(
-      t => available <= t && (lastThreshold === null || t < lastThreshold)
-    );
+    const currentThreshold = [...THRESHOLDS]
+      .reverse()
+      .find(t => available <= t);
 
-    if (crossed !== undefined) {
-      await sendNotification(lot, crossed, available);
-      await redis.set(key, crossed);
+    if (
+      currentThreshold !== undefined &&
+      (lastThreshold === null || currentThreshold < lastThreshold)
+    ) {
+      await sendNotification(lot, currentThreshold, available);
+      await redis.set(key, currentThreshold);
     }
   }
 }
+
 
 export function startParkingMonitor() {
   async function loop() {

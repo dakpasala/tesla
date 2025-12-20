@@ -22,7 +22,6 @@ router.get('/routes', async (req, res) => {
       return res.status(400).json({
         error: 'Missing required parameters: origin and destination',
       });
-      
     }
 
     const redis = await getRedisClient();

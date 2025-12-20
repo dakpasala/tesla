@@ -4,6 +4,7 @@ import dummyRoutes from './routes/dummy.js';
 import mapsRoutes from './routes/maps.js';
 import redisRoutes from './routes/redis.js';
 import dbRoutes from './routes/db.js';
+import { startParkingMonitor } from './jobs/parkingMonitor.js';
 import tripshotRoutes from './routes/tripshot.js';
 
 const app = express();
@@ -22,6 +23,8 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = 3000;
+
+startParkingMonitor();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -1,58 +1,71 @@
-// will be used for notifications, redis helps avoid duplicate notis
-
-import express from 'express';
-import {
-  getAllTransportOptions,
-  getDirections,
-} from '../services/maps/directionsService.js';
 import { getRedisClient } from '../services/redis/redisClient.js';
+import { getPool } from '../services/db/mssqlPool.js';
 
-const router = express.Router();
+const THRESHOLDS = [50, 25, 10, 5, 0];
 
-function normalize(str) {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_|_$/g, '');
+function getPollingIntervalMs() {
+  const hour = new Date().getHours();
+
+  if (hour >= 8 && hour < 10) return 5000;
+  if (hour >= 7 && hour < 8) return 60000;
+  if (hour >= 10 && hour < 12) return 60000;
+  return null;
 }
 
-router.get('/routes', async (req, res) => {
-  try {
-    const { origin, destination } = req.query;
+async function fetchParkingAvailability() {
+  const pool = await getPool();
+  const result = await pool.request().query(`
+    SELECT lot_name, available
+    FROM parking_availability
+    WHERE lot_name IN ('SAP Lot', 'DC Lot')
+  `);
+  return result.recordset;
+}
 
-    if (!origin || !destination) {
-      return res.status(400).json({
-        error: 'Missing required parameters: origin and destination',
-      });
-    }
-
-    const redis = await getRedisClient();
-    const cacheKey = `maps:routes:${normalize(origin)}:${normalize(destination)}`;
-
-    // check Redis first
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      console.log('Redis cache hit');
-      return res.json(JSON.parse(cached));
-    }
-
-    console.log('Redis cache miss → calling Google Maps');
-
-    // call Google Maps
-    const routes = await getAllTransportOptions(origin, destination);
-
-    // save to Redis with TTL
-    await redis.set(cacheKey, JSON.stringify(routes), {
-      EX: 60, 
-    });
-
-    // much easier than i thought, but working as expected
-
-    res.json(routes);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+async function sendNotification(lot, threshold, available) {
+  if (threshold === 0) {
+    console.log(`${lot} is FULL`);
+  } else {
+    console.log(`${lot} has less than ${threshold} spots available (${available})`);
   }
-});
+}
 
+async function checkParkingAvailability() {
+  const redis = await getRedisClient();
+  const rows = await fetchParkingAvailability();
 
-export default router;
+  for (const row of rows) {
+    const lot = row.lot_name;
+    const available = row.available;
+
+    const key = `parking:last_threshold:${lot}`;
+    const last = await redis.get(key);
+    const lastThreshold = last ? Number(last) : null;
+
+    const crossed = THRESHOLDS.find(
+      t => available <= t && (lastThreshold === null || t < lastThreshold)
+    );
+
+    if (crossed !== undefined) {
+      await sendNotification(lot, crossed, available);
+      await redis.set(key, crossed);
+    }
+  }
+}
+
+export function startParkingMonitor() {
+  async function loop() {
+    try {
+      const interval = getPollingIntervalMs();
+      if (interval === null) {
+        setTimeout(loop, 60000);
+        return;
+      }
+      await checkParkingAvailability();
+      setTimeout(loop, interval);
+    } catch {
+      setTimeout(loop, 60000);
+    }
+  }
+  loop();
+}

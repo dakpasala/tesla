@@ -52,5 +52,7 @@ router.get('/routes', async (req, res) => {
   }
 });
 
+// what i used to test:
+// curl "http://localhost:3000/api/maps/routes?origin=3850%20Kamp%20Dr,%20Pleasanton,%20CA&destination=3875%20Hopyard%20Rd,%20Pleasanton,%20CA"
 
 export default router;

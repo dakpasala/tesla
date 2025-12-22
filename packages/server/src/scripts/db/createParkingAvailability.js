@@ -22,7 +22,7 @@ async function run() {
         ('DC Lot', 100);
     `);
 
-    console.log('✅ parking_availability table created and seeded');
+    console.log('parking_availability table created and seeded');
 
     const result = await pool
       .request()
@@ -32,7 +32,7 @@ async function run() {
 
     await sql.close();
   } catch (err) {
-    console.error('❌ Error:', err.message);
+    console.error('Error:', err.message);
   }
 }
 

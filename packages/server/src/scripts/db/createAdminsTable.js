@@ -22,14 +22,14 @@ async function run() {
         ('kbeltran', 'kbeltr03@calpoly.edu');
     `);
 
-    console.log('✅ admins table created and seeded');
+    console.log('admins table created and seeded');
 
     const result = await pool.request().query('SELECT * FROM admins');
     console.log('Admins:', result.recordset);
 
     await sql.close();
   } catch (err) {
-    console.error('❌ Error:', err.message);
+    console.error('Error:', err.message);
   }
 }
 

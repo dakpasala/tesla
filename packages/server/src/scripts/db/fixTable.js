@@ -24,10 +24,10 @@ async function run() {
       EXEC sp_rename 'users_new', 'users';
     `);
 
-    console.log('✅ users table fixed');
+    console.log('users table fixed');
     await sql.close();
   } catch (err) {
-    console.error('❌ Migration failed:', err.message);
+    console.error('Migration failed:', err.message);
   }
 }
 

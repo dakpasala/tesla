@@ -14,6 +14,13 @@ function getPollingIntervalMs() {
   return null;
 }
 
+function secondsUntilMidnight() {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  return Math.floor((midnight - now) / 1000);
+}
+
 async function fetchParkingAvailability() {
   const pool = await getPool();
   const result = await pool.request().query(`
@@ -53,11 +60,12 @@ async function checkParkingAvailability() {
       (lastThreshold === null || currentThreshold < lastThreshold)
     ) {
       await sendNotification(lot, currentThreshold, available);
-      await redis.set(key, currentThreshold);
+      await redis.set(key, currentThreshold, {
+        EX: secondsUntilMidnight(),
+      });
     }
   }
 }
-
 
 export function startParkingMonitor() {
   async function loop() {

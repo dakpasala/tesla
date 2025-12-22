@@ -31,11 +31,19 @@ async function fetchParkingAvailability() {
   return result.recordset;
 }
 
-async function sendNotification(lot, threshold, available) {
+async function sendBelowNotification(lot, threshold, available) {
   if (threshold === 0) {
     console.log(`${lot} is FULL`);
   } else {
     console.log(`${lot} has less than ${threshold} spots available (${available})`);
+  }
+}
+
+async function sendRecoveryNotification(lot, threshold, available) {
+  if (threshold === 0) {
+    console.log(`${lot} has spots available again (${available})`);
+  } else {
+    console.log(`${lot} is back above ${threshold} spots (${available})`);
   }
 }
 
@@ -47,25 +55,57 @@ async function checkParkingAvailability() {
     const lot = row.lot_name;
     const available = row.availability;
 
-    const key = `parking:last_threshold:${lot}`;
-    const last = await redis.get(key);
-    const lastThreshold = last ? Number(last) : null;
+    let highestRecoveredThreshold = null;
 
-    const currentThreshold = [...THRESHOLDS]
-      .reverse()
-      .find(t => available <= t);
+    for (const threshold of THRESHOLDS) {
+      const key = `parking:below:${lot}:${threshold}`;
+      const isCached = await redis.exists(key);
 
-    if (
-      currentThreshold !== undefined &&
-      (lastThreshold === null || currentThreshold < lastThreshold)
-    ) {
-      await sendNotification(lot, currentThreshold, available);
-      await redis.set(key, currentThreshold, {
-        EX: secondsUntilMidnight(),
-      });
+      if (available > threshold && isCached) {
+        await redis.del(key);
+        if (
+          highestRecoveredThreshold === null ||
+          threshold > highestRecoveredThreshold
+        ) {
+          highestRecoveredThreshold = threshold;
+        }
+      }
+    }
+
+    if (highestRecoveredThreshold !== null) {
+      await sendRecoveryNotification(
+        lot,
+        highestRecoveredThreshold,
+        available
+      );
+    }
+
+    const crossedThresholds = THRESHOLDS.filter(
+      t => available <= t
+    );
+
+    if (crossedThresholds.length > 0) {
+      const lowestThreshold = Math.min(...crossedThresholds);
+      const key = `parking:below:${lot}:${lowestThreshold}`;
+      const alreadyCached = await redis.exists(key);
+
+      if (!alreadyCached) {
+        await sendBelowNotification(lot, lowestThreshold, available);
+
+        for (const t of THRESHOLDS) {
+          if (t >= lowestThreshold) {
+            await redis.set(
+              `parking:below:${lot}:${t}`,
+              '1',
+              { EX: secondsUntilMidnight() }
+            );
+          }
+        }
+      }
     }
   }
 }
+
 
 export function startParkingMonitor() {
   async function loop() {

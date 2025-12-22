@@ -1,7 +1,7 @@
 import { getPool } from '../../services/db/mssqlPool.js';
 
 const LOT = 'SAP Lot';
-const AVAILABLE = 48;
+const AVAILABLE = 2;
 
 async function run() {
   const pool = await getPool();

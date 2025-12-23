@@ -43,3 +43,17 @@ export async function getUsers() {
   await sql.close();
   return result.recordset;
 }
+
+export async function getParkingAvailability() {
+  const pool = await getPool();
+  const result = await pool.request().query('SELECT * FROM parking_availability');
+  await sql.close();
+  return result.recordset;
+}
+
+export async function getAdminsTable() {
+  const pool = await getPool();
+  const result = await pool.request().query('SELECT * FROM admins');
+  await sql.close();
+  return result.recordset;
+}

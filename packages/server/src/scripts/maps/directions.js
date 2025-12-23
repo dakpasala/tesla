@@ -1,5 +1,5 @@
-import { getDirections } from '../services/maps/directionsService.js';
-import { GOOGLE_MAPS_API_KEY } from '../config/env.js';
+import { getDirections } from '../../services/maps/directionsService.js';
+import { GOOGLE_MAPS_API_KEY } from '../../config/env.js';
 
 async function run() {
   try {

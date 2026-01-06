@@ -60,7 +60,7 @@ router.get('/parking', async (req, res) => {
 });
 
 // update parking availability
-router.post('/parking', async (req, res) => {
+router.patch('/parking', async (req, res) => {
   const { lot_name, availability } = req.body;
 
   if (!lot_name || availability === undefined) {

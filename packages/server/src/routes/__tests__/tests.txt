@@ -1,4 +1,4 @@
-Test the maps: curl "http://localhost:3000/api/maps/routes?origin=3850%20Kamp%20Dr,%20Pleasanton,%20CA&destination=3875%20Hopyard%20Rd,%20Pleasanton,%20CA"
+Test the maps: curl "http://localhost:3000/api/maps/routes?origin=37.394722,-122.150278&destination=Tesla%20HQ%20Dear%20Creek%20Palo%20Alto"
 Test the DB:
     Get parking availability: curl http://localhost:3000/api/db/parking
     Update parking availability: curl -X POST http://localhost:3000/api/db/parking \

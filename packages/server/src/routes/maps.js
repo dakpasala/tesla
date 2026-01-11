@@ -1,8 +1,5 @@
 import express from 'express';
-import {
-  getAllTransportOptions,
-  getDirections,
-} from '../services/maps/directionsService.js';
+import { getAllTransportOptions } from '../services/maps/directionsService.js';
 import { getRedisClient } from '../services/redis/redisClient.js';
 
 const router = express.Router();
@@ -27,7 +24,6 @@ router.get('/routes', async (req, res) => {
     const redis = await getRedisClient();
     const cacheKey = `maps:routes:${normalize(origin)}:${normalize(destination)}`;
 
-    // check Redis first
     const cached = await redis.get(cacheKey);
     if (cached) {
       console.log('Redis cache hit');
@@ -39,12 +35,7 @@ router.get('/routes', async (req, res) => {
     // call Google Maps
     const routes = await getAllTransportOptions(origin, destination);
 
-    // save to Redis with TTL
-    await redis.set(cacheKey, JSON.stringify(routes), {
-      EX: 60, 
-    });
-
-    // much easier than i thought, but working as expected
+    await redis.set(cacheKey, JSON.stringify(routes), { EX: 60 });
 
     res.json(routes);
   } catch (error) {

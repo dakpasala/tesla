@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { GOOGLE_MAPS_API_KEY } from '../../config/env.js';
+import { normalizeGoogleRoute } from "./normalizeRoute.js";
 
 const BASE_URL = 'https://maps.googleapis.com/maps/api/directions/json';
 
@@ -20,16 +21,22 @@ export async function getDirections(origin, destination, mode = 'driving') {
   return json;
 }
 
-// optional helper to fetch multiple modes at once
 export async function getAllTransportOptions(origin, destination) {
-  const modes = ['driving', 'bicycling', 'walking', 'transit'];
-  const results = {};
+  const modes = ["driving", "bicycling", "walking", "transit"];
+  const results = [];
+
   for (const mode of modes) {
     try {
-      results[mode] = await getDirections(origin, destination, mode);
+      const googleJson = await getDirections(origin, destination, mode);
+      const normalized = normalizeGoogleRoute(mode, googleJson);
+
+      if (normalized) {
+        results.push(normalized);
+      }
     } catch (err) {
-      console.error(`failed to fetch ${mode}:`, err.message);
+      console.error(`Failed to fetch ${mode}:`, err.message);
     }
   }
+
   return results;
 }

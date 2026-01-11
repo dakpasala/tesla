@@ -1,9 +1,11 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, Button, StyleSheet, Image, Pressable } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Modalize } from 'react-native-modalize';
+import Geolocation from "react-native-geolocation-service";
+import { getRoutesToTeslaHQ } from "../services/routes";
 
 import BikeScreen from '../screens/Bike';
 import BusScreen from '../screens/Bus';
@@ -18,20 +20,73 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const modalRef = useRef<Modalize>(null);
+
   const [screen, setScreen] = useState<
     'home' | 'bike' | 'bus' | 'train' | 'walk'
   >('home');
 
-  const items = [];
-  for (let i = 0; i < 500; i++) {
-    items.push(
-      <Text key={i} style={{ paddingVertical: 20 }}>
-        Item {i}
-      </Text>
-    );
-  }
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    accuracy?: number;
+  } | null>(null);
+
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const [routes, setRoutes] = useState<any[] | null>(null);
+  const [loadingRoutes, setLoadingRoutes] = useState(false);
 
   const { colors } = useTheme();
+
+  useEffect(() => {
+    Geolocation.getCurrentPosition(
+      pos => {
+        setLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+      },
+      err => setLocationError(err.message),
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000,
+      }
+    );
+  }, []);
+
+  useEffect(() => {
+  if (!location) return;
+
+    const origin = location; 
+    let cancelled = false;
+
+    async function loadRoutes() {
+      try {
+        setLoadingRoutes(true);
+
+        const data = await getRoutesToTeslaHQ({
+          lat: origin.lat,
+          lng: origin.lng,
+        });
+
+        if (!cancelled) {
+          setRoutes(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch routes", err);
+      } finally {
+        if (!cancelled) setLoadingRoutes(false);
+      }
+    }
+
+    loadRoutes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -109,14 +164,8 @@ export default function HomeScreen() {
           )}
 
           {screen === 'bike' && <BikeScreen />}
-
-          {
-            screen === 'bus' && <BusScreen />
-            // (<BusScreen goBack={() => setScreen("home")} />)
-          }
-
+          {screen === 'bus' && <BusScreen />}
           {screen === 'train' && <TrainScreen />}
-
           {screen === 'walk' && <WalkScreen />}
         </View>
       </Modalize>

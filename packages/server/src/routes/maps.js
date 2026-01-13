@@ -11,7 +11,7 @@ function normalize(str) {
     .replace(/^_|_$/g, '');
 }
 
-router.get('/routes', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { origin, destination } = req.query;
 

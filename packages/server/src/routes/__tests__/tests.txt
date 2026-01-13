@@ -1,4 +1,4 @@
-Test the maps: curl "http://localhost:3000/api/maps/routes?origin=37.394722,-122.150278&destination=Tesla%20HQ%20Dear%20Creek%20Palo%20Alto"
+Test the maps: curl "http://localhost:3000/api/maps/?origin=37.394722,-122.150278&destination=Tesla%20HQ%20Dear%20Creek%20Palo%20Alto"
 Test the DB:
     Get parking availability: curl "http://localhost:3000/api/parkings/?loc_name=Palo%20Alto%20Office"
     Update parking availability: curl -X PATCH http://localhost:3000/api/parkings/ \

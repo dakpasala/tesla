@@ -1,7 +1,7 @@
 Test the maps: curl "http://localhost:3000/api/maps/routes?origin=37.394722,-122.150278&destination=Tesla%20HQ%20Dear%20Creek%20Palo%20Alto"
 Test the DB:
-    Get parking availability: curl "http://localhost:3000/api/db/parking?loc_name=Palo%20Alto%20Office"
-    Update parking availability: curl -X PATCH http://localhost:3000/api/db/parking \
+    Get parking availability: curl "http://localhost:3000/api/parkings/?loc_name=Palo%20Alto%20Office"
+    Update parking availability: curl -X PATCH http://localhost:3000/api/parkings/ \
         -H "Content-Type: application/json" \
         -d '{
             "loc_name": "Palo Alto Office",
@@ -9,11 +9,16 @@ Test the DB:
             "availability": 37
         }'
 
-
-    Get admins: curl http://localhost:3000/api/db/admins
-    Add admin: curl -X POST http://localhost:3000/api/db/admins \
+    Get admins: curl http://localhost:3000/api/admins/
+    Add admin: curl -X POST http://localhost:3000/api/admins/ \
     -H "Content-Type: application/json" \
     -d '{"username":"user","email":"user@calpoly.edu"}'
+
+    Add to a user's incentives: curl -X POST http://localhost:3000/api/users/1/incentives \
+        -H "Content-Type: application/json" \
+        -d '{ "transitType": "shuttle" }'
+    Get a user's balance: curl http://localhost:3000/api/users/1/balance
+    Get a user's incentives: curl http://localhost:3000/api/users/1/incentives
 
 Test redis: None for now because redis implementations is done with the routes
 

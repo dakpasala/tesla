@@ -125,3 +125,134 @@ export async function addAdmin(username, email) {
   await sql.close();
   return result.recordset[0].id;
 }
+
+// --------------------
+// users
+// --------------------
+
+export async function getUsers() {
+  const pool = await getPool();
+  const result = await pool.request().query('SELECT * FROM users');
+  await sql.close();
+  return result.recordset;
+}
+
+export async function getUserBalance(userId) {
+  const pool = await getPool();
+
+  const result = await pool
+    .request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT id, name, balance
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+
+  if (result.recordset.length === 0) {
+    return null;
+  }
+
+  return result.recordset[0];
+}
+
+export async function getUserIncentives(userId) {
+  const pool = await getPool();
+
+  const result = await pool
+    .request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT
+        id,
+        transit_type,
+        amount,
+        created_at
+      FROM user_incentives
+      WHERE user_id = @userId
+      ORDER BY created_at DESC
+    `);
+
+  await sql.close();
+  return result.recordset;
+}
+
+export async function awardTransitIncentive(userId, transitType) {
+  const pool = await getPool();
+
+  const INCENTIVES = {
+    shuttle: 5.00,
+    carpool: 3.00,
+    walking: 2.00,
+    biking: 2.00,
+  };
+
+  const amount = INCENTIVES[transitType];
+
+  if (amount === undefined) {
+    throw new Error(`Invalid transit type: ${transitType}`);
+  }
+
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    const insertResult = await new sql.Request(transaction)
+      .input('userId', sql.Int, userId)
+      .input('transitType', sql.VarChar, transitType)
+      .input('amount', sql.Decimal(10, 2), amount)
+      .query(`
+        INSERT INTO user_incentives (user_id, transit_type, amount)
+        VALUES (@userId, @transitType, @amount);
+
+        SELECT SCOPE_IDENTITY() AS incentiveId;
+      `);
+
+    if (!insertResult.recordset[0].incentiveId) {
+      throw new Error('Failed to insert incentive');
+    }
+
+    const updateResult = await new sql.Request(transaction)
+      .input('userId', sql.Int, userId)
+      .input('amount', sql.Decimal(10, 2), amount)
+      .query(`
+        UPDATE users
+        SET balance = balance + @amount
+        WHERE id = @userId;
+
+        SELECT @@ROWCOUNT AS rowsAffected;
+      `);
+
+    if (updateResult.recordset[0].rowsAffected === 0) {
+      throw new Error('User not found');
+    }
+
+    await transaction.commit();
+
+    const updated = await pool
+      .request()
+      .input('userId', sql.Int, userId)
+      .query(`
+        SELECT id, name, balance
+        FROM users
+        WHERE id = @userId
+      `);
+
+    await sql.close();
+
+    return {
+      userId: updated.recordset[0].id,
+      name: updated.recordset[0].name,
+      newBalance: updated.recordset[0].balance,
+      transitType,
+      credited: amount,
+    };
+  } catch (err) {
+    await transaction.rollback();
+    await sql.close();
+    throw err;
+  }
+}

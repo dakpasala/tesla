@@ -1,7 +1,7 @@
 import express from 'express';
 import {
   testConnection,
-  getAllParkingAvailability,
+  getParkingAvailabilityByLocationName,
   updateParkingAvailability,
   getAllAdmins,
   addAdmin,
@@ -28,7 +28,22 @@ router.get('/test', async (req, res) => {
 
 router.get('/parking', async (req, res) => {
   try {
-    const rows = await getAllParkingAvailability();
+    const { loc_name } = req.query;
+
+    if (!loc_name) {
+      return res.status(400).json({
+        error: 'loc_name is required',
+      });
+    }
+
+    const rows = await getParkingAvailabilityByLocationName(loc_name);
+
+    if (rows.length === 1 && rows[0].error === 'LOCATION_NOT_FOUND') {
+      return res.status(404).json({
+        error: 'Location not found',
+      });
+    }
+
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -36,17 +51,33 @@ router.get('/parking', async (req, res) => {
 });
 
 router.patch('/parking', async (req, res) => {
-  const { lot_name, availability } = req.body;
+  const { loc_name, lot_name, availability } = req.body;
 
-  if (!lot_name || availability === undefined) {
+  if (!loc_name || !lot_name || typeof availability !== 'number') {
     return res.status(400).json({
-      error: 'lot_name and availability are required',
+      error: 'loc_name, lot_name, and numeric availability are required',
     });
   }
 
   try {
-    await updateParkingAvailability(lot_name, availability);
-    res.json({ success: true, lot_name, availability });
+    const rowsAffected = await updateParkingAvailability(
+      loc_name,
+      lot_name,
+      availability
+    );
+
+    if (rowsAffected === 0) {
+      return res.status(404).json({
+        error: 'Location or parking lot not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      loc_name,
+      lot_name,
+      availability,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

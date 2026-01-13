@@ -23,13 +23,21 @@ function secondsUntilMidnight() {
 
 async function fetchParkingAvailability() {
   const pool = await getPool();
+
   const result = await pool.request().query(`
-    SELECT lot_name, availability
-    FROM parking_availability
-    WHERE lot_name IN ('SAP Lot', 'DC Lot')
+    SELECT
+      l.name AS location_name,
+      p.name AS lot_name,
+      p.current_available AS availability
+    FROM parking_lots p
+    JOIN locations l ON l.id = p.location_id
+    WHERE p.is_active = 1
+      AND l.is_active = 1
   `);
+
   return result.recordset;
 }
+
 
 async function sendBelowNotification(lot, threshold, available) {
   if (threshold === 0) {
@@ -52,17 +60,19 @@ async function checkParkingAvailability() {
   const rows = await fetchParkingAvailability();
 
   for (const row of rows) {
+    const location = row.location_name;
     const lot = row.lot_name;
     const available = row.availability;
 
     let highestRecoveredThreshold = null;
 
     for (const threshold of THRESHOLDS) {
-      const key = `parking:below:${lot}:${threshold}`;
+      const key = `parking:below:${location}:${lot}:${threshold}`;
       const isCached = await redis.exists(key);
 
       if (available > threshold && isCached) {
         await redis.del(key);
+
         if (
           highestRecoveredThreshold === null ||
           threshold > highestRecoveredThreshold
@@ -74,7 +84,7 @@ async function checkParkingAvailability() {
 
     if (highestRecoveredThreshold !== null) {
       await sendRecoveryNotification(
-        lot,
+        `${location} - ${lot}`,
         highestRecoveredThreshold,
         available
       );
@@ -86,16 +96,20 @@ async function checkParkingAvailability() {
 
     if (crossedThresholds.length > 0) {
       const lowestThreshold = Math.min(...crossedThresholds);
-      const key = `parking:below:${lot}:${lowestThreshold}`;
+      const key = `parking:below:${location}:${lot}:${lowestThreshold}`;
       const alreadyCached = await redis.exists(key);
 
       if (!alreadyCached) {
-        await sendBelowNotification(lot, lowestThreshold, available);
+        await sendBelowNotification(
+          `${location} - ${lot}`,
+          lowestThreshold,
+          available
+        );
 
         for (const t of THRESHOLDS) {
           if (t >= lowestThreshold) {
             await redis.set(
-              `parking:below:${lot}:${t}`,
+              `parking:below:${location}:${lot}:${t}`,
               '1',
               { EX: secondsUntilMidnight() }
             );

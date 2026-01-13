@@ -1,9 +1,14 @@
 Test the maps: curl "http://localhost:3000/api/maps/routes?origin=37.394722,-122.150278&destination=Tesla%20HQ%20Dear%20Creek%20Palo%20Alto"
 Test the DB:
-    Get parking availability: curl http://localhost:3000/api/db/parking
-    Update parking availability: curl -X POST http://localhost:3000/api/db/parking \
-    -H "Content-Type: application/json" \
-    -d '{"lot_name":"SAP Lot","availability":12}'
+    Get parking availability: curl "http://localhost:3000/api/db/parking?loc_name=Palo%20Alto%20Office"
+    Update parking availability: curl -X PATCH http://localhost:3000/api/db/parking \
+        -H "Content-Type: application/json" \
+        -d '{
+            "loc_name": "Palo Alto Office",
+            "lot_name": "SAP Lot",
+            "availability": 37
+        }'
+
 
     Get admins: curl http://localhost:3000/api/db/admins
     Add admin: curl -X POST http://localhost:3000/api/db/admins \

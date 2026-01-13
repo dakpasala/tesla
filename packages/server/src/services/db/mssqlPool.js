@@ -39,29 +39,59 @@ export async function testConnection() {
 // parking availability
 // --------------------
 
-export async function getAllParkingAvailability() {
+export async function getParkingAvailabilityByLocationName(locationName) {
   const pool = await getPool();
-  const result = await pool.request().query(`
-    SELECT id, lot_name, availability
-    FROM parking_availability
-    ORDER BY lot_name
-  `);
+
+  const result = await pool
+    .request()
+    .input('locationName', sql.VarChar, locationName)
+    .query(`
+      -- Check if location exists
+      IF NOT EXISTS (
+        SELECT 1 FROM locations WHERE name = @locationName
+      )
+      BEGIN
+        SELECT 'LOCATION_NOT_FOUND' AS error;
+        RETURN;
+      END
+
+      SELECT
+        p.id,
+        p.name AS lot_name,
+        p.current_available,
+        p.capacity
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = @locationName
+        AND p.is_active = 1
+      ORDER BY p.name;
+    `);
+
   await sql.close();
   return result.recordset;
 }
 
-export async function updateParkingAvailability(lot_name, availability) {
+export async function updateParkingAvailability(locationName, lotName, availability) {
   const pool = await getPool();
-  await pool
+
+  const result = await pool
     .request()
-    .input('lot_name', sql.VarChar, lot_name)
+    .input('locationName', sql.VarChar, locationName)
+    .input('lotName', sql.VarChar, lotName)
     .input('availability', sql.Int, availability)
     .query(`
-      UPDATE parking_availability
-      SET availability = @availability
-      WHERE lot_name = @lot_name
+      UPDATE p
+      SET p.current_available = @availability
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = @locationName
+        AND p.name = @lotName;
+
+      SELECT @@ROWCOUNT AS rowsAffected;
     `);
+
   await sql.close();
+  return result.recordset[0].rowsAffected;
 }
 
 // --------------------

@@ -1,5 +1,5 @@
 import express from 'express';
-import { getRedisClient } from '../redis/client.js';
+import { getRedisClient } from '../services/redis/redisClient.js';
 
 const router = express.Router();
 
@@ -24,6 +24,8 @@ router.post('/set', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 router.get('/get/:key', async (req, res) => {
   try {

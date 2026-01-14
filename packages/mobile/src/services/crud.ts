@@ -1,7 +1,7 @@
 // this is a temporary file to show the concept of crud frontend wrappers
 // some modifications will be make for thoroughness, error handling, and sufficient abstraction
 
-const API_BASE_URL = 'https://your-backend-url.com/api';
+const API_BASE_URL = 'https://localhost:3000/api';
 
 export async function get<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/${endpoint}`);

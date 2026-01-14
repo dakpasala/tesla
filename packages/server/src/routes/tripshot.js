@@ -14,10 +14,12 @@ router.post('/commutePlan', (req, res) => {
     endLng,
     endName,
   } = req.query;
+  
   //validate required fields
   if (!day || !time || !startLat || !startLng || !endLat || !endLng) {
     return res.status(400).json({ error: 'missing parameters' });
   }
+
   //some data fields only not all , just for simple mock test purposes
   res.status(200).json({
     startPoint: {

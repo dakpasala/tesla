@@ -1,5 +1,4 @@
-// src/db/test.js
-import { testConnection, getUsers } from '../services/db/mssqlPool.js';
+import { testConnection, getAdminsTable } from '../../services/db/mssqlPool.js';
 
 async function run() {
   try {
@@ -8,10 +7,10 @@ async function run() {
     console.log('Ping result:', ping);
 
     try {
-      const users = await getUsers();
-      console.log('Users:', users);
+      const admins = await getAdminsTable();
+      console.log('Admins', admins);
     } catch (e) {
-      console.log('Users query failed:', e.message);
+      console.log('Admins query failed');
     }
   } catch (e) {
     console.error('DB script error:', e.message);

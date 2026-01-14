@@ -1,4 +1,4 @@
-// src/db/mssql.js
+// src/services/db/mssqlPool.js
 import sql from 'mssql';
 import {
   MSSQL_USER,
@@ -14,23 +14,245 @@ const config = {
   server: MSSQL_SERVER,
   port: parseInt(MSSQL_PORT, 10),
   database: MSSQL_DATABASE,
-  options: { encrypt: false, trustServerCertificate: true },
+  options: {
+    encrypt: false,
+    trustServerCertificate: true,
+  },
 };
 
 export async function getPool() {
   return sql.connect(config);
 }
 
+// --------------------
+// health / testing
+// --------------------
+
 export async function testConnection() {
   const pool = await getPool();
-  const result = await pool.request().query('SELECT TOP 1 1 AS ok');
+  const result = await pool.request().query('SELECT 1 AS ok');
   await sql.close();
   return result.recordset;
 }
+
+// --------------------
+// parking availability
+// --------------------
+
+export async function getParkingAvailabilityByLocationName(locationName) {
+  const pool = await getPool();
+
+  const result = await pool
+    .request()
+    .input('locationName', sql.VarChar, locationName)
+    .query(`
+      -- Check if location exists
+      IF NOT EXISTS (
+        SELECT 1 FROM locations WHERE name = @locationName
+      )
+      BEGIN
+        SELECT 'LOCATION_NOT_FOUND' AS error;
+        RETURN;
+      END
+
+      SELECT
+        p.id,
+        p.name AS lot_name,
+        p.current_available,
+        p.capacity
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = @locationName
+        AND p.is_active = 1
+      ORDER BY p.name;
+    `);
+
+  await sql.close();
+  return result.recordset;
+}
+
+export async function updateParkingAvailability(locationName, lotName, availability) {
+  const pool = await getPool();
+
+  const result = await pool
+    .request()
+    .input('locationName', sql.VarChar, locationName)
+    .input('lotName', sql.VarChar, lotName)
+    .input('availability', sql.Int, availability)
+    .query(`
+      UPDATE p
+      SET p.current_available = @availability
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = @locationName
+        AND p.name = @lotName;
+
+      SELECT @@ROWCOUNT AS rowsAffected;
+    `);
+
+  await sql.close();
+  return result.recordset[0].rowsAffected;
+}
+
+// --------------------
+// admins
+// --------------------
+
+export async function getAllAdmins() {
+  const pool = await getPool();
+  const result = await pool.request().query(`
+    SELECT id, username, email
+    FROM admins
+    ORDER BY username
+  `);
+  await sql.close();
+  return result.recordset;
+}
+
+export async function addAdmin(username, email) {
+  const pool = await getPool();
+  const result = await pool
+    .request()
+    .input('username', sql.VarChar, username)
+    .input('email', sql.VarChar, email)
+    .query(`
+      INSERT INTO admins (username, email)
+      VALUES (@username, @email);
+
+      SELECT SCOPE_IDENTITY() AS id;
+    `);
+
+  await sql.close();
+  return result.recordset[0].id;
+}
+
+// --------------------
+// users
+// --------------------
 
 export async function getUsers() {
   const pool = await getPool();
   const result = await pool.request().query('SELECT * FROM users');
   await sql.close();
   return result.recordset;
+}
+
+export async function getUserBalance(userId) {
+  const pool = await getPool();
+
+  const result = await pool
+    .request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT id, name, balance
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+
+  if (result.recordset.length === 0) {
+    return null;
+  }
+
+  return result.recordset[0];
+}
+
+export async function getUserIncentives(userId) {
+  const pool = await getPool();
+
+  const result = await pool
+    .request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT
+        id,
+        transit_type,
+        amount,
+        created_at
+      FROM user_incentives
+      WHERE user_id = @userId
+      ORDER BY created_at DESC
+    `);
+
+  await sql.close();
+  return result.recordset;
+}
+
+export async function awardTransitIncentive(userId, transitType) {
+  const pool = await getPool();
+
+  const INCENTIVES = {
+    shuttle: 5.00,
+    carpool: 3.00,
+    walking: 2.00,
+    biking: 2.00,
+  };
+
+  const amount = INCENTIVES[transitType];
+
+  if (amount === undefined) {
+    throw new Error(`Invalid transit type: ${transitType}`);
+  }
+
+  const transaction = new sql.Transaction(pool);
+
+  try {
+    await transaction.begin();
+
+    const insertResult = await new sql.Request(transaction)
+      .input('userId', sql.Int, userId)
+      .input('transitType', sql.VarChar, transitType)
+      .input('amount', sql.Decimal(10, 2), amount)
+      .query(`
+        INSERT INTO user_incentives (user_id, transit_type, amount)
+        VALUES (@userId, @transitType, @amount);
+
+        SELECT SCOPE_IDENTITY() AS incentiveId;
+      `);
+
+    if (!insertResult.recordset[0].incentiveId) {
+      throw new Error('Failed to insert incentive');
+    }
+
+    const updateResult = await new sql.Request(transaction)
+      .input('userId', sql.Int, userId)
+      .input('amount', sql.Decimal(10, 2), amount)
+      .query(`
+        UPDATE users
+        SET balance = balance + @amount
+        WHERE id = @userId;
+
+        SELECT @@ROWCOUNT AS rowsAffected;
+      `);
+
+    if (updateResult.recordset[0].rowsAffected === 0) {
+      throw new Error('User not found');
+    }
+
+    await transaction.commit();
+
+    const updated = await pool
+      .request()
+      .input('userId', sql.Int, userId)
+      .query(`
+        SELECT id, name, balance
+        FROM users
+        WHERE id = @userId
+      `);
+
+    await sql.close();
+
+    return {
+      userId: updated.recordset[0].id,
+      name: updated.recordset[0].name,
+      newBalance: updated.recordset[0].balance,
+      transitType,
+      credited: amount,
+    };
+  } catch (err) {
+    await transaction.rollback();
+    await sql.close();
+    throw err;
+  }
 }

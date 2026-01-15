@@ -1,10 +1,10 @@
-import { getDirections } from '../services/maps/directionsService.js';
-import { GOOGLE_MAPS_API_KEY } from '../config/env.js';
+import { getDirections } from '../../services/maps/directionsService.js';
+import { GOOGLE_MAPS_API_KEY } from '../../config/env.js';
 
 async function run() {
   try {
     console.log('Key loaded:', !!GOOGLE_MAPS_API_KEY);
-    const origin = 'San Jose,CA';
+    const origin = '3850 Kamp Dr, Pleasanton, CA';
     const destination = 'Palo Alto,CA';
     const modes = ['driving', 'bicycling', 'walking', 'transit'];
 

@@ -126,6 +126,74 @@ export async function addAdmin(username, email) {
   return result.recordset[0].id;
 }
 
+export async function getParkingLotByOfficeAndName(
+  officeName,
+  parkingLotName
+) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('officeName', sql.VarChar, officeName)
+    .input('parkingLotName', sql.VarChar, parkingLotName)
+    .query(`
+      SELECT
+        p.id,
+        p.name AS parking_lot_name,
+        p.address,
+        p.lat,
+        p.lng,
+        l.id AS location_id,
+        l.name AS location_name
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = @officeName
+        AND p.name = @parkingLotName
+        AND l.is_active = 1
+        AND p.is_active = 1
+    `);
+
+  return result.recordset[0] || null;
+}
+
+export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('lat', sql.Float, lat)
+    .input('lng', sql.Float, lng)
+    .input('radius', sql.Int, radiusMeters)
+    .query(`
+      SELECT TOP 1 *
+      FROM (
+        SELECT
+          id,
+          name,
+          address,
+          lat,
+          lng,
+          (
+            6371000 * ACOS(
+              COS(RADIANS(@lat)) *
+              COS(RADIANS(lat)) *
+              COS(RADIANS(lng) - RADIANS(@lng)) +
+              SIN(RADIANS(@lat)) *
+              SIN(RADIANS(lat))
+            )
+          ) AS distance_meters
+        FROM locations
+        WHERE
+          lat IS NOT NULL
+          AND lng IS NOT NULL
+          AND is_active = 1
+      ) AS distances
+      WHERE distance_meters <= @radius
+      ORDER BY distance_meters;
+    `);
+
+  return result.recordset[0] || null;
+}
+
+
 // --------------------
 // users
 // --------------------

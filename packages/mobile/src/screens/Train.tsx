@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     marginBottom: 20
   },
-  modalScreen: {
-    backgroundColor: '#E0E0E0'
-  }
+  // modalScreen: {
+  //   backgroundColor: '#E0E0E0'
+  // }
 });

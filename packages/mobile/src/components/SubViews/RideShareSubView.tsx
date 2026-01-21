@@ -86,7 +86,7 @@ export default function RideShareSubView({
       >
         <View style={styles.itemRow}>
           <Image
-            source={require('../../assets/car.png')}
+            source={require('../../assets/icons/old/car.png')}
             style={styles.icon}
             resizeMode="contain"
           />

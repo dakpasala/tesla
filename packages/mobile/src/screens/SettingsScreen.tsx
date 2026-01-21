@@ -10,7 +10,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1C1C1C'}}>
       <Text>Settings Screen</Text>
       <Button title="Go to Home" onPress={() => navigation.navigate('Home')} />
     </View>

@@ -128,4 +128,39 @@ router.get('/go-home', async (req, res) => {
   }
 });
 
+router.get('/presence', async (req, res) => {
+  try {
+    const { lat, lng } = req.query;
+
+    if (!lat || !lng) {
+      return res.status(400).json({
+        error: 'lat and lng are required',
+      });
+    }
+
+    const office = await findNearbyOffice(
+      parseFloat(lat),
+      parseFloat(lng)
+    );
+
+    if (!office) {
+      return res.json({
+        atOffice: false,
+      });
+    }
+
+    res.json({
+      atOffice: true,
+      office: {
+        id: office.id,
+        name: office.name,
+        distance_meters: office.distance_meters,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 export default router;

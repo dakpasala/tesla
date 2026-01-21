@@ -58,3 +58,12 @@ export async function createShuttleAlert({
 
   return alert;
 }
+
+export async function getShuttleAlerts(shuttleName) {
+  const redis = await getRedisClient();
+
+  const key = `alerts:shuttle:${shuttleName}`;
+  const alerts = await redis.lRange(key, 0, -1);
+
+  return alerts.map(JSON.parse);
+}

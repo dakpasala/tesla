@@ -1,0 +1,35 @@
+import React from 'react';
+import { Image, ImageStyle, StyleProp } from 'react-native';
+
+export type TransportationType = 'car' | 'van' | 'bus' | 'bike';
+
+type Props = {
+  type: TransportationType;
+  size?: number;
+  style?: StyleProp<ImageStyle>;
+  accessibilityLabel?: string;
+};
+
+const ICONS: Record<TransportationType, any> = {
+  car: require('../assets/images/transport_car.png'),
+  van: require('../assets/images/transport_van.png'),
+  bus: require('../assets/images/transport_bus.png'),
+  bike: require('../assets/images/transport_bike.png'),
+};
+
+export default function TransportationIcon({
+  type,
+  size = 24,
+  style,
+  accessibilityLabel,
+}: Props) {
+  return (
+    <Image
+      source={ICONS[type]}
+      style={[{ width: size, height: size }, style]}
+      resizeMode="contain"
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel ?? `${type} icon`}
+    />
+  );
+}

@@ -23,11 +23,24 @@ interface AtmWheelPickerProps {
     minute: number;
     period: 'am' | 'pm';
   }) => void;
+  /** Whether to show the selection overlay bar */
+  showSelectionOverlay?: boolean;
 }
 
 const ITEM_HEIGHT = 36;
 const VISIBLE_ITEMS = 9; // 4 above + center + 4 below
 const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
+const HOUR_CYCLE_LENGTH = 12;
+const HOUR_LOOPS = 5;
+const HOURS_LENGTH = HOUR_CYCLE_LENGTH * HOUR_LOOPS; // 60
+const HOUR_MID_START = HOUR_CYCLE_LENGTH * 2; // middle cycle start (24)
+const MINUTE_CYCLE_LENGTH = 12; // 12 increments of 5 minutes (0-55)
+const MINUTE_LOOPS = 5;
+const MINUTES_LENGTH = MINUTE_CYCLE_LENGTH * MINUTE_LOOPS; // 60
+const MINUTE_MID_START = MINUTE_CYCLE_LENGTH * 2; // middle cycle start (24)
+const PERIODS_LENGTH = 32;
+const MID_AM_INDEX = PERIODS_LENGTH / 2 - 1; // 15
+const MID_PM_INDEX = PERIODS_LENGTH / 2; // 16
 
 // Helper function to get current time
 const getCurrentTime = (): {
@@ -54,6 +67,7 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   initialMinute,
   initialPeriod,
   onTimeChange,
+  showSelectionOverlay = false,
 }) => {
   const currentTime = getCurrentTime();
 
@@ -63,25 +77,60 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
-  // Generate hours 1-12
-  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const baseHours = Array.from({ length: HOUR_CYCLE_LENGTH }, (_, i) => i + 1);
+  const baseMinutes = Array.from(
+    { length: MINUTE_CYCLE_LENGTH },
+    (_, i) => i * 5
+  );
 
-  // Generate minutes in 5-minute increments
-  const minutes = Array.from({ length: 12 }, (_, i) => i * 5);
+  const hourBaseIndex = baseHours.indexOf(defaultHour);
+  const minuteBaseIndex = baseMinutes.indexOf(defaultMinute);
 
-  // AM/PM options
-  const periods = ['am', 'pm'];
+  const defaultHourIndex =
+    (hourBaseIndex === -1 ? 0 : hourBaseIndex) + HOUR_MID_START;
+  const defaultMinuteIndex =
+    (minuteBaseIndex === -1 ? 0 : minuteBaseIndex) + MINUTE_MID_START;
+  const defaultPeriodIndex =
+    defaultPeriod === 'am' ? MID_AM_INDEX : MID_PM_INDEX;
+
+  // Looping arrays to simulate infinite scrolling
+  const hours = Array.from(
+    { length: HOURS_LENGTH },
+    (_, i) => baseHours[i % baseHours.length]
+  );
+
+  const minutes = Array.from(
+    { length: MINUTES_LENGTH },
+    (_, i) => baseMinutes[i % baseMinutes.length]
+  );
 
   const [selectedHour, setSelectedHour] = useState(defaultHour);
   const [selectedMinute, setSelectedMinute] = useState(defaultMinute);
   const [selectedPeriod, setSelectedPeriod] = useState<'am' | 'pm'>(
     defaultPeriod
   );
+  const [selectedHourIndex, setSelectedHourIndex] = useState(defaultHourIndex);
+  const [selectedMinuteIndex, setSelectedMinuteIndex] =
+    useState(defaultMinuteIndex);
+  const [selectedPeriodIndex, setSelectedPeriodIndex] =
+    useState(defaultPeriodIndex);
 
   // Track scroll offsets for real-time wheel effect
   const [hourScrollOffset, setHourScrollOffset] = useState(0);
   const [minuteScrollOffset, setMinuteScrollOffset] = useState(0);
   const [periodScrollOffset, setPeriodScrollOffset] = useState(0);
+
+  // Dynamically generate periods array - ALWAYS AM on top, PM on bottom
+  // selectedPeriodIndex determines where the boundary is
+  const periods = Array.from({ length: PERIODS_LENGTH }, (_, i) => {
+    if (selectedPeriod === 'am') {
+      // If AM is selected, it's at selectedPeriodIndex (the last AM before PMs start)
+      return i <= selectedPeriodIndex ? 'am' : 'pm';
+    } else {
+      // If PM is selected, it's at selectedPeriodIndex (the first PM after AMs end)
+      return i < selectedPeriodIndex ? 'am' : 'pm';
+    }
+  });
 
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
@@ -89,9 +138,10 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
 
   // Scroll each column to the initial/default position so the current time is centered on mount
   useEffect(() => {
-    const hourIndex = hours.indexOf(defaultHour);
-    const minuteIndex = minutes.indexOf(defaultMinute);
-    const periodIndex = periods.indexOf(defaultPeriod);
+    const hourIndex = defaultHourIndex;
+    const minuteIndex = defaultMinuteIndex;
+    // Start near middle of the array depending on initial period
+    const periodIndex = defaultPeriodIndex;
 
     // Guard against -1 (shouldn't happen, but avoids scroll errors)
     const safeHourIndex = Math.max(0, hourIndex);
@@ -136,11 +186,18 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
 
   const handleHourScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    const index = snapToItem(offsetY, hours.length, setSelectedHour, hours);
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, hours.length - 1));
+    const value = hours[clampedIndex];
+
+    setSelectedHour(value);
+    setSelectedHourIndex(clampedIndex);
+
+    recenterHourIfNeeded(offsetY);
 
     if (onTimeChange) {
       onTimeChange({
-        hour: hours[index],
+        hour: value,
         minute: selectedMinute,
         period: selectedPeriod,
       });
@@ -151,18 +208,97 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     event: NativeSyntheticEvent<NativeScrollEvent>
   ) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    const index = snapToItem(
-      offsetY,
-      minutes.length,
-      setSelectedMinute,
-      minutes
-    );
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, minutes.length - 1));
+    const value = minutes[clampedIndex];
+
+    setSelectedMinute(value);
+    setSelectedMinuteIndex(clampedIndex);
+
+    recenterMinuteIfNeeded(offsetY);
 
     if (onTimeChange) {
       onTimeChange({
         hour: selectedHour,
-        minute: minutes[index],
+        minute: value,
         period: selectedPeriod,
+      });
+    }
+  };
+
+  const recenterHourIfNeeded = (offsetY: number) => {
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const topThreshold = 6;
+    const bottomThreshold = hours.length - 7;
+
+    if (index <= topThreshold) {
+      const newIndex = index + HOUR_CYCLE_LENGTH;
+      const newValue = hours[newIndex];
+      setSelectedHourIndex(newIndex);
+      setSelectedHour(newValue);
+      const y = newIndex * ITEM_HEIGHT;
+      setHourScrollOffset(y);
+      hourScrollRef.current?.scrollTo({ y, animated: false });
+    } else if (index >= bottomThreshold) {
+      const newIndex = index - HOUR_CYCLE_LENGTH;
+      const newValue = hours[newIndex];
+      setSelectedHourIndex(newIndex);
+      setSelectedHour(newValue);
+      const y = newIndex * ITEM_HEIGHT;
+      setHourScrollOffset(y);
+      hourScrollRef.current?.scrollTo({ y, animated: false });
+    }
+  };
+
+  const recenterMinuteIfNeeded = (offsetY: number) => {
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const topThreshold = 6;
+    const bottomThreshold = minutes.length - 7;
+
+    if (index <= topThreshold) {
+      const newIndex = index + MINUTE_CYCLE_LENGTH;
+      const newValue = minutes[newIndex];
+      setSelectedMinuteIndex(newIndex);
+      setSelectedMinute(newValue);
+      const y = newIndex * ITEM_HEIGHT;
+      setMinuteScrollOffset(y);
+      minuteScrollRef.current?.scrollTo({ y, animated: false });
+    } else if (index >= bottomThreshold) {
+      const newIndex = index - MINUTE_CYCLE_LENGTH;
+      const newValue = minutes[newIndex];
+      setSelectedMinuteIndex(newIndex);
+      setSelectedMinute(newValue);
+      const y = newIndex * ITEM_HEIGHT;
+      setMinuteScrollOffset(y);
+      minuteScrollRef.current?.scrollTo({ y, animated: false });
+    }
+  };
+
+  const recenterPeriodIfNeeded = (
+    offsetY: number,
+    currentPeriod: 'am' | 'pm'
+  ) => {
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const topThreshold = 6;
+    const bottomThreshold = periods.length - 7;
+
+    if (currentPeriod === 'am' && index <= topThreshold) {
+      const newIndex = MID_AM_INDEX;
+      setSelectedPeriodIndex(newIndex);
+      setPeriodScrollOffset(newIndex * ITEM_HEIGHT);
+      periodScrollRef.current?.scrollTo({
+        y: newIndex * ITEM_HEIGHT,
+        animated: false,
+      });
+    }
+
+    if (currentPeriod === 'pm' && index >= bottomThreshold) {
+      const newIndex = MID_PM_INDEX;
+      setSelectedPeriodIndex(newIndex);
+      setPeriodScrollOffset(newIndex * ITEM_HEIGHT);
+      periodScrollRef.current?.scrollTo({
+        y: newIndex * ITEM_HEIGHT,
+        animated: false,
       });
     }
   };
@@ -171,18 +307,22 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     event: NativeSyntheticEvent<NativeScrollEvent>
   ) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    const index = snapToItem(
-      offsetY,
-      periods.length,
-      setSelectedPeriod,
-      periods as ('am' | 'pm')[]
-    );
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, periods.length - 1));
+
+    // Update the selected period and index
+    // This triggers recalibration of the periods array
+    const newPeriod = periods[clampedIndex] as 'am' | 'pm';
+    setSelectedPeriod(newPeriod);
+    setSelectedPeriodIndex(clampedIndex); // This recalibrates the values
+
+    recenterPeriodIfNeeded(offsetY, newPeriod);
 
     if (onTimeChange) {
       onTimeChange({
         hour: selectedHour,
         minute: selectedMinute,
-        period: periods[index] as 'am' | 'pm',
+        period: newPeriod,
       });
     }
   };
@@ -194,9 +334,13 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     onScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
     formatValue?: (value: number | string) => string,
     scrollOffset: number = 0,
-    onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
+    onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
+    selectedIndex?: number,
+    columnPosition: 'left' | 'center' | 'right' = 'center'
   ) => {
-    const selectedIndex = items.findIndex(i => i === selectedValue);
+    const defaultSelectedIndex = items.findIndex(i => i === selectedValue);
+    const actualSelectedIndex =
+      selectedIndex !== undefined ? selectedIndex : defaultSelectedIndex;
     // Calculate center position based on scroll offset
     const centerPosition = scrollOffset / ITEM_HEIGHT;
 
@@ -218,13 +362,23 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           {items.map((item, index) => {
             // Calculate distance from current scroll center, not just selected item
             const distance = Math.abs(index - centerPosition);
-            const scale = Math.max(0.6, 1 - distance * 0.12);
+            // Stronger size progression: center full size, edges much smaller
+            const normEdge = Math.min(distance / 4.5, 1); // 0 at center, 1 near far edge
+            const scale = Math.max(0.35, 1 - Math.pow(normEdge, 1.8) * 0.7);
             const tilt = (index - centerPosition) * 13;
 
-            // Smoother progressive compression across all distances
-            // Starts small but increases progressively to create continuous wheel curve
+            // Pull columns inward as rows move away from center to reduce horizontal gaps
+            const shiftMagnitude = Math.pow(normEdge, 1.3) * 10; // grows with distance
+            const translateX =
+              columnPosition === 'left'
+                ? shiftMagnitude
+                : columnPosition === 'right'
+                  ? -shiftMagnitude
+                  : 0;
+
+            // Stronger compression toward edges so far rows sit closer together
             const compressionFactor =
-              distance > 0 ? Math.pow(distance, 2.2) * 1.8 : 0;
+              distance > 0 ? Math.pow(distance, 2.2) * 2.2 : 0;
             const translateY =
               -compressionFactor * Math.sign(index - centerPosition);
 
@@ -236,7 +390,7 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
                 ? 0
                 : 1 - Math.max(0, (Math.abs(tilt) - 50) / 20);
 
-            const isSelected = item === selectedValue;
+            const isSelected = index === actualSelectedIndex;
 
             return (
               <View key={index} style={styles.itemContainer}>
@@ -251,6 +405,7 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
                       transform: [
                         { perspective: 500 },
                         { translateY },
+                        { translateX },
                         { rotateX: `${tilt}deg` },
                         { scale },
                       ],
@@ -277,13 +432,15 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      {/* Selection highlight */}
-      <View
-        style={[
-          styles.selectionOverlay,
-          isDarkMode && styles.selectionOverlayDark,
-        ]}
-      />
+      {/* Selection highlight (optional) */}
+      {showSelectionOverlay && (
+        <View
+          style={[
+            styles.selectionOverlay,
+            isDarkMode && styles.selectionOverlayDark,
+          ]}
+        />
+      )}
 
       <View style={styles.columnsContainer}>
         {/* Hour column */}
@@ -294,7 +451,12 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           handleHourScroll,
           undefined,
           hourScrollOffset,
-          e => setHourScrollOffset(e.nativeEvent.contentOffset.y)
+          e => {
+            const y = e.nativeEvent.contentOffset.y;
+            setHourScrollOffset(y);
+          },
+          selectedHourIndex,
+          'left'
         )}
 
         {/* Minute column */}
@@ -305,7 +467,12 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           handleMinuteScroll,
           formatMinute,
           minuteScrollOffset,
-          e => setMinuteScrollOffset(e.nativeEvent.contentOffset.y)
+          e => {
+            const y = e.nativeEvent.contentOffset.y;
+            setMinuteScrollOffset(y);
+          },
+          selectedMinuteIndex,
+          'center'
         )}
 
         {/* AM/PM column */}
@@ -316,7 +483,12 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           handlePeriodScroll,
           undefined,
           periodScrollOffset,
-          e => setPeriodScrollOffset(e.nativeEvent.contentOffset.y)
+          e => {
+            const y = e.nativeEvent.contentOffset.y;
+            setPeriodScrollOffset(y);
+          },
+          selectedPeriodIndex,
+          'right'
         )}
       </View>
     </View>

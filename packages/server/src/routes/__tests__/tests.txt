@@ -19,6 +19,24 @@ Test the DB:
         -d '{ "transitType": "shuttle" }'
     Get a user's balance: curl http://localhost:3000/api/users/1/balance
     Get a user's incentives: curl http://localhost:3000/api/users/1/incentives
+    Get home address: curl http://localhost:3000/api/users/1/address
+    Update home address: curl -X PUT http://localhost:3000/api/users/1/address \
+        -H "Content-Type: application/json" \
+        -d '{"homeAddress":"789 California Blvd, Palo Alto, CA"}'
+    Get favorites: curl http://localhost:3000/api/users/1/favorites
+    Add to favorites: curl -X POST http://localhost:3000/api/users/1/favorites \
+        -H "Content-Type: application/json" \
+        -d '{
+            "label": "office",
+            "name": "Tesla Deer Creek",
+            "address": "1501 Page Mill Rd"
+        }'
+    Remove favorite: curl -X DELETE http://localhost:3000/api/users/1/favorites/office
 
-Test redis: None for now because redis implementations is done with the routes
+    Add a report: curl -X POST "http://localhost:3000/api/shuttles/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/reports" -H "Content-Type: application/json" -d '{"comment":"Shuttle has not arrived yet"}'
+    View alerts: curl "http://localhost:3000/api/shuttles/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/alerts"
+    Fetch reports (admin only): curl "http://localhost:3000/api/shuttles/admin/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/reports"
+    Create alert (admin only): curl -X POST "http://localhost:3000/api/shuttles/admin/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/alerts" -H "Content-Type: application/json" -d '{"type":"delay","reason":"traffic","delayMinutes":15,"clearReports":true}'
+
+
 

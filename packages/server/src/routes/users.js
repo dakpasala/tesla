@@ -2,7 +2,12 @@ import express from 'express';
 import {
   awardTransitIncentive,
   getUserBalance,
-  getUserIncentives
+  getUserIncentives,
+  getUserHomeAddress,
+  setUserHomeAddress,
+  getUserFavorites,
+  addUserFavorite,
+  removeUserFavorite
 } from '../services/db/mssqlPool.js';
 
 const router = express.Router();
@@ -77,6 +82,131 @@ router.post('/:id/incentives', async (req, res) => {
     }
 
     res.status(500).json({ error: 'Failed to award incentive' });
+  }
+});
+
+// --------------------
+// home address
+// --------------------
+
+router.get('/:id/address', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  try {
+    const homeAddress = await getUserHomeAddress(userId);
+
+    if (!homeAddress) {
+      return res.status(404).json({ error: 'User not found or no address set' });
+    }
+
+    res.json({
+      userId,
+      home_address: homeAddress,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/:id/address', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { homeAddress } = req.body;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!homeAddress) {
+    return res.status(400).json({ error: 'homeAddress is required' });
+  }
+
+  try {
+    const success = await setUserHomeAddress(userId, homeAddress);
+
+    if (!success) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      userId,
+      home_address: homeAddress,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// --------------------
+// favorites
+// --------------------
+
+// get favorites
+router.get('/:id/favorites', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  try {
+    const favorites = await getUserFavorites(userId);
+    res.json(favorites);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// add favorite
+router.post('/:id/favorites', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { label, name, address } = req.body;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!label || !name || !address) {
+    return res.status(400).json({
+      error: 'label, name, and address are required',
+    });
+  }
+
+  try {
+    await addUserFavorite(userId, { label, name, address });
+
+    res.status(201).json({
+      success: true,
+      added: { label, name, address },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// remove favorite by label
+router.delete('/:id/favorites/:label', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { label } = req.params;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  try {
+    await removeUserFavorite(userId, label);
+
+    res.json({
+      success: true,
+      removed: label,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

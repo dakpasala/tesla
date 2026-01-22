@@ -21,7 +21,7 @@ router.post('/:shuttleName/reports', async (req, res) => {
   res.json(report);
 });
 
-// Fetch alerts
+// fetch alerts
 router.get('/:shuttleName/alerts', async (req, res) => {
   const { shuttleName } = req.params;
 

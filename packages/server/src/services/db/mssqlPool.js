@@ -324,3 +324,119 @@ export async function awardTransitIncentive(userId, transitType) {
     throw err;
   }
 }
+
+// get home address
+export async function getUserHomeAddress(userId) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT home_address
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+  return result.recordset[0]?.home_address ?? null;
+}
+
+// set home adddress
+export async function setUserHomeAddress(userId, homeAddress) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('homeAddress', sql.VarChar, homeAddress)
+    .query(`
+      UPDATE users
+      SET home_address = @homeAddress
+      WHERE id = @userId;
+
+      SELECT @@ROWCOUNT AS rowsAffected;
+    `);
+
+  await sql.close();
+  return result.recordset[0].rowsAffected === 1;
+}
+
+// get favorites
+export async function getUserFavorites(userId) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT favorites
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+
+  if (!result.recordset[0]?.favorites) {
+    return [];
+  }
+
+  const parsed = JSON.parse(result.recordset[0].favorites);
+  return parsed.favorites || [];
+}
+
+// add a favorite
+export async function addUserFavorite(userId, favorite) {
+  const pool = await getPool();
+
+  const favoriteJson = JSON.stringify(favorite);
+
+  await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('favorite', sql.NVarChar(sql.MAX), favoriteJson)
+    .query(`
+      UPDATE users
+      SET favorites =
+        CASE
+          WHEN favorites IS NULL
+          THEN JSON_QUERY('{"favorites": [' + @favorite + ']}')
+          ELSE JSON_MODIFY(
+            favorites,
+            'append $.favorites',
+            JSON_QUERY(@favorite)
+          )
+        END
+      WHERE id = @userId;
+    `);
+
+  await sql.close();
+  return true;
+}
+
+// remove a favorite
+export async function removeUserFavorite(userId, label) {
+  const pool = await getPool();
+
+  await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('label', sql.VarChar, label)
+    .query(`
+      UPDATE users
+      SET favorites = (
+        SELECT JSON_QUERY(
+          '{"favorites":' +
+          ISNULL((
+            SELECT
+              '[' +
+              STRING_AGG(value, ',') +
+              ']'
+            FROM OPENJSON(favorites, '$.favorites')
+            WHERE JSON_VALUE(value, '$.label') <> @label
+          ), '[]') +
+          '}'
+        )
+      )
+      WHERE id = @userId;
+    `);
+
+  await sql.close();
+  return true;
+}
+

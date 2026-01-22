@@ -522,33 +522,59 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
             'left'
           )}
 
-        {/* Hour column */}
-        {renderColumn(
-          hours,
-          selectedHour,
-          hourScrollRef,
-          handleHourScroll,
-          undefined,
-          hourScrollOffset,
-          e => setHourScrollOffset(e.nativeEvent.contentOffset.y),
-          selectedHourIndex,
-          mode === 'datetime' ? 'center' : 'left'
-        )}
-
-        {/* Minute column */}
-        <View style={mode === 'datetime' ? { marginLeft: -12 } : undefined}>
+        {/* Hour column with label for timer mode */}
+        <View style={styles.columnWrapper}>
           {renderColumn(
-            minutes,
-            selectedMinute,
-            minuteScrollRef,
-            handleMinuteScroll,
-            formatMinute,
-            minuteScrollOffset,
-            e => setMinuteScrollOffset(e.nativeEvent.contentOffset.y),
-            selectedMinuteIndex,
-            mode === 'timer' ? 'right' : 'center',
-            mode === 'datetime' // isMinuteColumn flag for datetime mode compression
+            hours,
+            selectedHour,
+            hourScrollRef,
+            handleHourScroll,
+            undefined,
+            hourScrollOffset,
+            e => setHourScrollOffset(e.nativeEvent.contentOffset.y),
+            selectedHourIndex,
+            mode === 'datetime' ? 'center' : 'left'
           )}
+          {mode === 'timer' && (
+            <Text
+              style={[
+                styles.timerLabel,
+                styles.hoursLabel,
+                isDarkMode && styles.timerLabelDark,
+              ]}
+            >
+              {selectedHour === 1 ? 'hour ' : 'hours'}
+            </Text>
+          )}
+        </View>
+
+        {/* Minute column with label for timer mode */}
+        <View style={mode === 'datetime' ? { marginLeft: -12 } : undefined}>
+          <View style={styles.columnWrapper}>
+            {renderColumn(
+              minutes,
+              selectedMinute,
+              minuteScrollRef,
+              handleMinuteScroll,
+              formatMinute,
+              minuteScrollOffset,
+              e => setMinuteScrollOffset(e.nativeEvent.contentOffset.y),
+              selectedMinuteIndex,
+              mode === 'timer' ? 'right' : 'center',
+              mode === 'datetime' // isMinuteColumn flag for datetime mode compression
+            )}
+            {mode === 'timer' && (
+              <Text
+                style={[
+                  styles.timerLabel,
+                  styles.minutesLabel,
+                  isDarkMode && styles.timerLabelDark,
+                ]}
+              >
+                minutes
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* AM/PM column (time mode only) */}
@@ -565,30 +591,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
             'right'
           )}
       </View>
-
-      {/* Timer mode labels */}
-      {mode === 'timer' && (
-        <>
-          <Text
-            style={[
-              styles.timerLabel,
-              styles.hoursLabel,
-              isDarkMode && styles.timerLabelDark,
-            ]}
-          >
-            hours
-          </Text>
-          <Text
-            style={[
-              styles.timerLabel,
-              styles.minutesLabel,
-              isDarkMode && styles.timerLabelDark,
-            ]}
-          >
-            minutes
-          </Text>
-        </>
-      )}
     </View>
   );
 };
@@ -631,6 +633,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
+  columnWrapper: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   column: {
     flex: 0,
     minWidth: 60,
@@ -662,21 +669,17 @@ const styles = StyleSheet.create({
     fontWeight: '400',
   },
   timerLabel: {
-    position: 'absolute',
-    bottom: CONTAINER_HEIGHT / 2 - ITEM_HEIGHT / 2 - 30,
-    fontSize: 14,
-    color: '#8e8e93',
+    fontSize: 22,
+    color: '#000000',
     fontWeight: '400',
+    marginLeft: -6,
+    fontFamily: 'System',
   },
   timerLabelDark: {
-    color: '#636366',
+    color: '#ffffff',
   },
-  hoursLabel: {
-    left: '15%',
-  },
-  minutesLabel: {
-    right: '15%',
-  },
+  hoursLabel: {},
+  minutesLabel: {},
 });
 
 export default WheelPicker;

@@ -78,6 +78,11 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     defaultPeriod
   );
 
+  // Track scroll offsets for real-time wheel effect
+  const [hourScrollOffset, setHourScrollOffset] = useState(0);
+  const [minuteScrollOffset, setMinuteScrollOffset] = useState(0);
+  const [periodScrollOffset, setPeriodScrollOffset] = useState(0);
+
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
   const periodScrollRef = useRef<ScrollView>(null);
@@ -102,9 +107,17 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
 
     // Use requestAnimationFrame to ensure scroll views are laid out
     requestAnimationFrame(() => {
+      const hourOffset = safeHourIndex * ITEM_HEIGHT;
+      const minuteOffset = safeMinuteIndex * ITEM_HEIGHT;
+      const periodOffset = safePeriodIndex * ITEM_HEIGHT;
+
       scrollToIndex(hourScrollRef, safeHourIndex);
       scrollToIndex(minuteScrollRef, safeMinuteIndex);
       scrollToIndex(periodScrollRef, safePeriodIndex);
+
+      setHourScrollOffset(hourOffset);
+      setMinuteScrollOffset(minuteOffset);
+      setPeriodScrollOffset(periodOffset);
     });
   }, [defaultHour, defaultMinute, defaultPeriod]);
 
@@ -179,9 +192,13 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     selectedValue: number | string,
     scrollRef: React.RefObject<ScrollView | null>,
     onScrollEnd: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
-    formatValue?: (value: number | string) => string
+    formatValue?: (value: number | string) => string,
+    scrollOffset: number = 0,
+    onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
   ) => {
     const selectedIndex = items.findIndex(i => i === selectedValue);
+    // Calculate center position based on scroll offset
+    const centerPosition = scrollOffset / ITEM_HEIGHT;
 
     return (
       <View style={styles.column}>
@@ -191,16 +208,36 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           snapToInterval={ITEM_HEIGHT}
           decelerationRate="fast"
           onMomentumScrollEnd={onScrollEnd}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={styles.scrollContent}
         >
           {/* Top padding */}
           <View style={{ height: ITEM_HEIGHT * 4 }} />
 
           {items.map((item, index) => {
-            const isSelected = item === selectedValue;
-            const distance = Math.abs(index - selectedIndex);
+            // Calculate distance from current scroll center, not just selected item
+            const distance = Math.abs(index - centerPosition);
             const scale = Math.max(0.6, 1 - distance * 0.12);
-            const tilt = (index - selectedIndex) * 13;
+            const tilt = (index - centerPosition) * 13;
+
+            // Smoother progressive compression across all distances
+            // Starts small but increases progressively to create continuous wheel curve
+            const compressionFactor =
+              distance > 0 ? Math.pow(distance, 2.2) * 1.8 : 0;
+            const translateY =
+              -compressionFactor * Math.sign(index - centerPosition);
+
+            // Hide items that wrap around to the back of the wheel
+            // Fade out items as they approach 90 degrees rotation
+            const maxVisibleTilt = 70; // Start fading before they reach the back
+            const opacity =
+              Math.abs(tilt) > maxVisibleTilt
+                ? 0
+                : 1 - Math.max(0, (Math.abs(tilt) - 50) / 20);
+
+            const isSelected = item === selectedValue;
+
             return (
               <View key={index} style={styles.itemContainer}>
                 <Text
@@ -210,8 +247,10 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
                     isSelected && styles.itemTextSelected,
                     isSelected && isDarkMode && styles.itemTextSelectedDark,
                     {
+                      opacity,
                       transform: [
                         { perspective: 500 },
+                        { translateY },
                         { rotateX: `${tilt}deg` },
                         { scale },
                       ],
@@ -248,7 +287,15 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
 
       <View style={styles.columnsContainer}>
         {/* Hour column */}
-        {renderColumn(hours, selectedHour, hourScrollRef, handleHourScroll)}
+        {renderColumn(
+          hours,
+          selectedHour,
+          hourScrollRef,
+          handleHourScroll,
+          undefined,
+          hourScrollOffset,
+          e => setHourScrollOffset(e.nativeEvent.contentOffset.y)
+        )}
 
         {/* Minute column */}
         {renderColumn(
@@ -256,7 +303,9 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           selectedMinute,
           minuteScrollRef,
           handleMinuteScroll,
-          formatMinute
+          formatMinute,
+          minuteScrollOffset,
+          e => setMinuteScrollOffset(e.nativeEvent.contentOffset.y)
         )}
 
         {/* AM/PM column */}
@@ -264,7 +313,10 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
           periods,
           selectedPeriod,
           periodScrollRef,
-          handlePeriodScroll
+          handlePeriodScroll,
+          undefined,
+          periodScrollOffset,
+          e => setPeriodScrollOffset(e.nativeEvent.contentOffset.y)
         )}
       </View>
     </View>

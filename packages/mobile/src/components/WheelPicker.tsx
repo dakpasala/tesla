@@ -77,12 +77,10 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
   const today = new Date();
 
   const defaultHour = initialHour ?? currentTime.hour;
-  const defaultMinute = initialMinute ?? currentTime.minute;
   const defaultPeriod = initialPeriod ?? currentTime.period;
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
-  // Generate date range (7 days back to 30 days forward)
   const generateDates = () => {
     const dates: Date[] = [];
     for (let i = -7; i <= 30; i++) {
@@ -100,7 +98,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
 
   const baseHours = Array.from({ length: HOUR_CYCLE_LENGTH }, (_, i) => i + 1);
 
-  // Minutes based on mode
   const getMinuteArray = () => {
     if (mode === 'datetime') {
       return Array.from({ length: 60 }, (_, i) => i);
@@ -110,6 +107,22 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
   };
 
   const baseMinutes = getMinuteArray();
+
+  const getDefaultMinute = () => {
+    if (initialMinute !== undefined) {
+      return initialMinute;
+    }
+
+    if (mode === 'timer') {
+      const currentMin = currentTime.minute;
+      const rounded = Math.round(currentMin / 5) * 5;
+      return rounded % 60;
+    }
+
+    return currentTime.minute;
+  };
+
+  const defaultMinute = getDefaultMinute();
   const MINUTE_CYCLE_LENGTH = baseMinutes.length;
   const MINUTE_LOOPS = 5;
   const MINUTES_LENGTH = MINUTE_CYCLE_LENGTH * MINUTE_LOOPS;
@@ -408,7 +421,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
 
             const shiftMagnitude = Math.pow(normEdge, 1.3) * 10;
 
-            // Base horizontal shift for wheel effect
             let translateX =
               columnPosition === 'left'
                 ? shiftMagnitude
@@ -416,22 +428,18 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
                   ? -shiftMagnitude
                   : 0;
 
-            // Add horizontal compression for datetime mode (bring outer columns closer to center)
             if (mode === 'datetime') {
               if (columnPosition === 'left') {
-                // Date column - compress right toward hours
-                const horizontalCompression = distance * 8;
+                const horizontalCompression = distance * 4;
                 translateX += horizontalCompression;
 
-                // Additional shift for "Today" to bring it closer to hours column
                 const formattedValue = formatValue
                   ? formatValue(item)
                   : String(item);
                 if (formattedValue === 'Today') {
-                  translateX += 25; // Move "Today" 20px closer to hours
+                  translateX += 15;
                 }
               } else if (isMinuteColumn) {
-                // Minute column in datetime - compress left toward hours (more subtle)
                 const horizontalCompression = distance * 3;
                 translateX -= horizontalCompression;
               }
@@ -458,6 +466,9 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
                     isDarkMode && styles.itemTextDark,
                     isSelected && styles.itemTextSelected,
                     isSelected && isDarkMode && styles.itemTextSelectedDark,
+                    columnPosition === 'left' &&
+                      mode === 'datetime' &&
+                      styles.dateColumnText,
                     {
                       opacity,
                       transform: [
@@ -497,7 +508,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
-      {/* Selection highlight - always visible for regular picker */}
       <View
         style={[
           styles.selectionOverlay,
@@ -508,7 +518,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
       <View
         style={[styles.columnsContainer, mode === 'datetime' && { gap: 0 }]}
       >
-        {/* Date column (datetime mode only) */}
         {mode === 'datetime' &&
           renderColumn(
             dates,
@@ -522,7 +531,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
             'left'
           )}
 
-        {/* Hour column with label for timer mode */}
         <View style={styles.columnWrapper}>
           {renderColumn(
             hours,
@@ -548,7 +556,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
           )}
         </View>
 
-        {/* Minute column with label for timer mode */}
         <View style={mode === 'datetime' ? { marginLeft: -12 } : undefined}>
           <View style={styles.columnWrapper}>
             {renderColumn(
@@ -561,7 +568,7 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
               e => setMinuteScrollOffset(e.nativeEvent.contentOffset.y),
               selectedMinuteIndex,
               mode === 'timer' ? 'right' : 'center',
-              mode === 'datetime' // isMinuteColumn flag for datetime mode compression
+              mode === 'datetime'
             )}
             {mode === 'timer' && (
               <Text
@@ -577,7 +584,6 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
           </View>
         </View>
 
-        {/* AM/PM column (time mode only) */}
         {mode === 'time' &&
           renderColumn(
             periods,
@@ -667,6 +673,9 @@ const styles = StyleSheet.create({
   itemTextSelectedDark: {
     color: '#ffffff',
     fontWeight: '400',
+  },
+  dateColumnText: {
+    textAlign: 'right',
   },
   timerLabel: {
     fontSize: 22,

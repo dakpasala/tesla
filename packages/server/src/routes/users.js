@@ -154,7 +154,7 @@ router.get('/:id/work_address', async (req, res) => {
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
-
+ 
   try {
     const workAddress = await getUserWorkAddress(userId);
 

@@ -360,6 +360,40 @@ export async function setUserHomeAddress(userId, homeAddress) {
   return result.recordset[0].rowsAffected === 1;
 }
 
+// get work address for quickstart
+export async function getUserWorkAddress(userId) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT work_address
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+  return result.recordset[0]?.work_address ?? null;
+}
+
+export async function setUserWorkAddress(userId, workAddress) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('workAddress', sql.VarChar, workAddress)
+    .query(`
+      UPDATE users
+      SET work_address = @workAddress
+      WHERE id = @userId;
+
+      SELECT @@ROWCOUNT AS rowsAffected;
+    `);
+
+  await sql.close();
+  return result.recordset[0].rowsAffected === 1;
+}
+
 // get favorites
 export async function getUserFavorites(userId) {
   const pool = await getPool();

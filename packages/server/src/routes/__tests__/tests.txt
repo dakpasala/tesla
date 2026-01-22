@@ -24,10 +24,14 @@ Test the DB:
         -d '{ "transitType": "shuttle" }'
     Get a user's balance: curl http://localhost:3000/api/users/1/balance
     Get a user's incentives: curl http://localhost:3000/api/users/1/incentives
-    Get home address: curl http://localhost:3000/api/users/1/address
-    Update home address: curl -X PUT http://localhost:3000/api/users/1/address \
+    Get home address: curl http://localhost:3000/api/users/1/home_address
+    Update home address: curl -X PUT http://localhost:3000/api/users/1/home_address \
         -H "Content-Type: application/json" \
         -d '{"homeAddress":"789 California Blvd, Palo Alto, CA"}'
+    Get work address: curl http://localhost:3000/api/users/1/work_address
+    Update work address: curl -X PUT http://localhost:3000/api/users/1/work_address \
+        -H "Content-Type: application/json" \
+        -d '{"workAddress":"3500 Deer Creek Rd, Palo Alto, CA"}'
     Get favorites: curl http://localhost:3000/api/users/1/favorites
     Add to favorites: curl -X POST http://localhost:3000/api/users/1/favorites \
         -H "Content-Type: application/json" \

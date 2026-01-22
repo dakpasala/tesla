@@ -5,6 +5,8 @@ import {
   getUserIncentives,
   getUserHomeAddress,
   setUserHomeAddress,
+  getUserWorkAddress,
+  setUserWorkAddress,
   getUserFavorites,
   addUserFavorite,
   removeUserFavorite
@@ -89,7 +91,7 @@ router.post('/:id/incentives', async (req, res) => {
 // home address
 // --------------------
 
-router.get('/:id/address', async (req, res) => {
+router.get('/:id/home_address', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
 
   if (Number.isNaN(userId)) {
@@ -112,7 +114,7 @@ router.get('/:id/address', async (req, res) => {
   }
 });
 
-router.put('/:id/address', async (req, res) => {
+router.put('/:id/home_address', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
   const { homeAddress } = req.body;
 
@@ -141,6 +143,62 @@ router.put('/:id/address', async (req, res) => {
   }
 });
 
+
+// --------------------
+// work address
+// --------------------
+
+router.get('/:id/work_address', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  try {
+    const workAddress = await getUserWorkAddress(userId);
+
+    if (!workAddress) {
+      return res.status(404).json({ error: 'User not found or no address set' });
+    }
+
+    res.json({
+      userId,
+      work_address: workAddress,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/:id/work_address', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { workAddress } = req.body;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!workAddress) {
+    return res.status(400).json({ error: 'workAddress is required' });
+  }
+
+  try {
+    const success = await setUserWorkAddress(userId, workAddress);
+
+    if (!success) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      userId,
+      work_address: workAddress,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // --------------------
 // favorites

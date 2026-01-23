@@ -15,6 +15,7 @@ export type RouteBadge = {
   backgroundColor: string;
   textColor?: string;
 };
+
 export type RouteCardItem = {
   id: string;
 

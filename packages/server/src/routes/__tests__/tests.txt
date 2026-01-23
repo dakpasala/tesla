@@ -1,4 +1,9 @@
-Test the maps: curl "http://localhost:3000/api/maps/?origin=37.394722,-122.150278&destination=Tesla%20HQ%20Dear%20Creek%20Palo%20Alto"
+Test the maps:
+    Near an office: curl "http://localhost:3000/api/maps/presence?lat=37.3382&lng=-121.8863"
+                    curl "http://localhost:3000/api/maps/presence?lat=37.3948&lng=-122.1501"
+    curl "http://localhost:3000/api/maps/to-office?lat=37.3382&lng=-121.8863&office_name=Palo%20Alto%20Office&parking_lot_name=SAP%20Lot"
+    curl "http://localhost:3000/api/maps/go-home?lat=37.3948&lng=-122.1501&destination=San%20Jose%20International%20Airport"
+    
 Test the DB:
     Get parking availability: curl "http://localhost:3000/api/parkings/?loc_name=Palo%20Alto%20Office"
     Update parking availability: curl -X PATCH http://localhost:3000/api/parkings/ \
@@ -19,6 +24,28 @@ Test the DB:
         -d '{ "transitType": "shuttle" }'
     Get a user's balance: curl http://localhost:3000/api/users/1/balance
     Get a user's incentives: curl http://localhost:3000/api/users/1/incentives
+    Get home address: curl http://localhost:3000/api/users/1/home_address
+    Update home address: curl -X PUT http://localhost:3000/api/users/1/home_address \
+        -H "Content-Type: application/json" \
+        -d '{"homeAddress":"789 California Blvd, Palo Alto, CA"}'
+    Get work address: curl http://localhost:3000/api/users/1/work_address
+    Update work address: curl -X PUT http://localhost:3000/api/users/1/work_address \
+        -H "Content-Type: application/json" \
+        -d '{"workAddress":"3500 Deer Creek Rd, Palo Alto, CA"}'
+    Get favorites: curl http://localhost:3000/api/users/1/favorites
+    Add to favorites: curl -X POST http://localhost:3000/api/users/1/favorites \
+        -H "Content-Type: application/json" \
+        -d '{
+            "label": "office",
+            "name": "Tesla Deer Creek",
+            "address": "1501 Page Mill Rd"
+        }'
+    Remove favorite: curl -X DELETE http://localhost:3000/api/users/1/favorites/office
 
-Test redis: None for now because redis implementations is done with the routes
+    Add a report: curl -X POST "http://localhost:3000/api/shuttles/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/reports" -H "Content-Type: application/json" -d '{"comment":"Shuttle has not arrived yet"}'
+    View alerts: curl "http://localhost:3000/api/shuttles/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/alerts"
+    Fetch reports (admin only): curl "http://localhost:3000/api/shuttles/admin/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/reports"
+    Create alert (admin only): curl -X POST "http://localhost:3000/api/shuttles/admin/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/alerts" -H "Content-Type: application/json" -d '{"type":"delay","reason":"traffic","delayMinutes":15,"clearReports":true}'
+
+
 

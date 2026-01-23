@@ -126,6 +126,74 @@ export async function addAdmin(username, email) {
   return result.recordset[0].id;
 }
 
+export async function getParkingLotByOfficeAndName(
+  officeName,
+  parkingLotName
+) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('officeName', sql.VarChar, officeName)
+    .input('parkingLotName', sql.VarChar, parkingLotName)
+    .query(`
+      SELECT
+        p.id,
+        p.name AS parking_lot_name,
+        p.address,
+        p.lat,
+        p.lng,
+        l.id AS location_id,
+        l.name AS location_name
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = @officeName
+        AND p.name = @parkingLotName
+        AND l.is_active = 1
+        AND p.is_active = 1
+    `);
+
+  return result.recordset[0] || null;
+}
+
+export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('lat', sql.Float, lat)
+    .input('lng', sql.Float, lng)
+    .input('radius', sql.Int, radiusMeters)
+    .query(`
+      SELECT TOP 1 *
+      FROM (
+        SELECT
+          id,
+          name,
+          address,
+          lat,
+          lng,
+          (
+            6371000 * ACOS(
+              COS(RADIANS(@lat)) *
+              COS(RADIANS(lat)) *
+              COS(RADIANS(lng) - RADIANS(@lng)) +
+              SIN(RADIANS(@lat)) *
+              SIN(RADIANS(lat))
+            )
+          ) AS distance_meters
+        FROM locations
+        WHERE
+          lat IS NOT NULL
+          AND lng IS NOT NULL
+          AND is_active = 1
+      ) AS distances
+      WHERE distance_meters <= @radius
+      ORDER BY distance_meters;
+    `);
+
+  return result.recordset[0] || null;
+}
+
+
 // --------------------
 // users
 // --------------------
@@ -256,3 +324,153 @@ export async function awardTransitIncentive(userId, transitType) {
     throw err;
   }
 }
+
+// get home address
+export async function getUserHomeAddress(userId) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT home_address
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+  return result.recordset[0]?.home_address ?? null;
+}
+
+// set home adddress
+export async function setUserHomeAddress(userId, homeAddress) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('homeAddress', sql.VarChar, homeAddress)
+    .query(`
+      UPDATE users
+      SET home_address = @homeAddress
+      WHERE id = @userId;
+
+      SELECT @@ROWCOUNT AS rowsAffected;
+    `);
+
+  await sql.close();
+  return result.recordset[0].rowsAffected === 1;
+}
+
+// get work address for quickstart
+export async function getUserWorkAddress(userId) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT work_address
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+  return result.recordset[0]?.work_address ?? null;
+}
+
+export async function setUserWorkAddress(userId, workAddress) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('workAddress', sql.VarChar, workAddress)
+    .query(`
+      UPDATE users
+      SET work_address = @workAddress
+      WHERE id = @userId;
+
+      SELECT @@ROWCOUNT AS rowsAffected;
+    `);
+
+  await sql.close();
+  return result.recordset[0].rowsAffected === 1;
+}
+
+// get favorites
+export async function getUserFavorites(userId) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('userId', sql.Int, userId)
+    .query(`
+      SELECT favorites
+      FROM users
+      WHERE id = @userId
+    `);
+
+  await sql.close();
+
+  if (!result.recordset[0]?.favorites) {
+    return [];
+  }
+
+  const parsed = JSON.parse(result.recordset[0].favorites);
+  return parsed.favorites || [];
+}
+
+// add a favorite
+export async function addUserFavorite(userId, favorite) {
+  const pool = await getPool();
+
+  const favoriteJson = JSON.stringify(favorite);
+
+  await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('favorite', sql.NVarChar(sql.MAX), favoriteJson)
+    .query(`
+      UPDATE users
+      SET favorites =
+        CASE
+          WHEN favorites IS NULL
+          THEN JSON_QUERY('{"favorites": [' + @favorite + ']}')
+          ELSE JSON_MODIFY(
+            favorites,
+            'append $.favorites',
+            JSON_QUERY(@favorite)
+          )
+        END
+      WHERE id = @userId;
+    `);
+
+  await sql.close();
+  return true;
+}
+
+// remove a favorite
+export async function removeUserFavorite(userId, label) {
+  const pool = await getPool();
+
+  await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('label', sql.VarChar, label)
+    .query(`
+      UPDATE users
+      SET favorites = (
+        SELECT JSON_QUERY(
+          '{"favorites":' +
+          ISNULL((
+            SELECT
+              '[' +
+              STRING_AGG(value, ',') +
+              ']'
+            FROM OPENJSON(favorites, '$.favorites')
+            WHERE JSON_VALUE(value, '$.label') <> @label
+          ), '[]') +
+          '}'
+        )
+      )
+      WHERE id = @userId;
+    `);
+
+  await sql.close();
+  return true;
+}
+

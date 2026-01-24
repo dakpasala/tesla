@@ -29,8 +29,8 @@ async function run() {
           "favorites": [
             {
               "label": "office",
-              "name": "Tesla Deer Creek",
-              "address": "1501 Page Mill Rd"
+              "name": "Palo Alto Office",
+              "address": "3500 Deer Creek Rd"
             }
           ]
         }'
@@ -43,7 +43,7 @@ async function run() {
           "favorites": [
             {
               "label": "office",
-              "name": "Tesla Palo Alto",
+              "name": "Palo Alto Office",
               "address": "3500 Deer Creek Rd"
             }
           ]

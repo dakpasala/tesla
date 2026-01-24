@@ -9,8 +9,12 @@ import {
   setUserWorkAddress,
   getUserFavorites,
   addUserFavorite,
-  removeUserFavorite
+  removeUserFavorite,
+  addUserFavoriteRow,
+  removeUserFavoriteRow,
+  getLocationIdByName
 } from '../services/db/mssqlPool.js';
+import { getRedisClient } from '../services/redis/redisClient.js'; 
 
 const router = express.Router();
 
@@ -238,30 +242,49 @@ router.post('/:id/favorites', async (req, res) => {
   try {
     await addUserFavorite(userId, { label, name, address });
 
+    const locationId = await getLocationIdByName(name);
+    if (!locationId) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+
+    await addUserFavoriteRow(userId, locationId);
+
+    const redis = await getRedisClient();
+    await redis.sAdd(`location:${locationId}:users`, String(userId));
+
     res.status(201).json({
       success: true,
       added: { label, name, address },
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message });
   }
 });
 
-// remove favorite by label
-router.delete('/:id/favorites/:label', async (req, res) => {
+// remove favorite by name
+router.delete('/:id/favorites/:name', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
-  const { label } = req.params;
+  const { name } = req.params;
 
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
 
+  if (!name) {
+    return res.status(404).json({ error: 'Provide name of place' });
+  }
+
   try {
-    await removeUserFavorite(userId, label);
+    const locationId = await getLocationIdByName(name);
+    await removeUserFavorite(userId, name);
+    await removeUserFavoriteRow(userId, locationId);
+
+    const redis = await getRedisClient();
+    await redis.sRem(`location:${locationId}:users`, String(userId));
 
     res.json({
       success: true,
-      removed: label,
+      removed: name,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

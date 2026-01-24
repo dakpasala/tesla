@@ -11,7 +11,7 @@ Test the DB:
         -d '{
             "loc_name": "Palo Alto Office",
             "lot_name": "SAP Lot",
-            "availability": 37
+            "availability": 75
         }'
 
     Get admins: curl http://localhost:3000/api/admins/
@@ -37,10 +37,12 @@ Test the DB:
         -H "Content-Type: application/json" \
         -d '{
             "label": "office",
-            "name": "Tesla Deer Creek",
-            "address": "1501 Page Mill Rd"
+            "name": "Palo Alto Office",
+            "address": "3500 Deer Creek Rd, Palo Alto, CA"
         }'
-    Remove favorite: curl -X DELETE http://localhost:3000/api/users/1/favorites/office
+
+        45500 Fremont Blvd, Fremont, CA
+    Remove favorite: curl -X DELETE http://localhost:3000/api/users/1/favorites/Palo%20Alto%20Office
 
     Add a report: curl -X POST "http://localhost:3000/api/shuttles/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/reports" -H "Content-Type: application/json" -d '{"comment":"Shuttle has not arrived yet"}'
     View alerts: curl "http://localhost:3000/api/shuttles/Tesla%20HQ%20Deer%20Creek%20Shuttle%20A/alerts"

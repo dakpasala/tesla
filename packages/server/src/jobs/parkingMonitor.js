@@ -1,5 +1,6 @@
 import { getRedisClient } from '../services/redis/redisClient.js';
-import { getPool } from '../services/db/mssqlPool.js';
+import { fetchParkingAvailability } from '../services/db/mssqlPool.js';
+import { routeParkingNotification } from '../services/notifications/notificationRouter.js';
 
 const THRESHOLDS = [50, 25, 10, 5, 0];
 
@@ -19,23 +20,6 @@ function secondsUntilMidnight() {
   const midnight = new Date();
   midnight.setHours(24, 0, 0, 0);
   return Math.floor((midnight - now) / 1000);
-}
-
-async function fetchParkingAvailability() {
-  const pool = await getPool();
-
-  const result = await pool.request().query(`
-    SELECT
-      l.name AS location_name,
-      p.name AS lot_name,
-      p.current_available AS availability
-    FROM parking_lots p
-    JOIN locations l ON l.id = p.location_id
-    WHERE p.is_active = 1
-      AND l.is_active = 1
-  `);
-
-  return result.recordset;
 }
 
 
@@ -83,11 +67,13 @@ async function checkParkingAvailability() {
     }
 
     if (highestRecoveredThreshold !== null) {
-      await sendRecoveryNotification(
-        `${location} - ${lot}`,
-        highestRecoveredThreshold,
-        available
-      );
+     await routeParkingNotification({
+        location,
+        lot,
+        threshold: highestRecoveredThreshold,
+        available,
+        type: 'RECOVERY',
+      });
     }
 
     const crossedThresholds = THRESHOLDS.filter(
@@ -100,11 +86,13 @@ async function checkParkingAvailability() {
       const alreadyCached = await redis.exists(key);
 
       if (!alreadyCached) {
-        await sendBelowNotification(
-          `${location} - ${lot}`,
-          lowestThreshold,
-          available
-        );
+        await routeParkingNotification({
+          location,
+          lot,
+          threshold: lowestThreshold,
+          available,
+          type: 'BELOW',
+        });
 
         for (const t of THRESHOLDS) {
           if (t >= lowestThreshold) {

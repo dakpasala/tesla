@@ -39,6 +39,23 @@ export async function testConnection() {
 // parking availability
 // --------------------
 
+export async function fetchParkingAvailability() {
+  const pool = await getPool();
+
+  const result = await pool.request().query(`
+    SELECT
+      l.name AS location_name,
+      p.name AS lot_name,
+      p.current_available AS availability
+    FROM parking_lots p
+    JOIN locations l ON l.id = p.location_id
+    WHERE p.is_active = 1
+      AND l.is_active = 1
+  `);
+
+  return result.recordset;
+}
+
 export async function getParkingAvailabilityByLocationName(locationName) {
   const pool = await getPool();
 
@@ -474,3 +491,23 @@ export async function removeUserFavorite(userId, label) {
   return true;
 }
 
+// check favs n stuff
+export async function getUsersFavoritingLocation(locationName) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('locationName', sql.VarChar, locationName)
+    .query(`
+      SELECT id, name, email, favorites
+      FROM users
+      WHERE favorites IS NOT NULL
+        AND EXISTS (
+          SELECT 1
+          FROM OPENJSON(favorites, '$.favorites')
+          WHERE JSON_VALUE(value, '$.name') = @locationName
+        );
+    `);
+
+  await sql.close();
+  return result.recordset;
+}

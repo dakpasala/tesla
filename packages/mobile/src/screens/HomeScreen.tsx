@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
@@ -11,9 +11,14 @@ import BikeScreen from '../screens/Bike';
 import BusScreen from '../screens/Bus';
 import TrainScreen from '../screens/Train';
 import WalkScreen from '../screens/Walk';
-import RideShareSubView from '../components/SubViews/RideShareSubView';
+import CarScreen from '../screens/Car';
+import NavBox from '../components/NavBox';
+// import NavBar, { type NavScreen } from '../components/NavBar'; // FIX: NavBar import commented out due to missing module/types.
 
 import { useTheme } from '../../theme/useTheme';
+import NavBar from '../components/NavBar';
+
+type NavScreen = 'car' | 'walk' | 'bike' | 'bus' | 'train'; // FIX: Define NavScreen type locally since import fails.
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -21,9 +26,11 @@ export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const modalRef = useRef<Modalize>(null);
 
-  const [screen, setScreen] = useState<
-    'home' | 'bike' | 'bus' | 'train' | 'walk'
-  >('home');
+  const [screen, setScreen] = useState<NavScreen>('car');
+
+  //using these for NavBox.tsx
+  const [currentLocation, setCurrentLocation] = React.useState('');
+  const [destination, setDestination] = React.useState('');
 
   const [location, setLocation] = useState<{
     lat: number;
@@ -89,84 +96,51 @@ export default function HomeScreen() {
   }, [location]);
 
   return (
+
+    
+    // <View style={{ flex: 1}}>
+    //   <View style={styles.inputContainer}>
+    //     <TextInput
+    //       style={styles.input}
+    //       onChangeText={setCurrentLocation}
+    //       value={currentLocation}
+    //       placeholder="Current Location"
+    //       keyboardType="default"
+    //     />
+    //     <View style={styles.divider} />
+    //     <TextInput
+    //       style={styles.input}
+    //       onChangeText={setDestination}
+    //       value={destination}
+    //       placeholder="Destination"
+    //       keyboardType="default"
+    //     />
+    //   </View>
     <View style={{ flex: 1 }}>
+    <NavBox
+      currentLocation={currentLocation}
+      destination={destination}
+      currentLocationIcon={require('../assets/icons/current.png')}
+      destinationIcon={require('../assets/icons/destination.png')}
+      onCurrentLocationChange={setCurrentLocation}
+      onDestinationChange={setDestination}
+    />
+
       <Modalize
         modalStyle={styles.modalScreen}
         alwaysOpen={340}
         modalHeight={700}
         ref={modalRef}
       >
-        <View style={styles.iconBar}>
-          <Pressable onPress={() => setScreen('bike')}>
-            <Image
-              source={
-                screen === 'bike'
-                  ? require('../assets/bikeActive.png')
-                  : require('../assets/bike.png')
-              }
-              style={styles.icon}
-            />
-          </Pressable>
 
-          <Pressable onPress={() => setScreen('bus')}>
-            <Image
-              source={
-                screen === 'bus'
-                  ? require('../assets/busActive.png')
-                  : require('../assets/bus.png')
-              }
-              style={styles.icon}
-            />
-          </Pressable>
-
-          <Pressable onPress={() => setScreen('home')}>
-            <Image
-              source={
-                screen === 'home'
-                  ? require('../assets/carActive.png')
-                  : require('../assets/car.png')
-              }
-              style={styles.icon}
-            />
-          </Pressable>
-
-          <Pressable onPress={() => setScreen('train')}>
-            <Image
-              source={
-                screen === 'train'
-                  ? require('../assets/trainActive.png')
-                  : require('../assets/train.png')
-              }
-              style={styles.icon}
-            />
-          </Pressable>
-
-          <Pressable onPress={() => setScreen('walk')}>
-            <Image
-              source={
-                screen === 'walk'
-                  ? require('../assets/walkActive.png')
-                  : require('../assets/walk.png')
-              }
-              style={styles.icon}
-            />
-          </Pressable>
-        </View>
+        <NavBar currentScreen={screen} onScreenChange={setScreen} />
 
         <View style={{ flex: 1 }}>
-          {screen === 'home' && (
-            <View style={{ alignItems: 'center' }}>
-              <Text>CAR</Text>
-              <RideShareSubView
-                onSelect={item => console.log('Selected rideshare:', item)}
-              />
-            </View>
-          )}
-
+          {screen === 'car' && <CarScreen />}
           {screen === 'bike' && <BikeScreen />}
           {screen === 'bus' && <BusScreen />}
           {screen === 'train' && <TrainScreen />}
-          {screen === 'walk' && <WalkScreen />}
+          {/* {screen === 'walk' && <WalkScreen />} */}
         </View>
       </Modalize>
     </View>
@@ -179,16 +153,29 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, marginBottom: 20 },
   modalScreen: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#D9D9D9',
   },
-  iconBar: {
-    flexDirection: 'row',
-    marginTop: 15,
+
+  inputContainer: {
+    width: 321,
+    height: 90,
+    alignSelf: 'center',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    borderRadius: 10,
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  icon: {
-    width: 50,
-    height: 50,
-    marginLeft: 25,
-    borderRadius: 40,
+  input: {
+    height: 45,
+    padding: 10,
+    marginLeft: 30,
+    textAlignVertical: 'center',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#D9D9D9',
+    marginHorizontal: 10,
   },
 });

@@ -1,5 +1,6 @@
 import { getRedisClient } from '../services/redis/redisClient.js';
-import { getPool } from '../services/db/mssqlPool.js';
+import { fetchParkingAvailability } from '../services/db/mssqlPool.js';
+import { routeParkingNotification } from '../services/notifications/notificationRouter.js';
 
 const THRESHOLDS = [50, 25, 10, 5, 0];
 
@@ -8,9 +9,9 @@ function getPollingIntervalMs() {
 
   if (hour >= 0 && hour < 24) return 5000;
 
-//   if (hour >= 8 && hour < 10) return 5000;
-//   if (hour >= 7 && hour < 8) return 60000;
-//   if (hour >= 10 && hour < 12) return 60000;
+  // if (hour >= 8 && hour < 10) return 5000;
+  // if (hour >= 7 && hour < 8) return 60000;
+  // if (hour >= 10 && hour < 12) return 60000;
   return null;
 }
 
@@ -21,53 +22,21 @@ function secondsUntilMidnight() {
   return Math.floor((midnight - now) / 1000);
 }
 
-async function fetchParkingAvailability() {
-  const pool = await getPool();
-
-  const result = await pool.request().query(`
-    SELECT
-      l.name AS location_name,
-      p.name AS lot_name,
-      p.current_available AS availability
-    FROM parking_lots p
-    JOIN locations l ON l.id = p.location_id
-    WHERE p.is_active = 1
-      AND l.is_active = 1
-  `);
-
-  return result.recordset;
-}
-
-
-async function sendBelowNotification(lot, threshold, available) {
-  if (threshold === 0) {
-    console.log(`${lot} is FULL`);
-  } else {
-    console.log(`${lot} has less than ${threshold} spots available (${available})`);
-  }
-}
-
-async function sendRecoveryNotification(lot, threshold, available) {
-  if (threshold === 0) {
-    console.log(`${lot} has spots available again (${available})`);
-  } else {
-    console.log(`${lot} is back above ${threshold} spots (${available})`);
-  }
-}
-
 async function checkParkingAvailability() {
   const redis = await getRedisClient();
   const rows = await fetchParkingAvailability();
 
   for (const row of rows) {
-    const location = row.location_name;
+    const locationId = row.location_id;
+    const locationName = row.location_name;
     const lot = row.lot_name;
     const available = row.availability;
 
     let highestRecoveredThreshold = null;
 
+
     for (const threshold of THRESHOLDS) {
-      const key = `parking:below:${location}:${lot}:${threshold}`;
+      const key = `parking:below:${locationId}:${lot}:${threshold}`;
       const isCached = await redis.exists(key);
 
       if (available > threshold && isCached) {
@@ -83,11 +52,14 @@ async function checkParkingAvailability() {
     }
 
     if (highestRecoveredThreshold !== null) {
-      await sendRecoveryNotification(
-        `${location} - ${lot}`,
-        highestRecoveredThreshold,
-        available
-      );
+      await routeParkingNotification({
+        locationId,
+        locationName,
+        lot,
+        threshold: highestRecoveredThreshold,
+        available,
+        type: 'RECOVERY',
+      });
     }
 
     const crossedThresholds = THRESHOLDS.filter(
@@ -96,20 +68,23 @@ async function checkParkingAvailability() {
 
     if (crossedThresholds.length > 0) {
       const lowestThreshold = Math.min(...crossedThresholds);
-      const key = `parking:below:${location}:${lot}:${lowestThreshold}`;
+      const key = `parking:below:${locationId}:${lot}:${lowestThreshold}`;
       const alreadyCached = await redis.exists(key);
 
       if (!alreadyCached) {
-        await sendBelowNotification(
-          `${location} - ${lot}`,
-          lowestThreshold,
-          available
-        );
+        await routeParkingNotification({
+          locationId,
+          locationName,
+          lot,
+          threshold: lowestThreshold,
+          available,
+          type: 'BELOW',
+        });
 
         for (const t of THRESHOLDS) {
           if (t >= lowestThreshold) {
             await redis.set(
-              `parking:below:${location}:${lot}:${t}`,
+              `parking:below:${locationId}:${lot}:${t}`,
               '1',
               { EX: secondsUntilMidnight() }
             );
@@ -119,7 +94,6 @@ async function checkParkingAvailability() {
     }
   }
 }
-
 
 export function startParkingMonitor() {
   async function loop() {
@@ -131,7 +105,8 @@ export function startParkingMonitor() {
       }
       await checkParkingAvailability();
       setTimeout(loop, interval);
-    } catch {
+    } catch (err) {
+      console.error('[PARKING MONITOR ERROR]', err);
       setTimeout(loop, 60000);
     }
   }

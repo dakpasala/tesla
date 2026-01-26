@@ -39,6 +39,40 @@ export async function testConnection() {
 // parking availability
 // --------------------
 
+export async function fetchParkingAvailability() {
+  const pool = await getPool();
+  const result = await pool.request().query(`
+  SELECT
+    l.id AS location_id,
+    l.name AS location_name,
+    p.id AS lot_id,
+    p.name AS lot_name,
+    p.current_available AS availability
+    FROM parking_lots p
+    JOIN locations l ON l.id = p.location_id
+    WHERE p.is_active = 1
+    AND l.is_active = 1
+  `);
+  return result.recordset;
+}
+
+export async function getLocationIdByName(name) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('name', sql.VarChar, name)
+    .query(`
+      SELECT id
+      FROM locations
+      WHERE name = @name
+        AND is_active = 1
+    `);
+
+  await sql.close();
+
+  return result.recordset[0]?.id ?? null;
+}
+
 export async function getParkingAvailabilityByLocationName(locationName) {
   const pool = await getPool();
 
@@ -445,12 +479,12 @@ export async function addUserFavorite(userId, favorite) {
 }
 
 // remove a favorite
-export async function removeUserFavorite(userId, label) {
+export async function removeUserFavorite(userId, name) {
   const pool = await getPool();
 
   await pool.request()
     .input('userId', sql.Int, userId)
-    .input('label', sql.VarChar, label)
+    .input('name', sql.VarChar, name)
     .query(`
       UPDATE users
       SET favorites = (
@@ -462,7 +496,7 @@ export async function removeUserFavorite(userId, label) {
               STRING_AGG(value, ',') +
               ']'
             FROM OPENJSON(favorites, '$.favorites')
-            WHERE JSON_VALUE(value, '$.label') <> @label
+            WHERE JSON_VALUE(value, '$.name') <> @name
           ), '[]') +
           '}'
         )
@@ -474,3 +508,50 @@ export async function removeUserFavorite(userId, label) {
   return true;
 }
 
+// add to favorites table
+export async function addUserFavoriteRow(userId, locationId) {
+  const pool = await getPool();
+
+  await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('locationId', sql.Int, locationId)
+    .query(`
+      INSERT INTO user_favorites (user_id, location_id)
+      VALUES (@userId, @locationId);
+    `);
+
+  await sql.close();
+  return true;
+}
+
+// remove from favorites table
+export async function removeUserFavoriteRow(userId, locationId) {
+  const pool = await getPool();
+
+  await pool.request()
+    .input('userId', sql.Int, userId)
+    .input('locationId', sql.Int, locationId)
+    .query(`
+      DELETE FROM user_favorites
+      WHERE user_id = @userId
+        AND location_id = @locationId;
+    `);
+
+  await sql.close();
+  return true;
+}
+
+// check favs n stuff
+export async function getUsersFavoritingLocationId(locationId) {
+  const pool = await getPool();
+  const result = await pool.request()
+  .input('locationId', sql.Int, locationId)
+  .query(`
+  SELECT u.id, u.name, u.email
+  FROM user_favorites uf
+  JOIN users u ON u.id = uf.user_id
+  WHERE uf.location_id = @locationId
+  `);
+
+  return result.recordset;
+}

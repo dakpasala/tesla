@@ -1,22 +1,25 @@
 import { getPool } from '../../services/db/mssqlPool.js';
+import sql from 'mssql';
 
-const LOT = 'SAP Lot';
-const AVAILABLE = 2;
+const AVAILABLE = 4;
 
 async function run() {
   const pool = await getPool();
 
-  await pool.request()
-    .input('lot', LOT)
-    .input('available', AVAILABLE)
+  const result = await pool.request()
+    .input('availability', sql.Int, AVAILABLE)
     .query(`
-      UPDATE parking_availability
-      SET availability = @available
-      WHERE lot_name = @lot
+      UPDATE p
+      SET p.current_available = @availability
+      FROM parking_lots p
+      JOIN locations l ON l.id = p.location_id
+      WHERE l.name = 'Palo Alto Office'
+        AND p.name = 'SAP Lot';
+
+      SELECT @@ROWCOUNT AS rowsAffected;
     `);
 
-  console.log(`Set ${LOT} availability to ${AVAILABLE}`);
-  process.exit(0);
+  return result.recordset[0].rowsAffected;
 }
 
 run();

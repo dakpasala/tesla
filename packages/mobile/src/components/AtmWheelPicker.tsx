@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -110,13 +110,21 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   const [minuteScrollOffset, setMinuteScrollOffset] = useState(0);
   const [periodScrollOffset, setPeriodScrollOffset] = useState(0);
 
-  const periods = Array.from({ length: PERIODS_LENGTH }, (_, i) => {
-    if (selectedPeriod === 'am') {
-      return i <= selectedPeriodIndex ? 'am' : 'pm';
-    } else {
-      return i < selectedPeriodIndex ? 'am' : 'pm';
-    }
-  });
+  const periods = useMemo(() => {
+    console.log(
+      '[PERIODS_MEMOIZED] Periods array recalculated - selectedPeriod:',
+      selectedPeriod,
+      'selectedPeriodIndex:',
+      selectedPeriodIndex
+    );
+    return Array.from({ length: PERIODS_LENGTH }, (_, i) => {
+      if (selectedPeriod === 'am') {
+        return i <= selectedPeriodIndex ? 'am' : 'pm';
+      } else {
+        return i < selectedPeriodIndex ? 'am' : 'pm';
+      }
+    });
+  }, [selectedPeriod, selectedPeriodIndex]);
 
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);

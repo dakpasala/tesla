@@ -291,4 +291,41 @@ router.delete('/:id/favorites/:name', async (req, res) => {
   }
 });
 
+// --------------------
+// location-state
+// --------------------
+
+router.post("/:id/location-state", async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { state } = req.body;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!state) {
+    return res.status(404).json({ error: 'Provide state please' });
+  }
+
+  try {
+    const redis = await getRedisClient();
+
+    if (state === "AT_LOCATION") {
+      await redis.set(
+        `user:${userId}:suppress_notifications`,
+        "true"
+      );
+    }
+    else if (state === "LEFT_LOCATION") {
+      await redis.del(`user:${userId}:suppress_notifications`);
+    }
+    else { return res.status(404).json({ error: 'Please provide a correct state'} )}
+
+    res.json({ success: true });
+  }
+  catch {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;

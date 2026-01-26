@@ -36,6 +36,15 @@ export async function routeParkingNotification({
 
     // fan-out
     for (const userId of userIds) {
+        // if the user is near an office and stuff u know
+        const suppressKey = `user:${userId}:suppress_notifications`;
+        const isSuppressed = await redis.exists(suppressKey);
+
+        if (isSuppressed) {
+            console.log(`[SKIP] user:${userId} at office → suppress notification`);
+            continue;
+        }
+
         const redisKey = `user:${userId}:notified:${locationId}:${threshold}`;
         const alreadyNotified = await redis.exists(redisKey);
         if (type === 'BELOW' && alreadyNotified) continue;

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -35,6 +35,11 @@ const HOUR_MID_START = HOUR_CYCLE_LENGTH * 2;
 const PERIODS_LENGTH = 32;
 const MID_AM_INDEX = PERIODS_LENGTH / 2 - 1;
 const MID_PM_INDEX = PERIODS_LENGTH / 2;
+
+let _cachedDatesKey: string | null = null;
+let _cachedDates: Date[] | null = null;
+let _datesGenCount = 0;
+let _periodsGenCount = 0;
 
 const getCurrentTime = () => {
   const now = new Date();
@@ -82,6 +87,7 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
   const isDarkMode = colorScheme === 'dark';
 
   const generateDates = () => {
+    _datesGenCount++;
     const dates: Date[] = [];
     for (let i = -7; i <= 30; i++) {
       const date = new Date(today);
@@ -91,7 +97,13 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
     return dates;
   };
 
-  const dates = generateDates();
+  const _todayKey = today.toDateString();
+  let dates: Date[];
+  if (_cachedDatesKey !== _todayKey || !_cachedDates) {
+    _cachedDates = generateDates();
+    _cachedDatesKey = _todayKey;
+  }
+  dates = _cachedDates!;
   const defaultDateIndex = dates.findIndex(
     d => d.toDateString() === (initialDate || today).toDateString()
   );
@@ -166,13 +178,16 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
   const [periodScrollOffset, setPeriodScrollOffset] = useState(0);
   const [dateScrollOffset, setDateScrollOffset] = useState(0);
 
-  const periods = Array.from({ length: PERIODS_LENGTH }, (_, i) => {
-    if (selectedPeriod === 'am') {
-      return i <= selectedPeriodIndex ? 'am' : 'pm';
-    } else {
-      return i < selectedPeriodIndex ? 'am' : 'pm';
-    }
-  });
+  const periods = useMemo(() => {
+    _periodsGenCount++;
+    return Array.from({ length: PERIODS_LENGTH }, (_, i) => {
+      if (selectedPeriod === 'am') {
+        return i <= selectedPeriodIndex ? 'am' : 'pm';
+      } else {
+        return i < selectedPeriodIndex ? 'am' : 'pm';
+      }
+    });
+  }, [selectedPeriod, selectedPeriodIndex]);
 
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
@@ -213,7 +228,13 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
       setPeriodScrollOffset(periodOffset);
       setDateScrollOffset(dateOffset);
     });
-  }, []);
+  }, [
+    defaultHourIndex,
+    defaultMinuteIndex,
+    defaultPeriodIndex,
+    selectedDateIndex,
+    mode,
+  ]);
 
   const recenterHourIfNeeded = (offsetY: number) => {
     const index = Math.round(offsetY / ITEM_HEIGHT);
@@ -508,6 +529,18 @@ const WheelPicker: React.FC<WheelPickerProps> = ({
 
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
+      <Text
+        style={{
+          fontSize: 10,
+          color: isDarkMode ? '#fff' : '#000',
+          position: 'absolute',
+          top: 6,
+          right: 8,
+          zIndex: 999,
+        }}
+      >
+        DatesGen: {_datesGenCount} PeriodsGen: {_periodsGenCount}
+      </Text>
       <View
         style={[
           styles.selectionOverlay,

@@ -23,7 +23,7 @@ export async function submitShuttleReport(
   comment: string
 ): Promise<ShuttleReport> {
   return post<ShuttleReport>(
-    `shuttle/${encodeURIComponent(shuttleName)}/reports`,
+    `shuttles/${encodeURIComponent(shuttleName)}/reports`,
     { comment }
   );
 }
@@ -33,7 +33,7 @@ export async function getShuttleAlerts(
   shuttleName: string
 ): Promise<ShuttleAlert[]> {
   return get<ShuttleAlert[]>(
-    `shuttle/${encodeURIComponent(shuttleName)}/alerts`
+    `shuttles/${encodeURIComponent(shuttleName)}/alerts`
   );
 }
 
@@ -44,7 +44,7 @@ export async function getShuttleReportsAdmin(
   shuttleName: string
 ): Promise<ShuttleReport[]> {
   return get<ShuttleReport[]>(
-    `shuttle/admin/${encodeURIComponent(shuttleName)}/reports`
+    `shuttles/admin/${encodeURIComponent(shuttleName)}/reports`
   );
 }
 
@@ -59,7 +59,7 @@ export async function createShuttleAlertAdmin(
   }
 ): Promise<ShuttleAlert> {
   return post<ShuttleAlert>(
-    `shuttle/admin/${encodeURIComponent(shuttleName)}/alerts`,
+    `shuttles/admin/${encodeURIComponent(shuttleName)}/alerts`,
     alert
   );
 }

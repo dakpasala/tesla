@@ -4,8 +4,9 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Modalize } from 'react-native-modalize';
-import Geolocation from "react-native-geolocation-service";
-import { getRoutesToTeslaHQ } from "../services/routes";
+import Geolocation from 'react-native-geolocation-service';
+import { getRoutesGoHome } from '../services/routes';
+import { OFFICE_LOCATIONS } from '../config/officeLocations';
 
 import BikeScreen from '../screens/Bike';
 import BusScreen from '../screens/Bus';
@@ -64,25 +65,38 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-  if (!location) return;
+    if (!location) return;
 
-    const origin = location; 
+    const origin = location;
     let cancelled = false;
 
     async function loadRoutes() {
       try {
         setLoadingRoutes(true);
 
-        const data = await getRoutesToTeslaHQ({
-          lat: origin.lat,
-          lng: origin.lng,
-        });
+        // choose nearest configured office as destination (avoids hardcoded Tesla HQ)
+        const nearest = OFFICE_LOCATIONS.reduce(
+          (best, office) => {
+            const dist =
+              (office.lat - origin.lat) ** 2 + (office.lng - origin.lng) ** 2;
+            if (!best || dist < best.dist) return { office, dist };
+            return best;
+          },
+          null as null | { office: (typeof OFFICE_LOCATIONS)[0]; dist: number }
+        );
+
+        const destination = nearest
+          ? `${nearest.office.lat},${nearest.office.lng}`
+          : 'Tesla HQ, 3500 Deer Creek Rd, Palo Alto, CA 94304';
+
+        const data = await getRoutesGoHome({ origin, destination });
 
         if (!cancelled) {
-          setRoutes(data);
+          // server returns an object with `routes` array; keep `routes` state as an array
+          setRoutes(data.routes ?? null);
         }
       } catch (err) {
-        console.error("Failed to fetch routes", err);
+        console.error('Failed to fetch routes', err);
       } finally {
         if (!cancelled) setLoadingRoutes(false);
       }
@@ -96,8 +110,6 @@ export default function HomeScreen() {
   }, [location]);
 
   return (
-
-    
     // <View style={{ flex: 1}}>
     //   <View style={styles.inputContainer}>
     //     <TextInput
@@ -117,14 +129,14 @@ export default function HomeScreen() {
     //     />
     //   </View>
     <View style={{ flex: 1 }}>
-    <NavBox
-      currentLocation={currentLocation}
-      destination={destination}
-      currentLocationIcon={require('../assets/icons/current.png')}
-      destinationIcon={require('../assets/icons/destination.png')}
-      onCurrentLocationChange={setCurrentLocation}
-      onDestinationChange={setDestination}
-    />
+      <NavBox
+        currentLocation={currentLocation}
+        destination={destination}
+        currentLocationIcon={require('../assets/icons/current.png')}
+        destinationIcon={require('../assets/icons/destination.png')}
+        onCurrentLocationChange={setCurrentLocation}
+        onDestinationChange={setDestination}
+      />
 
       <Modalize
         modalStyle={styles.modalScreen}
@@ -132,7 +144,6 @@ export default function HomeScreen() {
         modalHeight={700}
         ref={modalRef}
       >
-
         <NavBar currentScreen={screen} onScreenChange={setScreen} />
 
         <View style={{ flex: 1 }}>

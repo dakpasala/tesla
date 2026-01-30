@@ -69,3 +69,11 @@ export async function checkPresence(origin: LatLng): Promise<PresenceResponse> {
   const endpoint = `maps/presence?lat=${origin.lat}&lng=${origin.lng}`;
   return get<PresenceResponse>(endpoint);
 }
+
+// The previous compatibility helper `getRoutesToTeslaHQ` was removed to avoid hardcoded
+// destinations. Now, build destinations in the UI or use office config instead.
+
+// Was a convenience helper used by the mobile app to get routes to the Tesla HQ
+// JUST a placeholder for a hard-coded call in HomeScreen.tsx
+// Prefer calling `getRoutesGoHome` or `getRoutesToOffice` directly with a
+// destination derived from `OFFICE_LOCATIONS` or user input.

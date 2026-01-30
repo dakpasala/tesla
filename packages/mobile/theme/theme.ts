@@ -5,8 +5,8 @@
 //             This should set up the basic foundation for our future theme system before adding more feature.
 export const theme = {
   colors: {
-    background: '#000',
-    textPrimary: '#FFF',
+    background: '#FFF',
+    textPrimary: '#000',
     textSecondary: '#888',
     logo_color: '#E82127',
   },

@@ -3,291 +3,168 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   Image,
   ImageSourcePropType,
-  ViewStyle,
-  TextStyle,
 } from 'react-native';
-
-export type RouteBadge = {
-  label: string;
-  backgroundColor: string;
-  textColor?: string;
-};
+import { useTheme } from '../../theme/useTheme';
 
 export type RouteCardItem = {
   id: string;
 
-  icon?: ImageSourcePropType;
-
-  iconFallback?: string;
+  icon: ImageSourcePropType;
 
   duration: string;
   etaText: string;
-  deltaText?: string;
+
+  showDelay?: boolean;
+  delayText?: string;
 
   subtitle?: string;
-  warningText?: string;
 
-  badges?: RouteBadge[];
+  showParkingWarning?: boolean;
+  parkingWarningText?: string;
+
   disabled?: boolean;
 };
 
-export interface RouteCardsProps {
+interface RouteCardsProps {
   title?: string;
   items: RouteCardItem[];
   onPressItem?: (item: RouteCardItem) => void;
-
-  style?: ViewStyle;
-  titleStyle?: TextStyle;
 }
 
-const DEFAULT_TITLE = 'Route Cards';
-
 export default function RouteCards({
-  title = DEFAULT_TITLE,
+  title = 'Route Cards',
   items,
   onPressItem,
-  style,
-  titleStyle,
 }: RouteCardsProps) {
+  const { colors } = useTheme();
+
   return (
-    <View style={[styles.wrapper, style]}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerIcon}>✦</Text>
-        <Text style={[styles.headerTitle, titleStyle]}>{title}</Text>
-      </View>
+    <View style={styles.wrapper}>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>
+        ✦ {title}
+      </Text>
 
-      <View style={styles.card}>
-        {items.map((item, idx) => {
-          const content = (
-            <View style={styles.rowInner}>
-              {/* Left icon */}
-              <View style={styles.leftIconWrap}>
-                {item.icon ? (
-                  <Image
-                    source={item.icon}
-                    style={styles.leftIconImage}
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <Text style={styles.leftIconFallback}>
-                    {item.iconFallback ?? '🚗'}
-                  </Text>
-                )}
-              </View>
+      {items.map(item => {
+        const isPressable = Boolean(onPressItem) && !item.disabled;
 
-              {/* Main text */}
-              <View style={styles.textCol}>
-                <View style={styles.topLine}>
-                  <Text style={styles.duration}>{item.duration}</Text>
-                  <Text style={styles.eta}>{item.etaText}</Text>
-                  {item.deltaText ? (
-                    <Text style={styles.delta}>{item.deltaText}</Text>
-                  ) : null}
-                </View>
+        return (
+          <Pressable
+            key={item.id}
+            onPress={() => onPressItem?.(item)}
+            disabled={!isPressable}
+            style={[
+              styles.row,
+              //{ backgroundColor: colors.background },
+              item.disabled && styles.disabled,
+            ]}
+          >
+            <View style={styles.iconBox}>
+              <Image source={item.icon} style={styles.icon} />
+            </View>
 
-                {item.subtitle ? (
-                  <Text style={styles.subtitle}>{item.subtitle}</Text>
-                ) : null}
+            <View style={styles.textCol}>
+              <View style={styles.topRow}>
+                <Text style={[styles.duration, { color: colors.textPrimary }]}>
+                  {item.duration}
+                </Text>
 
-                {item.warningText ? (
-                  <Text style={styles.warning}>
-                    <Text style={styles.warningIcon}>⚠️ </Text>
-                    {item.warningText}
+                <Text style={[styles.eta, { color: colors.textPrimary }]}>
+                  {item.etaText}
+                </Text>
+
+                {item.showDelay && item.delayText ? (
+                  <Text style={[styles.delay, { color: colors.logo_color }]}>
+                    {item.delayText}
                   </Text>
                 ) : null}
               </View>
 
-              {/* Right badges (optional) */}
-              {item.badges && item.badges.length > 0 ? (
-                <View style={styles.badgeStack}>
-                  {item.badges.slice(0, 2).map((b, i) => (
-                    <View
-                      key={`${item.id}-badge-${b.label}-${i}`}
-                      style={[
-                        styles.badge,
-                        { backgroundColor: b.backgroundColor },
-                        i === 1 ? styles.badgeOverlap : null,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.badgeText,
-                          { color: b.textColor ?? '#fff' },
-                        ]}
-                      >
-                        {b.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+              {item.showParkingWarning && item.parkingWarningText ? (
+                <Text style={[styles.warning, { color: colors.logo_color }]}>
+                  ⚠ {item.parkingWarningText}
+                </Text>
+              ) : item.subtitle ? (
+                <Text
+                  style={[styles.subtitle, { color: colors.textSecondary }]}
+                >
+                  {item.subtitle}
+                </Text>
               ) : null}
             </View>
-          );
 
-          const isLast = idx === items.length - 1;
-
-          return (
-            <View key={item.id}>
-              {onPressItem ? (
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => !item.disabled && onPressItem(item)}
-                  disabled={item.disabled}
-                  accessibilityRole="button"
-                  accessibilityHint={`Opens route option ${idx + 1}`}
-                  style={[
-                    styles.rowPressable,
-                    item.disabled ? styles.disabledRow : null,
-                  ]}
-                >
-                  {content}
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.rowPressable}>{content}</View>
-              )}
-
-              {!isLast ? <View style={styles.spacer} /> : null}
+            <View style={styles.arrowBox}>
+              <Text style={styles.arrow}>→</Text>
             </View>
-          );
-        })}
-      </View>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: {
-    width: '100%',
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#8A38F5',
+    borderStyle: 'dashed',
+    borderRadius: 5,
+    padding: 3,
   },
 
-  headerRow: {
+  title: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginLeft: 8,
+  },
+
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  headerIcon: {
-    color: '#7C3AED',
-    fontSize: 16,
-    marginRight: 6,
-  },
-  headerTitle: {
-    color: '#7C3AED',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-  },
-
-  rowPressable: {
+    padding: 3,
     paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 12,
-  },
-  disabledRow: {
-    opacity: 0.5,
   },
 
-  rowInner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
+  disabled: { opacity: 0.5 },
 
-  leftIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    backgroundColor: '#F2F2F2',
+  iconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 10,
+    backgroundColor: '#FFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 16,
   },
-  leftIconImage: {
-    width: 22,
-    height: 22,
-  },
-  leftIconFallback: {
-    fontSize: 18,
-  },
+  icon: { width: 28, height: 28 },
 
-  textCol: {
-    flex: 1,
-    paddingRight: 8,
-  },
+  textCol: { flex: 1 },
 
-  topLine: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
     flexWrap: 'wrap',
   },
-  duration: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#111',
-    marginRight: 10,
-  },
-  eta: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111',
-    marginRight: 10,
-  },
-  delta: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#EF4444',
-  },
 
-  subtitle: {
-    marginTop: 2,
-    fontSize: 13,
-    color: '#333',
-  },
+  duration: { fontSize: 30, fontWeight: '800', marginRight: 10 },
+  eta: { fontSize: 16, fontWeight: '600', marginRight: 8 },
+  delay: { fontSize: 16, fontWeight: '600' },
 
-  warning: {
-    marginTop: 4,
-    fontSize: 13,
-    color: '#EF4444',
-    fontStyle: 'italic',
-  },
-  warningIcon: {
-    fontStyle: 'normal',
-  },
+  subtitle: { marginTop: 3, fontSize: 14, fontWeight: '400' },
+  warning: { marginTop: 3, fontSize: 14, fontStyle: 'italic' },
 
-  spacer: {
-    height: 10,
-  },
-
-  badgeStack: {
-    width: 54,
-    alignItems: 'flex-end',
-    paddingTop: 2,
-  },
-  badge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  arrowBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFF',
     alignItems: 'center',
     justifyContent: 'center',
-
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    marginLeft: 16,
   },
-  badgeOverlap: {
-    marginTop: -10,
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
+  arrow: { fontSize: 26, fontWeight: '600', color: '#000' },
 });

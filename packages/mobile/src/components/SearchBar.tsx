@@ -1,5 +1,7 @@
 import React from 'react';
 import type { ViewStyle } from 'react-native';
+import { FavoriteIcon } from './FavoriteIcon';
+
 import {
   View,
   Text,
@@ -19,18 +21,24 @@ type Props = {
 
 type RowData = {
   id: string;
-  label: string;
+  title: string;
+  subtitle: string;
+  miles: string;
 };
 
 type RowItemProps = {
-  label: string;
+  title: string;
+  subtitle: string;
+  miles: string;
   starred?: boolean;
   onPressRow?: () => void;
   onToggleStar?: () => void;
 };
 
 function RowItem({
-  label,
+  title,
+  subtitle,
+  miles,
   starred = false,
   onPressRow,
   onToggleStar,
@@ -41,34 +49,37 @@ function RowItem({
       activeOpacity={0.75}
       onPress={onPressRow}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={title}
     >
       <View style={styles.rowLeft}>
-        <Image
-          source={require('../assets/images/search.png')}
-          style={styles.rowIcon}
-        />
-        <Text style={styles.rowText}>{label}</Text>
-      </View>
-
-      <TouchableOpacity
-        onPress={onToggleStar}
-        activeOpacity={0.7}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityRole="button"
-        accessibilityLabel={
-          starred ? 'Remove from favorites' : 'Add to favorites'
-        }
-      >
-        <Image
-          source={
-            starred
-              ? require('../assets/images/fav_icon.png') // yellow
-              : require('../assets/images/fav_icon_deactivate.png') // outline
+        <TouchableOpacity
+          onPress={onToggleStar}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            starred ? 'Remove from favorites' : 'Add to favorites'
           }
-          style={styles.star}
-        />
-      </TouchableOpacity>
+        >
+          <View style={styles.star}>
+            {starred ? (
+              <FavoriteIcon />
+            ) : (
+              <Image
+                source={require('../assets/images/fav_icon_deactivate.png')}
+                style={{ width: 18, height: 18 }}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <View>
+          <Text style={styles.rowText}>{title}</Text>
+          <Text style={styles.placeSub}>{subtitle}</Text>
+        </View>
+      </View>
+      <Text style={styles.milesText}>{miles}</Text>
     </TouchableOpacity>
   );
 }
@@ -108,21 +119,42 @@ export default function SearchBar({
   onExpand,
   onCollapse,
 }: Props) {
-  // A–Z / Z–A
   const [sort, setSort] = React.useState<'A-Z' | 'Z-A'>('A-Z');
 
-  // Seed data (replace later with real data)
   const [favorites, setFavorites] = React.useState<RowData[]>([
-    { id: 'fav-1', label: 'Work Location' },
-    { id: 'fav-2', label: 'Work Location' },
-    { id: 'fav-3', label: 'Work Location' },
+    {
+      id: 'fav-1',
+      title: 'Tesla Deer Creek',
+      subtitle: '1501 Page Mill Rd, Palo Alto',
+      miles: '2.5 miles',
+    },
+    {
+      id: 'fav-2',
+      title: 'Tesla Page Mill',
+      subtitle: '1501 Page Mill Rd, Palo Alto',
+      miles: '2.5 miles',
+    },
+    {
+      id: 'fav-3',
+      title: 'Tesla Page Mill',
+      subtitle: '1501 Page Mill Rd, Palo Alto',
+      miles: '2.5 miles',
+    },
   ]);
 
   const [offices, setOffices] = React.useState<RowData[]>([
-    { id: 'off-1', label: 'Work Location' },
-    { id: 'off-2', label: 'Accounting' },
-    { id: 'off-3', label: 'Zion Office' },
-    { id: 'off-4', label: 'Main Office' },
+    {
+      id: 'off-1',
+      title: 'Tesla Page Mill',
+      subtitle: '1501 Page Mill Rd, Palo Alto',
+      miles: '2.5 miles',
+    },
+    {
+      id: 'off-2',
+      title: 'Tesla Page Mill',
+      subtitle: '1501 Page Mill Rd, Palo Alto',
+      miles: '2.5 miles',
+    },
   ]);
 
   // - If item is in favorites: unstar -> move back to All Offices
@@ -132,26 +164,18 @@ export default function SearchBar({
       setFavorites(prevFavs => {
         const isFav = prevFavs.some(f => f.id === item.id);
 
-        // If it's currently a favorite, remove it
         if (isFav) return prevFavs.filter(f => f.id !== item.id);
 
-        // Otherwise add to favorites
         return [item, ...prevFavs];
       });
 
       setOffices(prevOffices => {
         const inOffices = prevOffices.some(o => o.id === item.id);
-        const inFavoritesNow = favorites.some(f => f.id === item.id);
 
-        // determine favorite status by checking whether it's in offices right now:
-        // - If it IS in offices -> user is starring -> remove from offices
-        // - If it is NOT in offices -> user is unstarring from favorites -> add back to offices
         if (inOffices) {
-          // starring: move up (remove from All Offices)
           return prevOffices.filter(o => o.id !== item.id);
         }
 
-        // unstarring: move down (add back to All Offices if not already there)
         return [...prevOffices, item];
       });
     },
@@ -160,7 +184,7 @@ export default function SearchBar({
 
   const sortedOffices = React.useMemo(() => {
     const copy = [...offices];
-    copy.sort((a, b) => a.label.localeCompare(b.label));
+    copy.sort((a, b) => a.title.localeCompare(b.title));
     if (sort === 'Z-A') copy.reverse();
     return copy;
   }, [offices, sort]);
@@ -208,22 +232,22 @@ export default function SearchBar({
         </TouchableOpacity>
       </View>
 
-      {/* Home / Work */}
+      {/* home / work */}
       <View style={styles.quickRow}>
         <QuickItem
           title="Home"
           subtitle="Set location"
-          icon={require('../assets/images/home_work.png')}
+          icon={require('../assets/images/search_house.png')}
         />
         <QuickItem
           title="Work"
           subtitle="Set location"
-          icon={require('../assets/images/home_work.png')}
+          icon={require('../assets/images/search_job.png')}
           style={{ marginLeft: -100 }}
         />
       </View>
 
-      {/* Favorites */}
+      {/* favorites */}
       <Text style={styles.section}>My Favorites</Text>
       {favorites.length === 0 ? (
         <Text style={styles.emptyText}>No favorites yet</Text>
@@ -231,14 +255,16 @@ export default function SearchBar({
         favorites.map(item => (
           <RowItem
             key={item.id}
-            label={item.label}
+            title={item.title}
+            subtitle={item.subtitle}
+            miles={item.miles}
             starred
-            onToggleStar={() => toggleFavorite(item)} // yellow -> unstar -> move down to offices
+            onToggleStar={() => toggleFavorite(item)}
           />
         ))
       )}
 
-      {/* Offices header with dropdown */}
+      {/* offices header with dropdown */}
       <View style={styles.sectionRow}>
         <Text style={styles.section}>All Offices</Text>
 
@@ -255,9 +281,11 @@ export default function SearchBar({
       {sortedOffices.map(item => (
         <RowItem
           key={item.id}
-          label={item.label}
+          title={item.title}
+          subtitle={item.subtitle}
+          miles={item.miles}
           starred={false}
-          onToggleStar={() => toggleFavorite(item)} // outline -> star -> move up to favorites
+          onToggleStar={() => toggleFavorite(item)}
         />
       ))}
     </View>
@@ -350,8 +378,8 @@ const styles = StyleSheet.create({
   },
 
   quickCircleIcon: {
-    width: 35,
-    height: 35,
+    width: 20,
+    height: 17,
     resizeMode: 'contain',
     opacity: 0.9,
   },
@@ -421,12 +449,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
 
-  rowIcon: {
-    width: 18,
-    height: 18,
-    opacity: 0.55,
-  },
-
   rowText: {
     fontSize: 12,
     fontWeight: 400,
@@ -436,6 +458,18 @@ const styles = StyleSheet.create({
   star: {
     width: 18,
     height: 18,
+  },
+
+  placeSub: {
+    fontSize: 8,
+    color: '#878585',
+    marginTop: 1,
+  },
+
+  milesText: {
+    color: '#878585',
+    fontWeight: '400',
+    fontSize: 12,
   },
 
   emptyText: {

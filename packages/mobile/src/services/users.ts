@@ -80,7 +80,11 @@ export async function removeUserFavorite(userId: number, name: string) {
 // add location state
 export async function setUserLocationState(
   userId: number,
-  state: 'AT_LOCATION' | 'LEFT_LOCATION'
+  state: 'AT_LOCATION' | 'LEFT_LOCATION',
+  locationId: number
 ) {
-  return post(`users/${userId}/location-state`, { state });
+  return post(`users/${userId}/location-state`, {
+    state,
+    location_id: locationId,
+  });
 }

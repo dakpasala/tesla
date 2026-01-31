@@ -62,3 +62,36 @@ export async function routeParkingNotification({
         }
     }
 }
+
+export async function notifyShuttleEvent({
+  shuttleId,
+  event,
+  etaMinutes,
+}) {
+  const redis = await getRedisClient();
+
+  const usersKey = `shuttle:${shuttleId}:users`;
+  const userIds = await redis.sMembers(usersKey);
+
+  if (userIds.length === 0) return;
+
+  for (const userId of userIds) {
+    const suppressKey = `user:${userId}:suppress_notifications`;
+    const isSuppressed = await redis.exists(suppressKey);
+    if (isSuppressed) {
+      console.log(`[SKIP] user:${userId} suppressed`);
+      continue;
+    }
+
+    const dedupeKey = `user:${userId}:notified:shuttle:${shuttleId}:${event}`;
+    const alreadyNotified = await redis.exists(dedupeKey);
+    if (alreadyNotified) continue;
+
+    console.log(
+      `[SHUTTLE NOTIFY] user:${userId} → shuttle ${shuttleId} ${event} (${etaMinutes} min)`
+    );
+
+    // APNs 
+    await redis.set(dedupeKey, '1', { EX: 900 });
+  }
+}

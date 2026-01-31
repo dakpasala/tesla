@@ -328,3 +328,67 @@ router.post("/:id/location-state", async (req, res) => {
 });
 
 export default router;
+
+// --------------------
+// shuttle-subscriptions
+// --------------------
+
+// add user to shuttle
+router.post('/:id/shuttle', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { shuttleId } = req.body;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!shuttleId) {
+    return res.status(400).json({ error: 'shuttleId is required' });
+  }
+
+  try {
+    const redis = await getRedisClient();
+
+    await redis.sAdd(
+      `shuttle:${shuttleId}:users`,
+      String(userId)
+    );
+
+    res.status(201).json({
+      success: true,
+      subscribed: { shuttleId },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// remove user from shuttle
+router.delete('/:id/shuttle/:shuttleId', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { shuttleId } = req.params;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!shuttleId) {
+    return res.status(400).json({ error: 'shuttleId is required' });
+  }
+
+  try {
+    const redis = await getRedisClient();
+
+    await redis.sRem(
+      `shuttle:${shuttleId}:users`,
+      String(userId)
+    );
+
+    res.json({
+      success: true,
+      unsubscribed: { shuttleId },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

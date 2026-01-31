@@ -36,7 +36,6 @@ Test the DB:
     Add to favorites: curl -X POST http://localhost:3000/api/users/1/favorites \
         -H "Content-Type: application/json" \
         -d '{
-            "label": "office",
             "name": "Palo Alto Office",
             "address": "3500 Deer Creek Rd, Palo Alto, CA"
         }'

@@ -8,8 +8,6 @@ import {
   getUserWorkAddress,
   setUserWorkAddress,
   getUserFavorites,
-  addUserFavorite,
-  removeUserFavorite,
   addUserFavoriteRow,
   removeUserFavoriteRow,
   getLocationIdByName
@@ -227,37 +225,35 @@ router.get('/:id/favorites', async (req, res) => {
 // add favorite
 router.post('/:id/favorites', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
-  const { label, name, address } = req.body;
+  const { name, address } = req.body;
 
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
 
-  if (!label || !name || !address) {
+  if (!name || !address) {
     return res.status(400).json({
-      error: 'label, name, and address are required',
+      error: 'name and address are required',
     });
   }
 
   try {
-    await addUserFavorite(userId, { label, name, address });
-
     const locationId = await getLocationIdByName(name);
     if (!locationId) {
       return res.status(404).json({ error: 'Location not found' });
     }
 
-    await addUserFavoriteRow(userId, locationId);
+    await addUserFavoriteRow(userId, locationId, name, address);
 
     const redis = await getRedisClient();
     await redis.sAdd(`location:${locationId}:users`, String(userId));
 
     res.status(201).json({
       success: true,
-      added: { label, name, address },
+      added: { name, address },
     });
   } catch (err) {
-      res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -271,12 +267,15 @@ router.delete('/:id/favorites/:name', async (req, res) => {
   }
 
   if (!name) {
-    return res.status(404).json({ error: 'Provide name of place' });
+    return res.status(400).json({ error: 'Provide name of place' });
   }
 
   try {
     const locationId = await getLocationIdByName(name);
-    await removeUserFavorite(userId, name);
+    if (!locationId) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
+
     await removeUserFavoriteRow(userId, locationId);
 
     const redis = await getRedisClient();

@@ -17,20 +17,24 @@ interface MenuItem {
   id: string;
   title: string;
   icon: string;
-  screen?: keyof RootStackParamList;
+  onPress?: () => void;
 }
-
-const MENU_ITEMS: MenuItem[] = [
-  { id: '1', title: 'Settings', icon: '⚙️', screen: 'Settings' },
-  { id: '2', title: 'Favorites', icon: '⭐', screen: 'Favorites' },
-  { id: '3', title: 'Commute History', icon: '📊' },
-  { id: '4', title: 'Notifications', icon: '🔔' },
-  { id: '5', title: 'Help & Support', icon: '❓' },
-  { id: '6', title: 'About', icon: 'ℹ️' },
-];
 
 export default function ProfileScreen() {
   const navigation = useNavigation<NavigationProp>();
+
+  const menuItems: MenuItem[] = [
+    { id: '1', title: 'Rewards', icon: '🎁' },
+    {
+      id: '2',
+      title: 'Favorites',
+      icon: '⭐',
+      onPress: () => navigation.navigate('Favorites'),
+    },
+    { id: '3', title: 'Notifications', icon: '🔔' },
+    { id: '4', title: 'Help & Support', icon: '❓' },
+    { id: '5', title: 'About', icon: 'ℹ️' },
+  ];
 
   return (
     <SafeAreaView style={styles.container}>
@@ -39,50 +43,29 @@ export default function ProfileScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backButton}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profile</Text>
+        <Text style={styles.headerTitle}>Settings</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView>
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
+      <ScrollView style={styles.content}>
+        {/* Profile Summary */}
+        <View style={styles.profileSummary}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>JD</Text>
           </View>
-          <Text style={styles.userName}>John Doe</Text>
-          <Text style={styles.userEmail}>john.doe@tesla.com</Text>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>127</Text>
-            <Text style={styles.statLabel}>Trips</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>1,250</Text>
-            <Text style={styles.statLabel}>Miles</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>48h</Text>
-            <Text style={styles.statLabel}>Saved</Text>
+          <View style={styles.profileInfo}>
+            <Text style={styles.userName}>John Doe</Text>
+            <Text style={styles.userEmail}>john.doe@tesla.com</Text>
           </View>
         </View>
 
         {/* Menu Items */}
         <View style={styles.menuSection}>
-          {MENU_ITEMS.map(item => (
+          {menuItems.map(item => (
             <TouchableOpacity
               key={item.id}
               style={styles.menuItem}
-              onPress={() =>
-                item.screen && navigation.navigate(item.screen as any)
-              }
+              onPress={item.onPress}
             >
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={styles.menuTitle}>{item.title}</Text>
@@ -91,12 +74,14 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Admin Access */}
+        {/* Admin Panel */}
         <TouchableOpacity
           style={styles.adminButton}
           onPress={() => navigation.navigate('Admin')}
         >
-          <Text style={styles.adminButtonText}>🔐 Admin Panel</Text>
+          <Text style={styles.adminIcon}>🔐</Text>
+          <Text style={styles.adminText}>Admin Panel</Text>
+          <Text style={styles.menuArrow}>›</Text>
         </TouchableOpacity>
 
         {/* Logout */}
@@ -134,71 +119,42 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 24,
   },
-  profileCard: {
+  content: {
+    flex: 1,
+  },
+  profileSummary: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 24,
+    padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E3E3E3',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#4285F4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginRight: 16,
   },
   avatarText: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: '600',
     color: '#fff',
   },
+  profileInfo: {
+    flex: 1,
+  },
   userName: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     color: '#111',
   },
   userEmail: {
     fontSize: 14,
     color: '#666',
-    marginTop: 4,
-  },
-  editButton: {
-    marginTop: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E3E3E3',
-  },
-  editButtonText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E3E3E3',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: '#E3E3E3',
+    marginTop: 2,
   },
   menuSection: {
     paddingTop: 8,
@@ -225,20 +181,25 @@ const styles = StyleSheet.create({
     color: '#ccc',
   },
   adminButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     margin: 20,
     padding: 16,
     backgroundColor: '#F0F0F0',
     borderRadius: 12,
-    alignItems: 'center',
   },
-  adminButtonText: {
+  adminIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  adminText: {
+    flex: 1,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#111',
   },
   logoutButton: {
-    margin: 20,
-    marginTop: 0,
+    marginHorizontal: 20,
     padding: 16,
     alignItems: 'center',
   },

@@ -17,6 +17,11 @@ type Props = {
   expanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  onSelectDestination?: (destination: {
+    id: string;
+    title: string;
+    subtitle: string;
+  }) => void;
 };
 
 type RowData = {
@@ -118,6 +123,7 @@ export default function SearchBar({
   expanded = false,
   onExpand,
   onCollapse,
+  onSelectDestination,
 }: Props) {
   const [sort, setSort] = React.useState<'A-Z' | 'Z-A'>('A-Z');
 
@@ -259,6 +265,13 @@ export default function SearchBar({
             subtitle={item.subtitle}
             miles={item.miles}
             starred
+            onPressRow={() =>
+              onSelectDestination?.({
+                id: item.id,
+                title: item.title,
+                subtitle: item.subtitle,
+              })
+            }
             onToggleStar={() => toggleFavorite(item)}
           />
         ))
@@ -285,6 +298,13 @@ export default function SearchBar({
           subtitle={item.subtitle}
           miles={item.miles}
           starred={false}
+          onPressRow={() =>
+            onSelectDestination?.({
+              id: item.id,
+              title: item.title,
+              subtitle: item.subtitle,
+            })
+          }
           onToggleStar={() => toggleFavorite(item)}
         />
       ))}

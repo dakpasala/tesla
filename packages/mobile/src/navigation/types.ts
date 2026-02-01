@@ -2,12 +2,12 @@
 export type RootStackParamList = {
   // Main App Screens
   MainHome: undefined;
-  Routes: undefined;
+  Routes: { destinationId?: string; destinationName?: string } | undefined;
   Directions: { routeId: string };
   Favorites: undefined;
   Profile: undefined;
   Settings: undefined;
-  Parking: undefined;
+  Parking: { fromRoutes?: boolean } | undefined;
 
   // Admin Screens
   Admin: undefined;

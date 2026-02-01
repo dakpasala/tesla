@@ -6,51 +6,51 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
 import { Modalize } from 'react-native-modalize';
 
 // Import existing components
 import NavBox from '../../components/NavBox';
 import NavBar, { NavScreen } from '../../components/NavBar';
-import OptionsCard, { OptionItem } from '../../components/OptionsCard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type ParkingRouteProp = RouteProp<RootStackParamList, 'Parking'>;
 
 interface ParkingLot {
   id: string;
   name: string;
-  sublot: string;
+  sublot?: string;
   status: 'available' | 'limited' | 'full';
-  extraTime?: string;
+  currentPercent?: string;
+  forecast?: string;
+  sublots?: { name: string; range: string; color: string }[];
 }
 
-const PARKING_LOTS: ParkingLot[] = [
-  { id: '1', name: 'Deer Creek', sublot: 'Sublot B', status: 'full' },
-  { id: '2', name: 'Page Mill', sublot: '', status: 'available' },
+const PARKING_DATA: ParkingLot[] = [
+  {
+    id: '1',
+    name: 'Deer Creek',
+    sublot: 'Sublot B',
+    status: 'full',
+  },
+  {
+    id: '2',
+    name: 'Page Mill',
+    status: 'available',
+  },
   {
     id: '3',
     name: 'Hanover',
-    sublot: '',
     status: 'limited',
-    extraTime: '+ 2 min',
   },
 ];
 
 const SHUTTLE_OPTIONS = [
-  {
-    id: 's1',
-    name: 'Shuttle A',
-    status: 'On Time',
-    arriveTime: 'Arrives in 5 min',
-  },
-  {
-    id: 's2',
-    name: 'Shuttle B',
-    status: 'On Time',
-    arriveTime: 'Arrives in 10 min',
-  },
+  { id: 's1', name: 'Shuttle A', status: 'On Time', time: 'Arrives in 5 min' },
+  { id: 's2', name: 'Shuttle B', status: 'On Time', time: 'Arrives in 10 min' },
 ];
 
 const STATUS_COLORS = {
@@ -67,18 +67,16 @@ const STATUS_LABELS = {
 
 export default function ParkingScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<ParkingRouteProp>();
   const modalRef = useRef<Modalize>(null);
+
+  const fromRoutes = route.params?.fromRoutes ?? false;
 
   // Transport mode state
   const [transportMode, setTransportMode] = useState<NavScreen>('car');
-
-  // Location state
-  const [currentLocation, setCurrentLocation] = useState('Current');
-  const [destination, setDestination] = useState('Tesla HQ Deer Creek');
-
   const [selectedLot, setSelectedLot] = useState<string | null>(null);
 
-  const handleLotSelect = (lot: ParkingLot) => {
+  const handleSelectLot = (lot: ParkingLot) => {
     setSelectedLot(lot.id);
   };
 
@@ -90,31 +88,30 @@ export default function ParkingScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Map Background (placeholder) */}
+      {/* Map Background */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>
-          {/* Parking map will go here */}
-        </View>
+        <View style={styles.mapPlaceholder} />
+      </View>
 
-        {/* Back button overlay */}
+      {/* NavBox overlay */}
+      <View style={styles.navBoxOverlay}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-      </View>
 
-      {/* NavBox for origin/destination */}
-      <View style={styles.navBoxContainer}>
-        <NavBox
-          currentLocation={currentLocation}
-          destination={destination}
-          currentLocationIcon={require('../../assets/icons/current.png')}
-          destinationIcon={require('../../assets/icons/destination.png')}
-          onCurrentLocationChange={setCurrentLocation}
-          onDestinationChange={setDestination}
-        />
+        <View style={styles.navBoxWrapper}>
+          <NavBox
+            currentLocation="Current"
+            destination="Tesla HQ Deer Creek"
+            currentLocationIcon={require('../../assets/icons/current.png')}
+            destinationIcon={require('../../assets/icons/destination.png')}
+            onCurrentLocationChange={() => {}}
+            onDestinationChange={() => {}}
+          />
+        </View>
       </View>
 
       {/* Bottom Sheet */}
@@ -123,9 +120,7 @@ export default function ParkingScreen() {
         modalStyle={styles.modalStyle}
         handleStyle={styles.handleStyle}
         alwaysOpen={450}
-        modalHeight={650}
-        panGestureEnabled={true}
-        withHandle={true}
+        modalHeight={600}
       >
         <ScrollView
           style={styles.sheetContent}
@@ -137,22 +132,22 @@ export default function ParkingScreen() {
             onScreenChange={setTransportMode}
           />
 
-          {/* Parking Lots List */}
+          {/* Parking Lots */}
           <View style={styles.lotsSection}>
-            {PARKING_LOTS.map(lot => (
+            {PARKING_DATA.map(lot => (
               <TouchableOpacity
                 key={lot.id}
                 style={[
                   styles.lotCard,
                   selectedLot === lot.id && styles.lotCardSelected,
                 ]}
-                onPress={() => handleLotSelect(lot)}
+                onPress={() => handleSelectLot(lot)}
               >
                 <View style={styles.lotInfo}>
                   <Text style={styles.lotName}>
-                    {lot.name}{' '}
+                    {lot.name}
                     {lot.sublot && (
-                      <Text style={styles.sublotText}>{lot.sublot}</Text>
+                      <Text style={styles.sublotText}> {lot.sublot}</Text>
                     )}
                   </Text>
                   <View style={styles.statusRow}>
@@ -172,9 +167,6 @@ export default function ParkingScreen() {
                     </Text>
                   </View>
                 </View>
-                {lot.extraTime && (
-                  <Text style={styles.extraTime}>{lot.extraTime}</Text>
-                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -185,7 +177,7 @@ export default function ParkingScreen() {
             {SHUTTLE_OPTIONS.map(shuttle => (
               <TouchableOpacity key={shuttle.id} style={styles.shuttleCard}>
                 <View style={styles.shuttleIcon}>
-                  <Text style={styles.shuttleIconText}>🚌</Text>
+                  <Text style={styles.shuttleEmoji}>🚌</Text>
                 </View>
                 <View style={styles.shuttleInfo}>
                   <Text style={styles.shuttleName}>{shuttle.name}</Text>
@@ -193,31 +185,30 @@ export default function ParkingScreen() {
                     <View
                       style={[styles.statusDot, { backgroundColor: '#34A853' }]}
                     />
-                    <Text style={styles.shuttleStatus}>{shuttle.status}</Text>
+                    <Text style={styles.shuttleStatusText}>
+                      {shuttle.status}
+                    </Text>
                   </View>
                 </View>
-                <Text style={styles.shuttleTime}>{shuttle.arriveTime}</Text>
+                <Text style={styles.shuttleTime}>{shuttle.time}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.otherLotsButton}>
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.otherLotsBtn}>
               <Text style={styles.otherLotsText}>Other Lots</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.routeButton,
-                !selectedLot && styles.routeButtonDisabled,
-              ]}
+              style={[styles.routeBtn, !selectedLot && styles.routeBtnDisabled]}
               onPress={handleRouteToLot}
               disabled={!selectedLot}
             >
-              <Text style={styles.routeButtonText}>
+              <Text style={styles.routeBtnText}>
                 Route to{' '}
                 {selectedLot
-                  ? PARKING_LOTS.find(l => l.id === selectedLot)?.name
+                  ? PARKING_DATA.find(l => l.id === selectedLot)?.name
                   : 'Lot'}
               </Text>
             </TouchableOpacity>
@@ -235,22 +226,29 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
-    position: 'relative',
   },
   mapPlaceholder: {
     flex: 1,
     backgroundColor: '#e8e8e8',
   },
-  backButton: {
+  navBoxOverlay: {
     position: 'absolute',
     top: 50,
-    left: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 10,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -258,15 +256,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   backButtonText: {
-    fontSize: 24,
+    fontSize: 20,
     color: '#111',
   },
-  navBoxContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  navBoxWrapper: {
+    flex: 1,
   },
   modalStyle: {
     backgroundColor: '#FCFCFC',
@@ -329,10 +323,6 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 13,
   },
-  extraTime: {
-    fontSize: 13,
-    color: '#666',
-  },
   shuttleSection: {
     paddingHorizontal: 16,
     marginTop: 16,
@@ -362,7 +352,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  shuttleIconText: {
+  shuttleEmoji: {
     fontSize: 20,
   },
   shuttleInfo: {
@@ -378,7 +368,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 2,
   },
-  shuttleStatus: {
+  shuttleStatusText: {
     fontSize: 12,
     color: '#34A853',
   },
@@ -386,13 +376,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
-  actionButtons: {
+  actionRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 20,
     gap: 12,
   },
-  otherLotsButton: {
+  otherLotsBtn: {
     flex: 1,
     paddingVertical: 14,
     backgroundColor: '#fff',
@@ -406,17 +396,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#111',
   },
-  routeButton: {
+  routeBtn: {
     flex: 2,
     paddingVertical: 14,
     backgroundColor: '#4285F4',
     borderRadius: 10,
     alignItems: 'center',
   },
-  routeButtonDisabled: {
+  routeBtnDisabled: {
     backgroundColor: '#ccc',
   },
-  routeButtonText: {
+  routeBtnText: {
     fontSize: 15,
     fontWeight: '600',
     color: '#fff',

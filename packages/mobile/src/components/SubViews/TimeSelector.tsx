@@ -26,55 +26,16 @@ export default function TimeSelector({ onSelect }: TimeSelectorProps) {
       <Text style={styles.title}>Time Selector</Text>
 
       <View style={styles.dropdownWrap}>
-        {/* #region agent log */}
         <TouchableOpacity
           style={styles.dropdownButton}
-          onPress={() => {
-            fetch(
-              'http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234',
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  location: 'TimeSelector.tsx:onPress',
-                  message: 'TimeSelector dropdown pressed',
-                  data: { currentModalVisible: modalVisible },
-                  timestamp: Date.now(),
-                  sessionId: 'debug-session',
-                  hypothesisId: 'B',
-                }),
-              }
-            ).catch(() => {});
-            setModalVisible(true);
-          }}
+          onPress={() => setModalVisible(true)}
           accessibilityRole="button"
         >
           <Text style={styles.dropdownText}>{selectedLeave}</Text>
           <Text style={styles.dropdownCaret}>▾</Text>
         </TouchableOpacity>
-        {/* #endregion */}
       </View>
 
-      {/* #region agent log */}
-      {(() => {
-        fetch(
-          'http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              location: 'TimeSelector.tsx:render',
-              message: 'TimeSelectorScreen render check',
-              data: { modalVisible },
-              timestamp: Date.now(),
-              sessionId: 'debug-session',
-              hypothesisId: 'C',
-            }),
-          }
-        ).catch(() => {});
-        return null;
-      })()}
-      {/* #endregion */}
       <TimeSelectorScreen
         visible={modalVisible}
         onClose={() => setModalVisible(false)}

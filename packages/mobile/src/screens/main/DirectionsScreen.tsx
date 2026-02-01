@@ -142,7 +142,7 @@ function DirectionsScreen() {
         return (
           <TouchableOpacity
             key={mode}
-            style={[styles.tab, isActive && styles.activeTab]}
+            style={[styles.tab, isActive && styles.activeTabBorder]}
             onPress={() => setTravelMode(mode)}
           >
             <Image
@@ -156,8 +156,8 @@ function DirectionsScreen() {
             <Text style={[styles.tabTime, isActive && styles.activeTabTime]}>
               {mode === 'car' && '30m'}
               {mode === 'shuttle' && '50m'}
-              {mode === 'transit' && '1h 5m'}
-              {mode === 'bike' && '35m'}
+              {mode === 'transit' && '1hr5m'}
+              {mode === 'bike' && '30m'}
             </Text>
           </TouchableOpacity>
         );
@@ -397,38 +397,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sheetContent: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 4,
     paddingBottom: 40,
   },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
-    backgroundColor: '#F2F2F7',
-    padding: 4,
-    borderRadius: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    paddingBottom: 0,
   },
   tab: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    borderRadius: 10,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
-  activeTab: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+  activeTabBorder: {
+    borderBottomColor: '#007AFF',
   },
   tabIconImage: {
-    width: 28,
-    height: 28,
-    marginBottom: 4,
+    width: 36,
+    height: 36,
+    marginRight: 8,
   },
   tabTime: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
     color: '#8E8E93',
   },

@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Image,
 } from 'react-native';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 
 type RowData = {
   id: string;
@@ -33,7 +34,7 @@ const RowItem = memo(function RowItem({
 }: RowItemProps) {
   return (
     <View style={styles.row}>
-      <TouchableOpacity
+      <GHTouchableOpacity
         onPress={() => onToggleStar(item.id)}
         activeOpacity={0.6}
         style={styles.starTouchable}
@@ -49,7 +50,7 @@ const RowItem = memo(function RowItem({
             />
           )}
         </View>
-      </TouchableOpacity>
+      </GHTouchableOpacity>
 
       <TouchableOpacity
         style={styles.rowContent}

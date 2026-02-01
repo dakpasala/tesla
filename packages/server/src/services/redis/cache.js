@@ -26,6 +26,30 @@ export async function setCache(key, value, ttlSeconds = null) {
   }
 }
 
+export async function deleteCache(key) {
+  const redis = await getRedisClient();
+  await redis.del(key);
+}
+
+export async function cacheExists(key) {
+  const redis = await getRedisClient();
+  return redis.exists(key);
+}
+
+export async function getSetMembers(key) {
+  const redis = await getRedisClient();
+  return redis.sMembers(key);
+}
+
+export async function addSetMembers(key, members) {
+  const redis = await getRedisClient();
+  if (Array.isArray(members)) {
+    if (members.length > 0) await redis.sAdd(key, members);
+  } else {
+    await redis.sAdd(key, String(members));
+  }
+}
+
 export async function addUserToLocation(locationId, userId) {
   const redis = await getRedisClient();
   await redis.sAdd(`location:${locationId}:users`, String(userId));
@@ -55,3 +79,4 @@ export async function unsuppressUserNotifications(userId) {
   const redis = await getRedisClient();
   await redis.del(`user:${userId}:suppress_notifications`);
 }
+

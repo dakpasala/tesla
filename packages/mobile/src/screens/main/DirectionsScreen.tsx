@@ -86,26 +86,24 @@ function DirectionsScreen() {
     <View style={styles.headerContainer}>
       {/* Route Card */}
       <View style={styles.routeHeaderCard}>
-        <View style={styles.routeRow}>
-          {/* Graphics Column */}
-          <View style={styles.graphicsCol}>
-            <Svg width={16} height={68} style={styles.routeSvg}>
-              {/* Current Dot - Aligned with top text (center y=12) */}
-              <Circle cx={8} cy={12} r={6} fill="#007AFF" />
-              {/* Vertical Dotted Line - Connecting dot to pin */}
-              <Line
-                x1={8}
-                y1={20}
-                x2={8}
-                y2={45}
-                stroke="#C7C7CC"
-                strokeWidth={2}
-                strokeDasharray="4 2"
-              />
-              {/* Destination Pin - Aligned with bottom text (center y=53)
-                  Original center y=39. Offset = 53 - 39 = 14.
-               */}
-              <G translateY={14}>
+        {/* Row 1: Current */}
+        <View style={styles.routeRowItem}>
+          <View style={styles.iconCol}>
+            <Svg width={16} height={16} viewBox="0 0 16 16">
+              <Circle cx={8} cy={8} r={6} fill="#007AFF" />
+            </Svg>
+          </View>
+          <Text style={styles.locationLabel}>Current</Text>
+        </View>
+
+        {/* Full width Divider */}
+        <View style={styles.headerDivider} />
+
+        {/* Row 2: Destination */}
+        <View style={styles.routeRowItem}>
+          <View style={styles.iconCol}>
+            <Svg width={16} height={24} viewBox="0 0 16 24">
+              <G translateY={-28}>
                 <Path
                   d="M8 50 C8 50 14 44 14 39 C14 35.6863 11.3137 33 8 33 C4.68629 33 2 35.6863 2 39 C2 44 8 50 8 50 Z"
                   fill="#FF3B30"
@@ -114,17 +112,7 @@ function DirectionsScreen() {
               </G>
             </Svg>
           </View>
-
-          {/* Text Column */}
-          <View style={styles.textCol}>
-            <View style={styles.locationItem}>
-              <Text style={styles.locationLabel}>Current</Text>
-            </View>
-            <View style={styles.headerDivider} />
-            <View style={styles.locationItem}>
-              <Text style={styles.locationTitle}>{destinationName}</Text>
-            </View>
-          </View>
+          <Text style={styles.locationTitle}>{destinationName}</Text>
         </View>
       </View>
     </View>
@@ -364,23 +352,15 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  routeRow: {
+  routeRowItem: {
     flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
   },
-  graphicsCol: {
+  iconCol: {
     width: 24,
     alignItems: 'center',
     marginRight: 12,
-    paddingTop: 4,
-  },
-  routeSvg: {},
-  textCol: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  locationItem: {
-    height: 24,
-    justifyContent: 'center',
   },
   locationLabel: {
     fontSize: 14,

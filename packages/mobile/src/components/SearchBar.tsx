@@ -48,17 +48,50 @@ function RowItem({
   onPressRow,
   onToggleStar,
 }: RowItemProps) {
+  // #region agent log
+  const handleRowPress = () => {
+    fetch('http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'SearchBar.tsx:RowItem',
+        message: 'Row pressed',
+        data: { title, hasOnPressRow: !!onPressRow },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        hypothesisId: 'A',
+      }),
+    }).catch(() => {});
+    onPressRow?.();
+  };
+  const handleStarPress = (e: any) => {
+    e.stopPropagation();
+    fetch('http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location: 'SearchBar.tsx:RowItem',
+        message: 'Star pressed',
+        data: { title },
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        hypothesisId: 'B',
+      }),
+    }).catch(() => {});
+    onToggleStar?.();
+  };
+  // #endregion
   return (
     <TouchableOpacity
       style={styles.row}
       activeOpacity={0.75}
-      onPress={onPressRow}
+      onPress={handleRowPress}
       accessibilityRole="button"
       accessibilityLabel={title}
     >
       <View style={styles.rowLeft}>
         <TouchableOpacity
-          onPress={onToggleStar}
+          onPress={handleStarPress}
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"

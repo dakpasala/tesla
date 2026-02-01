@@ -16,8 +16,6 @@ export async function routeParkingNotification({
     available,
     type
 }) {
-    const redis = await getRedisClient();
-
     const locationUsersKey = `location:${locationId}:users`;
     const locationReadyKey = `location:${locationId}:users:ready`;
 

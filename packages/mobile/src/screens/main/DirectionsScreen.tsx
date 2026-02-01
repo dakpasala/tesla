@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Linking,
   Platform,
   Alert,
@@ -115,71 +114,67 @@ export default function DirectionsScreen() {
         handleStyle={styles.handleStyle}
         alwaysOpen={350}
         modalHeight={500}
+        scrollViewProps={{
+          showsVerticalScrollIndicator: false,
+          contentContainerStyle: styles.sheetContent,
+        }}
       >
-        <ScrollView
-          style={styles.sheetContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Route Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.backLink}>{'< All Routes'}</Text>
-            </TouchableOpacity>
-            <View style={styles.etaInfo}>
-              <Text style={styles.etaTime}>50 Min</Text>
-              <Text style={styles.etaSubtext}>9:30AM ETA</Text>
-            </View>
+        {/* Route Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.backLink}>{'< All Routes'}</Text>
+          </TouchableOpacity>
+          <View style={styles.etaInfo}>
+            <Text style={styles.etaTime}>50 Min</Text>
+            <Text style={styles.etaSubtext}>9:30AM ETA</Text>
           </View>
+        </View>
 
-          {/* Shuttle Info */}
-          <View style={styles.shuttleInfo}>
-            <Text style={styles.shuttleName}>Tesla Shuttle A</Text>
-            <Text style={styles.shuttleStatus}>On Time · 10 min away</Text>
-          </View>
+        {/* Shuttle Info */}
+        <View style={styles.shuttleInfo}>
+          <Text style={styles.shuttleName}>Tesla Shuttle A</Text>
+          <Text style={styles.shuttleStatus}>On Time · 10 min away</Text>
+        </View>
 
-          {/* Arrival Card */}
-          <View style={styles.arrivalCard}>
-            <View style={styles.arrivalHeader}>
-              <Text style={styles.arrivalLabel}>Arriving In 6 Min</Text>
-              <Text style={styles.arrivalStop}>
-                Stevens Creek & Albany Bus Stop
-              </Text>
-              <Text style={styles.onTime}>On Time</Text>
-            </View>
-            <View style={styles.capacityRow}>
-              <Text style={styles.capacityText}>🚌 75% Full</Text>
-            </View>
-          </View>
-
-          {/* Report Link */}
-          <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
-            <Text style={styles.reportText}>
-              See something off?{' '}
-              <Text style={styles.reportLinkText}>Report it</Text>
+        {/* Arrival Card */}
+        <View style={styles.arrivalCard}>
+          <View style={styles.arrivalHeader}>
+            <Text style={styles.arrivalLabel}>Arriving In 6 Min</Text>
+            <Text style={styles.arrivalStop}>
+              Stevens Creek & Albany Bus Stop
             </Text>
+            <Text style={styles.onTime}>On Time</Text>
+          </View>
+          <View style={styles.capacityRow}>
+            <Text style={styles.capacityText}>🚌 75% Full</Text>
+          </View>
+        </View>
+
+        {/* Report Link */}
+        <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
+          <Text style={styles.reportText}>
+            See something off?{' '}
+            <Text style={styles.reportLinkText}>Report it</Text>
+          </Text>
+        </TouchableOpacity>
+
+        {/* Map Redirect Buttons */}
+        <View style={styles.mapButtons}>
+          <TouchableOpacity style={styles.mapButton} onPress={openInMaps}>
+            <Text style={styles.mapButtonText}>Open in Maps</Text>
           </TouchableOpacity>
 
-          {/* Map Redirect Buttons */}
-          <View style={styles.mapButtons}>
-            <TouchableOpacity style={styles.mapButton} onPress={openInMaps}>
-              <Text style={styles.mapButtonText}>Open in Maps</Text>
-            </TouchableOpacity>
+          <TouchableOpacity style={styles.mapButton} onPress={openInGoogleMaps}>
+            <Text style={styles.mapButtonText}>Open in Google Maps</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.mapButton}
-              onPress={openInGoogleMaps}
-            >
-              <Text style={styles.mapButtonText}>Open in Google Maps</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => navigation.navigate('MainHome')}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => navigation.navigate('MainHome')}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </Modalize>
     </View>
   );
@@ -240,7 +235,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sheetContent: {
-    flex: 1,
     padding: 20,
   },
   header: {

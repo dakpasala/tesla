@@ -5,7 +5,6 @@ import {
   StatusBar,
   TouchableOpacity,
   Text,
-  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -81,22 +80,21 @@ function MainHomeScreen() {
         handleStyle={styles.handleStyle}
         alwaysOpen={450}
         modalHeight={650}
+        scrollViewProps={{
+          keyboardShouldPersistTaps: 'handled',
+          showsVerticalScrollIndicator: false,
+          contentContainerStyle: styles.sheetContent,
+        }}
       >
-        <ScrollView
-          style={styles.sheetContent}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
-          <View style={styles.searchContainer}>
-            <SearchBar
-              expanded={searchExpanded}
-              onExpand={handleExpand}
-              onCollapse={handleCollapse}
-              onSelectDestination={handleSelectDestination}
-            />
-          </View>
-        </ScrollView>
+        {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
+        <View style={styles.searchContainer}>
+          <SearchBar
+            expanded={searchExpanded}
+            onExpand={handleExpand}
+            onCollapse={handleCollapse}
+            onSelectDestination={handleSelectDestination}
+          />
+        </View>
       </Modalize>
     </View>
   );
@@ -148,8 +146,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   sheetContent: {
-    flex: 1,
     paddingTop: 10,
+    paddingBottom: 20,
   },
   searchContainer: {
     paddingHorizontal: 16,

@@ -10,6 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { Modalize } from 'react-native-modalize';
 
 // Import existing components
@@ -51,9 +52,18 @@ function MainHomeScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Map Background (placeholder for now) */}
+      {/* Map Background */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder} />
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: 37.3935, // Tesla HQ area
+            longitude: -122.15,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+        />
 
         {/* Settings button overlay on map */}
         <TouchableOpacity
@@ -103,9 +113,8 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#e8e8e8',
+  map: {
+    ...StyleSheet.absoluteFillObject,
   },
   settingsButton: {
     position: 'absolute',

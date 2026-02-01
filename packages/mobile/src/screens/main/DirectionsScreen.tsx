@@ -13,6 +13,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Modalize } from 'react-native-modalize';
 
 // Import existing components
@@ -67,11 +68,23 @@ export default function DirectionsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Map Background (placeholder) */}
+      {/* Map Background */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>
-          {/* Route map will go here */}
-        </View>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: destinationLat,
+            longitude: destinationLng,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+        >
+          <Marker
+            coordinate={{ latitude: destinationLat, longitude: destinationLng }}
+            title={destinationName}
+          />
+        </MapView>
       </View>
 
       {/* NavBox overlay at top */}
@@ -180,9 +193,8 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
   },
-  mapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#e8e8e8',
+  map: {
+    ...StyleSheet.absoluteFillObject,
   },
   navBoxOverlay: {
     position: 'absolute',

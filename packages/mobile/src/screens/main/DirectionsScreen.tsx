@@ -18,6 +18,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRideContext, TravelMode } from '../../context/RideContext';
+import OptionsCard, { OptionItem } from '../../components/OptionsCard';
 import Svg, {
   Circle,
   Path,
@@ -146,34 +147,26 @@ function DirectionsScreen() {
 
       <Text style={styles.sectionHeader}>ALSO CONSIDER</Text>
 
-      {/* Shuttle Alternative */}
-      <View style={styles.altOptionCard}>
-        <View style={styles.altHeader}>
-          <Image
-            source={require('../../assets/icons/new/newShuttle.png')}
-            style={styles.altIcon}
-            resizeMode="contain"
-          />
-          <View>
-            <Text style={styles.altTitle}>Shuttle A</Text>
-            <Text style={styles.altSub}>On Time</Text>
-          </View>
-          <Text style={styles.altRightTime}>Arrives in 5 min</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.altHeader}>
-          <Image
-            source={require('../../assets/icons/new/newShuttle.png')}
-            style={styles.altIcon}
-            resizeMode="contain"
-          />
-          <View>
-            <Text style={styles.altTitle}>Shuttle B</Text>
-            <Text style={styles.altSub}>On Time</Text>
-          </View>
-          <Text style={styles.altRightTime}>Arrives in 15 min</Text>
-        </View>
-      </View>
+      <OptionsCard
+        items={[
+          {
+            id: 'shuttle-a',
+            title: 'Shuttle A',
+            subtitle: 'On Time',
+            rightText: 'Arrives in 5 min',
+            icon: require('../../assets/icons/new/newShuttle.png'),
+          },
+          {
+            id: 'shuttle-b',
+            title: 'Shuttle B',
+            subtitle: 'On Time',
+            rightText: 'Arrives in 10 min',
+            icon: require('../../assets/icons/new/newShuttle.png'),
+          },
+        ]}
+        style={{ borderWidth: 0, padding: 0 }}
+        itemStyle={{ backgroundColor: '#fff', marginBottom: 12 }}
+      />
 
       <View style={styles.actionRow}>
         <TouchableOpacity style={styles.startButton} onPress={openInGoogleMaps}>
@@ -719,36 +712,5 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 12,
     textTransform: 'uppercase',
-  },
-  altOptionCard: {
-    backgroundColor: '#F2F2F7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  altHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  altIcon: {
-    width: 24,
-    height: 24,
-    marginRight: 12,
-    tintColor: '#000',
-  },
-  altTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#000',
-  },
-  altSub: {
-    fontSize: 13,
-    color: '#34C759',
-    fontWeight: '500',
-  },
-  altRightTime: {
-    marginLeft: 'auto',
-    fontSize: 13,
-    color: '#8E8E93',
   },
 });

@@ -15,6 +15,7 @@ export type OptionItem = {
 
   title: string;
   subtitle: string;
+  rightText?: string;
 
   showIncentive?: boolean;
   incentiveText?: string; // "$$"
@@ -73,6 +74,10 @@ export default function OptionsCard({
               </View>
             </View>
 
+            {item.rightText ? (
+              <Text style={styles.rightText}>{item.rightText}</Text>
+            ) : null}
+
             {item.showIncentive && item.incentiveText ? (
               <View style={styles.incentivePill}>
                 <Text style={styles.incentiveText}>{item.incentiveText}</Text>
@@ -129,8 +134,8 @@ const styles = StyleSheet.create({
   },
 
   icon: {
-    width: 24,
-    height: 24,
+    width: 48,
+    height: 48,
     resizeMode: 'contain',
   },
 
@@ -174,5 +179,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#FFF',
+  },
+
+  rightText: {
+    marginLeft: 'auto',
+    fontSize: 13,
+    color: '#8E8E93',
   },
 });

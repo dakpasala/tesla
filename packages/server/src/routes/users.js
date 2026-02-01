@@ -12,7 +12,14 @@ import {
   removeUserFavoriteRow,
   getLocationIdByName
 } from '../services/db/mssqlPool.js';
-import { getRedisClient } from '../services/redis/redisClient.js'; 
+import { 
+  addUserToLocation,
+  removeUserFromLocation,
+  subscribeUserToShuttle,
+  unsubscribeUserFromShuttle,
+  suppressUserNotifications,
+  unsuppressUserNotifications,
+} from '../services/redis/cache.js';
 
 const router = express.Router();
 
@@ -244,9 +251,7 @@ router.post('/:id/favorites', async (req, res) => {
     }
 
     await addUserFavoriteRow(userId, locationId, name, address);
-
-    const redis = await getRedisClient();
-    await redis.sAdd(`location:${locationId}:users`, String(userId));
+    await addUserToLocation(locationId, userId);
 
     res.status(201).json({
       success: true,
@@ -277,9 +282,7 @@ router.delete('/:id/favorites/:name', async (req, res) => {
     }
 
     await removeUserFavoriteRow(userId, locationId);
-
-    const redis = await getRedisClient();
-    await redis.sRem(`location:${locationId}:users`, String(userId));
+    await removeUserFromLocation(locationId, userId);
 
     res.json({
       success: true,
@@ -307,16 +310,10 @@ router.post("/:id/location-state", async (req, res) => {
   }
 
   try {
-    const redis = await getRedisClient();
-
-    if (state === "AT_LOCATION") {
-      await redis.set(
-        `user:${userId}:suppress_notifications`,
-        "true"
-      );
-    }
-    else if (state === "LEFT_LOCATION") {
-      await redis.del(`user:${userId}:suppress_notifications`);
+    if (state === 'AT_LOCATION') {
+      await suppressUserNotifications(userId);
+    } else if (state === 'LEFT_LOCATION') {
+      await unsuppressUserNotifications(userId);
     }
     else { return res.status(404).json({ error: 'Please provide a correct state'} )}
 
@@ -347,12 +344,7 @@ router.post('/:id/shuttle', async (req, res) => {
   }
 
   try {
-    const redis = await getRedisClient();
-
-    await redis.sAdd(
-      `shuttle:${shuttleId}:users`,
-      String(userId)
-    );
+    await subscribeUserToShuttle(userId, shuttleId);
 
     res.status(201).json({
       success: true,
@@ -377,12 +369,7 @@ router.delete('/:id/shuttle/:shuttleId', async (req, res) => {
   }
 
   try {
-    const redis = await getRedisClient();
-
-    await redis.sRem(
-      `shuttle:${shuttleId}:users`,
-      String(userId)
-    );
+    await unsubscribeUserFromShuttle(userId, shuttleId);
 
     res.json({
       success: true,

@@ -25,3 +25,33 @@ export async function setCache(key, value, ttlSeconds = null) {
     await redis.set(key, storedValue);
   }
 }
+
+export async function addUserToLocation(locationId, userId) {
+  const redis = await getRedisClient();
+  await redis.sAdd(`location:${locationId}:users`, String(userId));
+}
+
+export async function removeUserFromLocation(locationId, userId) {
+  const redis = await getRedisClient();
+  await redis.sRem(`location:${locationId}:users`, String(userId));
+}
+
+export async function subscribeUserToShuttle(userId, shuttleId) {
+  const redis = await getRedisClient();
+  await redis.sAdd(`shuttle:${shuttleId}:users`, String(userId));
+}
+
+export async function unsubscribeUserFromShuttle(userId, shuttleId) {
+  const redis = await getRedisClient();
+  await redis.sRem(`shuttle:${shuttleId}:users`, String(userId));
+}
+
+export async function suppressUserNotifications(userId) {
+  const redis = await getRedisClient();
+  await redis.set(`user:${userId}:suppress_notifications`, 'true');
+}
+
+export async function unsuppressUserNotifications(userId) {
+  const redis = await getRedisClient();
+  await redis.del(`user:${userId}:suppress_notifications`);
+}

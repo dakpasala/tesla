@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   SafeAreaView,
   TouchableOpacity,
   FlatList,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+
+// Import existing component
+import { FavoriteIcon } from '../../components/FavoriteIcon';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -17,47 +21,70 @@ interface FavoriteLocation {
   id: string;
   name: string;
   address: string;
-  icon: string;
+  miles: string;
+  starred: boolean;
 }
 
-const MOCK_FAVORITES: FavoriteLocation[] = [
+const INITIAL_FAVORITES: FavoriteLocation[] = [
   {
     id: '1',
-    name: 'Home',
-    address: '123 Main St, San Francisco, CA',
-    icon: '🏠',
+    name: 'Tesla Deer Creek',
+    address: '1501 Page Mill Rd, Palo Alto',
+    miles: '2.5 miles',
+    starred: true,
   },
-  { id: '2', name: 'Work', address: 'Tesla HQ, Palo Alto, CA', icon: '🏢' },
+  {
+    id: '2',
+    name: 'Tesla Page Mill',
+    address: '1501 Page Mill Rd, Palo Alto',
+    miles: '2.5 miles',
+    starred: true,
+  },
   {
     id: '3',
-    name: 'Gym',
-    address: '456 Fitness Ave, Mountain View, CA',
-    icon: '💪',
-  },
-  {
-    id: '4',
-    name: "Mom's House",
-    address: '789 Family Ln, San Jose, CA',
-    icon: '❤️',
+    name: 'Tesla Page Mill',
+    address: '1501 Page Mill Rd, Palo Alto',
+    miles: '2.5 miles',
+    starred: true,
   },
 ];
 
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const [favorites, setFavorites] = useState(INITIAL_FAVORITES);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, starred: !item.starred } : item
+      )
+    );
+  };
 
   const renderFavorite = ({ item }: { item: FavoriteLocation }) => (
     <TouchableOpacity
       style={styles.favoriteCard}
       onPress={() => navigation.navigate('Routes')}
     >
-      <View style={styles.favoriteIcon}>
-        <Text style={styles.favoriteIconText}>{item.icon}</Text>
-      </View>
+      <TouchableOpacity
+        style={styles.starButton}
+        onPress={() => toggleFavorite(item.id)}
+      >
+        {item.starred ? (
+          <FavoriteIcon />
+        ) : (
+          <Image
+            source={require('../../assets/images/fav_icon_deactivate.png')}
+            style={styles.starIcon}
+            resizeMode="contain"
+          />
+        )}
+      </TouchableOpacity>
       <View style={styles.favoriteInfo}>
         <Text style={styles.favoriteName}>{item.name}</Text>
         <Text style={styles.favoriteAddress}>{item.address}</Text>
       </View>
-      <Text style={styles.favoriteArrow}>→</Text>
+      <Text style={styles.favoriteMiles}>{item.miles}</Text>
     </TouchableOpacity>
   );
 
@@ -74,15 +101,48 @@ export default function FavoritesScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Quick Access */}
+      <View style={styles.quickAccess}>
+        <TouchableOpacity style={styles.quickItem}>
+          <View style={styles.quickCircle}>
+            <Image
+              source={require('../../assets/images/search_house.png')}
+              style={styles.quickIcon}
+              resizeMode="contain"
+            />
+          </View>
+          <View>
+            <Text style={styles.quickTitle}>Home</Text>
+            <Text style={styles.quickSubtitle}>Set location</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.quickItem}>
+          <View style={styles.quickCircle}>
+            <Image
+              source={require('../../assets/images/search_job.png')}
+              style={styles.quickIcon}
+              resizeMode="contain"
+            />
+          </View>
+          <View>
+            <Text style={styles.quickTitle}>Work</Text>
+            <Text style={styles.quickSubtitle}>Set location</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Section Title */}
+      <Text style={styles.sectionTitle}>My Favorites</Text>
+
       {/* Favorites List */}
       <FlatList
-        data={MOCK_FAVORITES}
+        data={favorites}
         renderItem={renderFavorite}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>⭐</Text>
             <Text style={styles.emptyText}>No favorites yet</Text>
             <Text style={styles.emptySubtext}>
               Save your frequent destinations for quick access
@@ -97,7 +157,7 @@ export default function FavoritesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FCFCFC',
   },
   header: {
     flexDirection: 'row',
@@ -106,7 +166,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E3E3E3',
   },
   backButton: {
     fontSize: 24,
@@ -121,53 +181,86 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: '#4285F4',
   },
+  quickAccess: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 16,
+  },
+  quickItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  quickCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F1F1F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickIcon: {
+    width: 20,
+    height: 17,
+  },
+  quickTitle: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000',
+  },
+  quickSubtitle: {
+    fontSize: 8,
+    color: '#878585',
+    marginTop: 1,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000',
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
   },
   favoriteCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
-  favoriteIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  starButton: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
   },
-  favoriteIconText: {
-    fontSize: 24,
+  starIcon: {
+    width: 18,
+    height: 18,
   },
   favoriteInfo: {
     flex: 1,
   },
   favoriteName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#1C1C1C',
   },
   favoriteAddress: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
+    fontSize: 8,
+    color: '#878585',
+    marginTop: 1,
   },
-  favoriteArrow: {
-    fontSize: 20,
-    color: '#999',
+  favoriteMiles: {
+    fontSize: 12,
+    color: '#878585',
   },
   emptyState: {
     alignItems: 'center',
     paddingTop: 60,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
   },
   emptyText: {
     fontSize: 18,

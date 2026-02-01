@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,247 +10,198 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import { Modalize } from 'react-native-modalize';
+
+// Import existing components
+import NavBox from '../../components/NavBox';
+import NavBar, { NavScreen } from '../../components/NavBar';
+import RouteCards, { RouteCardItem } from '../../components/RouteCards';
+import TimeSelector from '../../components/SubViews/TimeSelector';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-type TransportMode = 'car' | 'transit' | 'bike' | 'walk';
-
-interface RouteOption {
-  id: string;
-  mode: TransportMode;
-  duration: string;
-  distance: string;
-  details: string;
-}
-
-const MOCK_ROUTES: RouteOption[] = [
+// Mock route data using RouteCardItem type
+const QUICK_START_ROUTES: RouteCardItem[] = [
   {
     id: '1',
-    mode: 'car',
-    duration: '25 min',
-    distance: '12.5 mi',
-    details: 'Via US-101 N',
-  },
-  {
-    id: '2',
-    mode: 'transit',
-    duration: '45 min',
-    distance: '14.2 mi',
-    details: 'Bus 22 → Caltrain',
-  },
-  {
-    id: '3',
-    mode: 'bike',
-    duration: '55 min',
-    distance: '11.8 mi',
-    details: 'Via bike path',
+    icon: require('../../assets/icons/new/newShuttle.png'),
+    duration: '50m',
+    etaText: '9:30AM ETA',
+    subtitle: 'Stevens Creek/Albany · Leaves At 8:45AM',
   },
 ];
 
-const MODE_ICONS: Record<TransportMode, string> = {
-  car: '🚗',
-  transit: '🚌',
-  bike: '🚲',
-  walk: '🚶',
-};
+const OTHER_ROUTES: RouteCardItem[] = [
+  {
+    id: '2',
+    icon: require('../../assets/icons/new/newCar.png'),
+    duration: '35m',
+    etaText: '8:15AM ETA',
+    showParkingWarning: true,
+    parkingWarningText: 'Parking 90% full on arrival',
+  },
+  {
+    id: '3',
+    icon: require('../../assets/icons/new/newBus.png'),
+    duration: '1h 10m',
+    etaText: '10:20AM ETA',
+    subtitle: 'Stevens Creek/Albany · Leaves In 30 Min',
+  },
+];
 
 export default function RoutesScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [selectedMode, setSelectedMode] = useState<TransportMode | 'all'>(
-    'all'
-  );
+  const modalRef = useRef<Modalize>(null);
 
-  const filteredRoutes =
-    selectedMode === 'all'
-      ? MOCK_ROUTES
-      : MOCK_ROUTES.filter(r => r.mode === selectedMode);
+  // Transport mode state
+  const [transportMode, setTransportMode] = useState<NavScreen>('car');
+
+  // Location state
+  const [currentLocation, setCurrentLocation] = useState('Current');
+  const [destination, setDestination] = useState('Tesla Deer Creek');
+
+  const handleRoutePress = (item: RouteCardItem) => {
+    navigation.navigate('Directions', { routeId: item.id });
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
+    <View style={styles.container}>
+      {/* Map Background (placeholder) */}
+      <View style={styles.mapContainer}>
+        <View style={styles.mapPlaceholder}>
+          {/* Route map will go here */}
+        </View>
+
+        {/* Back button overlay */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Routes</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
-      {/* Origin/Destination */}
-      <View style={styles.locationCard}>
-        <View style={styles.locationRow}>
-          <View style={styles.originDot} />
-          <Text style={styles.locationText}>Current Location</Text>
-        </View>
-        <View style={styles.locationDivider} />
-        <View style={styles.locationRow}>
-          <View style={styles.destDot} />
-          <Text style={styles.locationText}>Tesla HQ, Palo Alto</Text>
-        </View>
+      {/* NavBox for origin/destination */}
+      <View style={styles.navBoxContainer}>
+        <NavBox
+          currentLocation={currentLocation}
+          destination={destination}
+          currentLocationIcon={require('../../assets/icons/current.png')}
+          destinationIcon={require('../../assets/icons/destination.png')}
+          onCurrentLocationChange={setCurrentLocation}
+          onDestinationChange={setDestination}
+        />
       </View>
 
-      {/* Mode Filter */}
-      <View style={styles.modeFilter}>
-        {(['all', 'car', 'transit', 'bike', 'walk'] as const).map(mode => (
-          <TouchableOpacity
-            key={mode}
-            style={[
-              styles.modeButton,
-              selectedMode === mode && styles.modeButtonActive,
-            ]}
-            onPress={() => setSelectedMode(mode)}
-          >
-            <Text style={styles.modeButtonText}>
-              {mode === 'all' ? 'All' : MODE_ICONS[mode]}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Bottom Sheet */}
+      <Modalize
+        ref={modalRef}
+        modalStyle={styles.modalStyle}
+        handleStyle={styles.handleStyle}
+        alwaysOpen={450}
+        modalHeight={650}
+        panGestureEnabled={true}
+        withHandle={true}
+      >
+        <ScrollView
+          style={styles.sheetContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Transport Mode Tabs */}
+          <NavBar
+            currentScreen={transportMode}
+            onScreenChange={setTransportMode}
+          />
 
-      {/* Route List */}
-      <ScrollView style={styles.routeList}>
-        {filteredRoutes.map(route => (
-          <TouchableOpacity
-            key={route.id}
-            style={styles.routeCard}
-            onPress={() =>
-              navigation.navigate('Directions', { routeId: route.id })
-            }
-          >
-            <View style={styles.routeIcon}>
-              <Text style={styles.routeIconText}>{MODE_ICONS[route.mode]}</Text>
-            </View>
-            <View style={styles.routeInfo}>
-              <Text style={styles.routeDuration}>{route.duration}</Text>
-              <Text style={styles.routeDetails}>
-                {route.distance} • {route.details}
-              </Text>
-            </View>
-            <Text style={styles.routeArrow}>→</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+          {/* Time Selector */}
+          <View style={styles.timeSelectorContainer}>
+            <TimeSelector />
+          </View>
+
+          {/* Quick Start Routes */}
+          <View style={styles.routesSection}>
+            <RouteCards
+              title="QUICK START"
+              items={QUICK_START_ROUTES}
+              onPressItem={handleRoutePress}
+            />
+          </View>
+
+          {/* Other Routes */}
+          <View style={styles.routesSection}>
+            <RouteCards
+              title="OTHER MODES"
+              items={OTHER_ROUTES}
+              onPressItem={handleRoutePress}
+            />
+          </View>
+        </ScrollView>
+      </Modalize>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  mapPlaceholder: {
+    flex: 1,
+    backgroundColor: '#e8e8e8',
   },
   backButton: {
-    fontSize: 24,
-    color: '#111',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111',
-  },
-  headerSpacer: {
-    width: 24,
-  },
-  locationCard: {
-    margin: 16,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  originDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4285F4',
-    marginRight: 12,
-  },
-  destDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#EA4335',
-    marginRight: 12,
-  },
-  locationText: {
-    fontSize: 16,
-    color: '#111',
-  },
-  locationDivider: {
-    height: 1,
-    backgroundColor: '#ddd',
-    marginLeft: 22,
-  },
-  modeFilter: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    gap: 8,
-  },
-  modeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-  },
-  modeButtonActive: {
-    backgroundColor: '#111',
-  },
-  modeButtonText: {
-    fontSize: 16,
-  },
-  routeList: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  routeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  routeIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    position: 'absolute',
+    top: 50,
+    left: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  routeIconText: {
+  backButtonText: {
     fontSize: 24,
-  },
-  routeInfo: {
-    flex: 1,
-  },
-  routeDuration: {
-    fontSize: 18,
-    fontWeight: '600',
     color: '#111',
   },
-  routeDetails: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
+  navBoxContainer: {
+    position: 'absolute',
+    top: 50,
+    left: 0,
+    right: 0,
+    zIndex: 10,
   },
-  routeArrow: {
-    fontSize: 20,
-    color: '#999',
+  modalStyle: {
+    backgroundColor: '#FCFCFC',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  handleStyle: {
+    backgroundColor: '#DEDEDE',
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 10,
+  },
+  sheetContent: {
+    flex: 1,
+    paddingTop: 5,
+  },
+  timeSelectorContainer: {
+    paddingHorizontal: 16,
+  },
+  routesSection: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
 });

@@ -6,7 +6,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -92,7 +91,7 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Admin Access (if applicable) */}
+        {/* Admin Access */}
         <TouchableOpacity
           style={styles.adminButton}
           onPress={() => navigation.navigate('Admin')}
@@ -112,7 +111,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#FCFCFC',
   },
   header: {
     flexDirection: 'row',
@@ -121,7 +120,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E3E3E3',
   },
   backButton: {
     fontSize: 24,
@@ -139,7 +138,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E3E3E3',
   },
   avatar: {
     width: 80,
@@ -171,7 +170,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#E3E3E3',
   },
   editButtonText: {
     fontSize: 14,
@@ -182,7 +181,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingVertical: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E3E3E3',
   },
   statItem: {
     alignItems: 'center',
@@ -199,7 +198,7 @@ const styles = StyleSheet.create({
   },
   statDivider: {
     width: 1,
-    backgroundColor: '#eee',
+    backgroundColor: '#E3E3E3',
   },
   menuSection: {
     paddingTop: 8,
@@ -210,7 +209,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#F0F0F0',
   },
   menuIcon: {
     fontSize: 20,
@@ -228,7 +227,7 @@ const styles = StyleSheet.create({
   adminButton: {
     margin: 20,
     padding: 16,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F0F0F0',
     borderRadius: 12,
     alignItems: 'center',
   },

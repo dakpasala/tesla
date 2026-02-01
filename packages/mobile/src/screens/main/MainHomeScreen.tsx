@@ -14,6 +14,7 @@ import { Modalize } from 'react-native-modalize';
 
 // Import existing components
 import SearchBar from '../../components/SearchBar';
+import { useRideContext } from '../../context/RideContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -22,17 +23,22 @@ function MainHomeScreen() {
   const modalRef = useRef<Modalize>(null);
 
   // Search expanded state only - SearchBar manages its own search text
-  const [searchExpanded, setSearchExpanded] = useState(true);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const { setDestination } = useRideContext();
 
   // Stable callbacks
   const handleSelectDestination = useCallback(
-    (destination: { id: string; title: string; subtitle: string }) => {
-      navigation.navigate('Routes', {
-        destinationId: destination.id,
-        destinationName: destination.title,
-      });
+    (dest: {
+      id: string;
+      title: string;
+      subtitle: string;
+      coordinate?: { latitude: number; longitude: number };
+    }) => {
+      setDestination(dest);
+      // For now we pass a dummy 'route-1' or similar, but the context holds the real data
+      navigation.navigate('Directions', { routeId: 'route-1' });
     },
-    [navigation]
+    [navigation, setDestination]
   );
 
   const handleExpand = useCallback(() => {

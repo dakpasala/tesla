@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Linking,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +15,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Modalize } from 'react-native-modalize';
+import { useRideContext, TravelMode } from '../../context/RideContext';
 
 // Import existing components
 import NavBox from '../../components/NavBox';
@@ -25,11 +27,12 @@ export default function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<DirectionsRouteProp>();
   const modalRef = useRef<Modalize>(null);
+  const { destination, travelMode, setTravelMode } = useRideContext();
 
-  // Mock destination coordinates (would come from route data)
-  const destinationLat = 37.4419;
-  const destinationLng = -122.143;
-  const destinationName = 'Tesla Deer Creek';
+  // Fallback if no destination in context (shouldn't happen in flow)
+  const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
+  const destinationLng = destination?.coordinate?.longitude ?? -122.143;
+  const destinationName = destination?.title ?? 'Tesla Deer Creek';
 
   const openInMaps = () => {
     const url = Platform.select({
@@ -65,6 +68,42 @@ export default function DirectionsScreen() {
     ]);
   };
 
+  const renderTabs = () => (
+    <View style={styles.tabContainer}>
+      {(['car', 'shuttle', 'transit', 'bike'] as TravelMode[]).map(mode => (
+        <TouchableOpacity
+          key={mode}
+          style={[styles.tab, travelMode === mode && styles.activeTab]}
+          onPress={() => setTravelMode(mode)}
+        >
+          {/* Icons would go here, using text for now or simple placeholders */}
+          <Text
+            style={[
+              styles.tabText,
+              travelMode === mode && styles.activeTabText,
+            ]}
+          >
+            {mode === 'car' && '🚗'}
+            {mode === 'shuttle' && '🚌'}
+            {mode === 'transit' && '🚆'}
+            {mode === 'bike' && '🚲'}
+          </Text>
+          <Text
+            style={[
+              styles.tabLabel,
+              travelMode === mode && styles.activeTabText,
+            ]}
+          >
+            {mode === 'car' && '30m'}
+            {mode === 'shuttle' && '50m'}
+            {mode === 'transit' && '1h 5m'}
+            {mode === 'bike' && '35m'}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {/* Map Background */}
@@ -72,7 +111,7 @@ export default function DirectionsScreen() {
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          initialRegion={{
+          region={{
             latitude: destinationLat,
             longitude: destinationLng,
             latitudeDelta: 0.05,
@@ -107,7 +146,7 @@ export default function DirectionsScreen() {
         </View>
       </View>
 
-      {/* Bottom Sheet - En Route Info */}
+      {/* Bottom Sheet - Route Planning */}
       <Modalize
         ref={modalRef}
         modalStyle={styles.modalStyle}
@@ -119,62 +158,52 @@ export default function DirectionsScreen() {
           contentContainerStyle: styles.sheetContent,
         }}
       >
-        {/* Route Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backLink}>{'< All Routes'}</Text>
+        {renderTabs()}
+
+        {/* Time Selector */}
+        <View style={styles.timeSelector}>
+          <Text style={styles.timeLabel}>Time Selector</Text>
+          <TouchableOpacity style={styles.timeButton}>
+            <Text style={styles.timeButtonText}>Now: 12:20 PM ▼</Text>
           </TouchableOpacity>
-          <View style={styles.etaInfo}>
-            <Text style={styles.etaTime}>50 Min</Text>
-            <Text style={styles.etaSubtext}>9:30AM ETA</Text>
+        </View>
+
+        {/* Quick Start Card */}
+        <View style={styles.quickStartCard}>
+          <View style={styles.quickHeader}>
+            <Text style={styles.quickTitle}>✦ QUICK START</Text>
+          </View>
+          <View style={styles.quickBody}>
+            <View>
+              <Text style={styles.quickTime}>
+                {travelMode === 'shuttle' ? '50m' : '30m'}{' '}
+                <Text style={styles.quickEta}>9:30AM ETA</Text>
+              </Text>
+              <Text style={styles.quickDetails}>
+                Stevens Creek/Albany · Leaves At 8:45AM
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.goButton}
+              onPress={openInGoogleMaps}
+            >
+              <Text style={styles.goButtonText}>→</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Shuttle Info */}
-        <View style={styles.shuttleInfo}>
-          <Text style={styles.shuttleName}>Tesla Shuttle A</Text>
-          <Text style={styles.shuttleStatus}>On Time · 10 min away</Text>
+        {/* Other Modes / Report Link */}
+        <View style={styles.footerLinks}>
+          <Text style={styles.footerTitle}>✦ OTHER MODES</Text>
+          {/* Can add more details here later */}
         </View>
 
-        {/* Arrival Card */}
-        <View style={styles.arrivalCard}>
-          <View style={styles.arrivalHeader}>
-            <Text style={styles.arrivalLabel}>Arriving In 6 Min</Text>
-            <Text style={styles.arrivalStop}>
-              Stevens Creek & Albany Bus Stop
-            </Text>
-            <Text style={styles.onTime}>On Time</Text>
-          </View>
-          <View style={styles.capacityRow}>
-            <Text style={styles.capacityText}>🚌 75% Full</Text>
-          </View>
-        </View>
-
-        {/* Report Link */}
         <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
           <Text style={styles.reportText}>
             See something off?{' '}
             <Text style={styles.reportLinkText}>Report it</Text>
           </Text>
         </TouchableOpacity>
-
-        {/* Map Redirect Buttons */}
-        <View style={styles.mapButtons}>
-          <TouchableOpacity style={styles.mapButton} onPress={openInMaps}>
-            <Text style={styles.mapButtonText}>Open in Maps</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.mapButton} onPress={openInGoogleMaps}>
-            <Text style={styles.mapButtonText}>Open in Google Maps</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => navigation.navigate('MainHome')}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
       </Modalize>
     </View>
   );
@@ -237,80 +266,120 @@ const styles = StyleSheet.create({
   sheetContent: {
     padding: 20,
   },
-  header: {
+  tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  backLink: {
-    fontSize: 14,
-    color: '#666',
-  },
-  etaInfo: {
-    alignItems: 'flex-end',
-  },
-  etaTime: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#111',
-  },
-  etaSubtext: {
-    fontSize: 14,
-    color: '#4285F4',
-  },
-  shuttleInfo: {
     marginBottom: 20,
   },
-  shuttleName: {
-    fontSize: 18,
-    fontWeight: '600',
+  tab: {
+    alignItems: 'center',
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: '#E8F0FE',
+  },
+  tabText: {
+    fontSize: 20,
+    marginBottom: 4,
+    color: '#888',
+  },
+  tabLabel: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: '#1a73e8',
+    fontWeight: '700',
+  },
+  timeSelector: {
+    marginBottom: 20,
+  },
+  timeLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 8,
     color: '#111',
   },
-  shuttleStatus: {
-    fontSize: 14,
-    color: '#4285F4',
-    marginTop: 2,
+  timeButton: {
+    backgroundColor: '#F1F1F1',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
-  arrivalCard: {
+  timeButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+  },
+  quickStartCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    marginBottom: 20,
+    overflow: 'hidden',
   },
-  arrivalHeader: {
-    marginBottom: 8,
+  quickHeader: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
   },
-  arrivalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+  quickTitle: {
+    fontSize: 12,
+    fontWeight: '800',
     color: '#111',
+    letterSpacing: 0.5,
   },
-  arrivalStop: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  onTime: {
-    fontSize: 13,
-    color: '#4285F4',
-    marginTop: 2,
-  },
-  capacityRow: {
+  quickBody: {
+    padding: 16,
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-  capacityText: {
-    fontSize: 13,
-    color: '#666',
+  quickTime: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#000',
+  },
+  quickEta: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#555',
+  },
+  quickDetails: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 4,
+  },
+  goButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  footerLinks: {
+    marginBottom: 20,
+  },
+  footerTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#111',
+    marginBottom: 10,
   },
   reportLink: {
-    marginBottom: 20,
+    marginBottom: 40,
+    alignSelf: 'center',
   },
   reportText: {
     fontSize: 14,
@@ -319,29 +388,5 @@ const styles = StyleSheet.create({
   reportLinkText: {
     color: '#4285F4',
     textDecorationLine: 'underline',
-  },
-  mapButtons: {
-    gap: 12,
-  },
-  mapButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E3E3E3',
-  },
-  mapButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#4285F4',
-  },
-  cancelButton: {
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#EA4335',
   },
 });

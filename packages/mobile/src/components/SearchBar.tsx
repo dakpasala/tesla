@@ -18,6 +18,10 @@ type RowData = {
   subtitle: string;
   miles: string;
   isFavorite: boolean;
+  coordinate?: {
+    latitude: number;
+    longitude: number;
+  };
 };
 
 type RowItemProps = {
@@ -108,6 +112,7 @@ const INITIAL_LOCATIONS: RowData[] = [
     subtitle: '3500 Deer Creek Rd, Palo Alto',
     miles: '2.5 miles',
     isFavorite: true,
+    coordinate: { latitude: 37.3935, longitude: -122.15 },
   },
   {
     id: 'loc-2',
@@ -115,6 +120,7 @@ const INITIAL_LOCATIONS: RowData[] = [
     subtitle: '1501 Page Mill Rd, Palo Alto',
     miles: '2.8 miles',
     isFavorite: true,
+    coordinate: { latitude: 37.4124, longitude: -122.1468 },
   },
   {
     id: 'loc-3',
@@ -122,6 +128,7 @@ const INITIAL_LOCATIONS: RowData[] = [
     subtitle: '45500 Fremont Blvd, Fremont',
     miles: '12.3 miles',
     isFavorite: true,
+    coordinate: { latitude: 37.4925, longitude: -121.9446 },
   },
   {
     id: 'loc-4',
@@ -129,6 +136,7 @@ const INITIAL_LOCATIONS: RowData[] = [
     subtitle: '3500 Deer Creek Rd, Palo Alto',
     miles: '2.5 miles',
     isFavorite: false,
+    coordinate: { latitude: 37.3935, longitude: -122.15 },
   },
   {
     id: 'loc-5',
@@ -136,6 +144,7 @@ const INITIAL_LOCATIONS: RowData[] = [
     subtitle: '1100 W Maude Ave, Sunnyvale',
     miles: '5.2 miles',
     isFavorite: false,
+    coordinate: { latitude: 37.3879, longitude: -122.0305 },
   },
 ];
 
@@ -147,6 +156,7 @@ type Props = {
     id: string;
     title: string;
     subtitle: string;
+    coordinate?: { latitude: number; longitude: number };
   }) => void;
 };
 
@@ -189,6 +199,7 @@ function SearchBar({
           id: item.id,
           title: item.title,
           subtitle: item.subtitle,
+          coordinate: item.coordinate,
         });
       }
     },

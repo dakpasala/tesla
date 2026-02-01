@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Modalize } from 'react-native-modalize';
 import Geolocation from 'react-native-geolocation-service';
-// import { getRoutesToTeslaHQ } from "../services/routes";
+import { getRoutesToTeslaHQ } from '../services/routes';
 
 import BikeScreen from '../screens/Bike';
 import BusScreen from '../screens/Bus';
@@ -69,26 +69,26 @@ export default function HomeScreen() {
     const origin = location;
     let cancelled = false;
 
-    // async function loadRoutes() {
-    //   try {
-    //     setLoadingRoutes(true);
+    async function loadRoutes() {
+      try {
+        setLoadingRoutes(true);
 
-    //     const data = await getRoutesToTeslaHQ({
-    //       lat: origin.lat,
-    //       lng: origin.lng,
-    //     });
+        const data = await getRoutesToTeslaHQ({
+          lat: origin.lat,
+          lng: origin.lng,
+        });
 
-    //     if (!cancelled) {
-    //       setRoutes(data);
-    //     }
-    //   } catch (err) {
-    //     console.error("Failed to fetch routes", err);
-    //   } finally {
-    //     if (!cancelled) setLoadingRoutes(false);
-    //   }
-    // }
+        if (!cancelled) {
+          setRoutes(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch routes', err);
+      } finally {
+        if (!cancelled) setLoadingRoutes(false);
+      }
+    }
 
-    // loadRoutes();
+    loadRoutes();
 
     return () => {
       cancelled = true;

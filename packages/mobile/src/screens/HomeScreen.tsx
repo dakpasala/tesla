@@ -1,11 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { Modalize } from 'react-native-modalize';
-import Geolocation from "react-native-geolocation-service";
-import { getRoutesToTeslaHQ } from "../services/routes";
+import Geolocation from 'react-native-geolocation-service';
+// import { getRoutesToTeslaHQ } from "../services/routes";
 
 import BikeScreen from '../screens/Bike';
 import BusScreen from '../screens/Bus';
@@ -64,31 +64,31 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-  if (!location) return;
+    if (!location) return;
 
-    const origin = location; 
+    const origin = location;
     let cancelled = false;
 
-    async function loadRoutes() {
-      try {
-        setLoadingRoutes(true);
+    // async function loadRoutes() {
+    //   try {
+    //     setLoadingRoutes(true);
 
-        const data = await getRoutesToTeslaHQ({
-          lat: origin.lat,
-          lng: origin.lng,
-        });
+    //     const data = await getRoutesToTeslaHQ({
+    //       lat: origin.lat,
+    //       lng: origin.lng,
+    //     });
 
-        if (!cancelled) {
-          setRoutes(data);
-        }
-      } catch (err) {
-        console.error("Failed to fetch routes", err);
-      } finally {
-        if (!cancelled) setLoadingRoutes(false);
-      }
-    }
+    //     if (!cancelled) {
+    //       setRoutes(data);
+    //     }
+    //   } catch (err) {
+    //     console.error("Failed to fetch routes", err);
+    //   } finally {
+    //     if (!cancelled) setLoadingRoutes(false);
+    //   }
+    // }
 
-    loadRoutes();
+    // loadRoutes();
 
     return () => {
       cancelled = true;
@@ -96,8 +96,6 @@ export default function HomeScreen() {
   }, [location]);
 
   return (
-
-    
     // <View style={{ flex: 1}}>
     //   <View style={styles.inputContainer}>
     //     <TextInput
@@ -117,14 +115,20 @@ export default function HomeScreen() {
     //     />
     //   </View>
     <View style={{ flex: 1 }}>
-    <NavBox
-      currentLocation={currentLocation}
-      destination={destination}
-      currentLocationIcon={require('../assets/icons/current.png')}
-      destinationIcon={require('../assets/icons/destination.png')}
-      onCurrentLocationChange={setCurrentLocation}
-      onDestinationChange={setDestination}
-    />
+      {/* <Pressable
+      onPress={() => navigation.navigate('AdminHome')}
+      style={styles.adminLink}
+    >
+      <Text style={styles.adminLinkText}>Admin Home</Text>
+    </Pressable> */}
+      <NavBox
+        currentLocation={currentLocation}
+        destination={destination}
+        currentLocationIcon={require('../assets/icons/current.png')}
+        destinationIcon={require('../assets/icons/destination.png')}
+        onCurrentLocationChange={setCurrentLocation}
+        onDestinationChange={setDestination}
+      />
 
       <Modalize
         modalStyle={styles.modalScreen}
@@ -132,7 +136,6 @@ export default function HomeScreen() {
         modalHeight={700}
         ref={modalRef}
       >
-
         <NavBar currentScreen={screen} onScreenChange={setScreen} />
 
         <View style={{ flex: 1 }}>
@@ -178,4 +181,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#D9D9D9',
     marginHorizontal: 10,
   },
+  // adminLink: {
+  //   padding: 12,
+  //   alignSelf: 'flex-end',
+  // },
+  // adminLinkText: {
+  //   fontSize: 14,
+  //   color: '#007AFF',
+  // },
 });

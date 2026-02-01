@@ -1,4 +1,3 @@
-import { getRedisClient } from '../redis/redisClient.js';
 import {
   getCache,
   setCache,

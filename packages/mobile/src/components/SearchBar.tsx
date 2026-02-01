@@ -261,47 +261,9 @@ function SearchBar({
     );
   }, [offices, searchText]);
 
-  if (!expanded) {
-    return (
-      <TouchableOpacity
-        style={styles.collapsed}
-        onPress={onExpand}
-        activeOpacity={0.85}
-      >
-        <Image
-          source={require('../assets/images/search.png')}
-          style={styles.searchIcon}
-        />
-        <Text style={styles.placeholder}>Search Here</Text>
-      </TouchableOpacity>
-    );
-  }
-
-  return (
-    <View style={styles.expanded}>
-      <View style={styles.inputRow}>
-        <Image
-          source={require('../assets/images/search_activate.png')}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          value={searchText}
-          onChangeText={handleSearchChange}
-          placeholder="Search Here"
-          placeholderTextColor="#A0A0A0"
-          style={styles.input}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <TouchableOpacity
-          onPress={searchText.length > 0 ? handleClearSearch : handleCollapse}
-          style={styles.clearBtn}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.clear}>✕</Text>
-        </TouchableOpacity>
-      </View>
-
+  // Refactored to keep a stable component tree and avoid flashing during expansion
+  const renderContent = () => (
+    <>
       <View style={styles.quickRow}>
         <QuickItem
           title="Home"
@@ -360,6 +322,36 @@ function SearchBar({
           />
         ))
       )}
+    </>
+  );
+
+  return (
+    <View style={[styles.container, expanded && styles.expandedContainer]}>
+      {/* Search Input Row - Always visible to prevent flash */}
+      <View style={styles.inputRow}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={!expanded ? onExpand : undefined}
+          style={[StyleSheet.absoluteFill, { zIndex: expanded ? -1 : 1 }]}
+        />
+        <Image
+          source={require('../assets/images/search.png')}
+          style={styles.searchIcon}
+        />
+
+        <TextInput
+          value={searchText}
+          onChangeText={handleSearchChange}
+          placeholder="Search Here"
+          placeholderTextColor="#A0A0A0"
+          style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      </View>
+
+      {/* Expanded Content - Always rendered */}
+      {renderContent()}
     </View>
   );
 }
@@ -367,20 +359,22 @@ function SearchBar({
 export default memo(SearchBar);
 
 const styles = StyleSheet.create({
-  collapsed: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: {
     backgroundColor: '#FCFCFC',
     borderRadius: 22,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    padding: 16,
+    overflow: 'hidden',
   },
-  expanded: { backgroundColor: '#FCFCFC', borderRadius: 22, padding: 16 },
+  expandedContainer: {
+    // Styles unified
+  },
+  // Removed old 'collapsed' and 'expanded' styles in favor of 'container' + 'expandedContainer'
   searchIcon: { width: 18, height: 18, marginRight: 10, opacity: 0.9 },
-  placeholder: { color: '#A0A0A0', fontSize: 14 },
+  placeholder: { color: '#A0A0A0', fontSize: 14, flex: 1 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    // Consistent styling for row
     borderRadius: 22,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -388,17 +382,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   input: { flex: 1, fontSize: 14, paddingVertical: 0, color: '#1C1C1C' },
-  clearBtn: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#7878801F',
-    marginLeft: 8,
-  },
-  clear: { fontSize: 14, color: '#3C3C4399', marginTop: -1 },
-  quickRow: { flexDirection: 'row', marginBottom: 10 },
+  // clearBtn and clear styles removed
+  // ... rest of styles
+  quickRow: { flexDirection: 'row', marginBottom: 10, marginTop: 10 },
   quickItem: {
     flex: 1,
     flexDirection: 'row',

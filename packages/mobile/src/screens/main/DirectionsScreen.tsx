@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Modalize } from 'react-native-modalize';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRideContext, TravelMode } from '../../context/RideContext';
 
 // Import existing components
@@ -23,16 +23,19 @@ import NavBox from '../../components/NavBox';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
 
-export default function DirectionsScreen() {
+function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<DirectionsRouteProp>();
-  const modalRef = useRef<Modalize>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
   const { destination, travelMode, setTravelMode } = useRideContext();
 
   // Fallback if no destination in context (shouldn't happen in flow)
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
   const destinationLng = destination?.coordinate?.longitude ?? -122.143;
   const destinationName = destination?.title ?? 'Tesla Deer Creek';
+
+  // Snap points: Peek (20%), Default (50%), Full (95%)
+  const snapPoints = useMemo(() => ['20%', '50%', '95%'], []);
 
   const openInMaps = () => {
     const url = Platform.select({
@@ -147,67 +150,70 @@ export default function DirectionsScreen() {
       </View>
 
       {/* Bottom Sheet - Route Planning */}
-      <Modalize
-        ref={modalRef}
-        modalStyle={styles.modalStyle}
-        handleStyle={styles.handleStyle}
-        alwaysOpen={350}
-        modalHeight={500}
-        scrollViewProps={{
-          showsVerticalScrollIndicator: false,
-          contentContainerStyle: styles.sheetContent,
-        }}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={1} // Start at 50%
+        snapPoints={snapPoints}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetHandle}
       >
-        {renderTabs()}
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheetContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderTabs()}
 
-        {/* Time Selector */}
-        <View style={styles.timeSelector}>
-          <Text style={styles.timeLabel}>Time Selector</Text>
-          <TouchableOpacity style={styles.timeButton}>
-            <Text style={styles.timeButtonText}>Now: 12:20 PM ▼</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Quick Start Card */}
-        <View style={styles.quickStartCard}>
-          <View style={styles.quickHeader}>
-            <Text style={styles.quickTitle}>✦ QUICK START</Text>
-          </View>
-          <View style={styles.quickBody}>
-            <View>
-              <Text style={styles.quickTime}>
-                {travelMode === 'shuttle' ? '50m' : '30m'}{' '}
-                <Text style={styles.quickEta}>9:30AM ETA</Text>
-              </Text>
-              <Text style={styles.quickDetails}>
-                Stevens Creek/Albany · Leaves At 8:45AM
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.goButton}
-              onPress={openInGoogleMaps}
-            >
-              <Text style={styles.goButtonText}>→</Text>
+          {/* Time Selector */}
+          <View style={styles.timeSelector}>
+            <Text style={styles.timeLabel}>Time Selector</Text>
+            <TouchableOpacity style={styles.timeButton}>
+              <Text style={styles.timeButtonText}>Now: 12:20 PM ▼</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Other Modes / Report Link */}
-        <View style={styles.footerLinks}>
-          <Text style={styles.footerTitle}>✦ OTHER MODES</Text>
-          {/* Can add more details here later */}
-        </View>
+          {/* Quick Start Card */}
+          <View style={styles.quickStartCard}>
+            <View style={styles.quickHeader}>
+              <Text style={styles.quickTitle}>✦ QUICK START</Text>
+            </View>
+            <View style={styles.quickBody}>
+              <View>
+                <Text style={styles.quickTime}>
+                  {travelMode === 'shuttle' ? '50m' : '30m'}{' '}
+                  <Text style={styles.quickEta}>9:30AM ETA</Text>
+                </Text>
+                <Text style={styles.quickDetails}>
+                  Stevens Creek/Albany · Leaves At 8:45AM
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.goButton}
+                onPress={openInGoogleMaps}
+              >
+                <Text style={styles.goButtonText}>→</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-        <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
-          <Text style={styles.reportText}>
-            See something off?{' '}
-            <Text style={styles.reportLinkText}>Report it</Text>
-          </Text>
-        </TouchableOpacity>
-      </Modalize>
+          {/* Other Modes / Report Link */}
+          <View style={styles.footerLinks}>
+            <Text style={styles.footerTitle}>✦ OTHER MODES</Text>
+            {/* Can add more details here later */}
+          </View>
+
+          <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
+            <Text style={styles.reportText}>
+              See something off?{' '}
+              <Text style={styles.reportLinkText}>Report it</Text>
+            </Text>
+          </TouchableOpacity>
+        </BottomSheetScrollView>
+      </BottomSheet>
     </View>
   );
 }
+
+export default memo(DirectionsScreen);
 
 const styles = StyleSheet.create({
   container: {
@@ -251,20 +257,28 @@ const styles = StyleSheet.create({
   navBoxWrapper: {
     flex: 1,
   },
-  modalStyle: {
+  bottomSheetBackground: {
     backgroundColor: '#FCFCFC',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  handleStyle: {
+  bottomSheetHandle: {
     backgroundColor: '#DEDEDE',
     width: 40,
-    height: 5,
-    borderRadius: 3,
-    marginTop: 10,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 8,
   },
   sheetContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   tabContainer: {
     flexDirection: 'row',

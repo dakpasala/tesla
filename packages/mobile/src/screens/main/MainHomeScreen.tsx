@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, memo } from 'react';
+import React, { useRef, useState, useCallback, useMemo, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -10,7 +10,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import { Modalize } from 'react-native-modalize';
+import BottomSheet, {
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
 
 // Import existing components
 import SearchBar from '../../components/SearchBar';
@@ -20,11 +23,14 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function MainHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const modalRef = useRef<Modalize>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Search expanded state only - SearchBar manages its own search text
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { setDestination } = useRideContext();
+
+  // Snap points for the bottom sheet
+  const snapPoints = useMemo(() => ['15%', '45%', '90%'], []);
 
   // Stable callbacks
   const handleSelectDestination = useCallback(
@@ -42,11 +48,20 @@ function MainHomeScreen() {
   );
 
   const handleExpand = useCallback(() => {
+    bottomSheetRef.current?.snapToIndex(1);
     setSearchExpanded(true);
   }, []);
 
   const handleCollapse = useCallback(() => {
+    bottomSheetRef.current?.snapToIndex(0);
     setSearchExpanded(false);
+  }, []);
+
+  const handleSheetChanges = useCallback((index: number) => {
+    // Index 0 = collapsed (15%)
+    // Index 1 = half-open (45%)
+    // Index 2 = full-open (90%)
+    setSearchExpanded(index > 0);
   }, []);
 
   const handleSettingsPress = useCallback(() => {
@@ -79,29 +94,30 @@ function MainHomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Sheet with Modalize - Landing page content */}
-      <Modalize
-        ref={modalRef}
-        modalStyle={styles.modalStyle}
-        handleStyle={styles.handleStyle}
-        alwaysOpen={450}
-        modalHeight={650}
-        scrollViewProps={{
-          keyboardShouldPersistTaps: 'handled',
-          showsVerticalScrollIndicator: false,
-          contentContainerStyle: styles.sheetContent,
-        }}
+      {/* Bottom Sheet - Landing page content */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={0}
+        snapPoints={snapPoints}
+        onChange={handleSheetChanges}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetHandle}
       >
-        {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
-        <View style={styles.searchContainer}>
-          <SearchBar
-            expanded={searchExpanded}
-            onExpand={handleExpand}
-            onCollapse={handleCollapse}
-            onSelectDestination={handleSelectDestination}
-          />
-        </View>
-      </Modalize>
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheetContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
+          <View style={styles.searchContainer}>
+            <SearchBar
+              expanded={searchExpanded}
+              onExpand={handleExpand}
+              onCollapse={handleCollapse}
+              onSelectDestination={handleSelectDestination}
+            />
+          </View>
+        </BottomSheetScrollView>
+      </BottomSheet>
     </View>
   );
 }
@@ -139,17 +155,24 @@ const styles = StyleSheet.create({
   settingsIcon: {
     fontSize: 20,
   },
-  modalStyle: {
+  bottomSheetBackground: {
     backgroundColor: '#FCFCFC',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  handleStyle: {
+  bottomSheetHandle: {
     backgroundColor: '#DEDEDE',
     width: 40,
-    height: 5,
-    borderRadius: 3,
-    marginTop: 10,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 8,
   },
   sheetContent: {
     paddingTop: 10,

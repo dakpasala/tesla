@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
 
@@ -29,96 +29,48 @@ type RowData = {
   title: string;
   subtitle: string;
   miles: string;
+  isFavorite: boolean;
 };
 
 type RowItemProps = {
-  title: string;
-  subtitle: string;
-  miles: string;
-  starred?: boolean;
-  onPressRow?: () => void;
-  onToggleStar?: () => void;
+  item: RowData;
+  onPressRow: () => void;
+  onToggleStar: () => void;
 };
 
-function RowItem({
-  title,
-  subtitle,
-  miles,
-  starred = false,
-  onPressRow,
-  onToggleStar,
-}: RowItemProps) {
-  // #region agent log
-  const handleRowPress = () => {
-    fetch('http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'SearchBar.tsx:RowItem',
-        message: 'Row pressed',
-        data: { title, hasOnPressRow: !!onPressRow },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        hypothesisId: 'A',
-      }),
-    }).catch(() => {});
-    onPressRow?.();
-  };
-  const handleStarPress = (e: any) => {
-    e.stopPropagation();
-    fetch('http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'SearchBar.tsx:RowItem',
-        message: 'Star pressed',
-        data: { title },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        hypothesisId: 'B',
-      }),
-    }).catch(() => {});
-    onToggleStar?.();
-  };
-  // #endregion
+function RowItem({ item, onPressRow, onToggleStar }: RowItemProps) {
   return (
-    <TouchableOpacity
-      style={styles.row}
-      activeOpacity={0.75}
-      onPress={handleRowPress}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
-      <View style={styles.rowLeft}>
-        <TouchableOpacity
-          onPress={handleStarPress}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
-          accessibilityLabel={
-            starred ? 'Remove from favorites' : 'Add to favorites'
-          }
-        >
-          <View style={styles.star}>
-            {starred ? (
-              <FavoriteIcon />
-            ) : (
-              <Image
-                source={require('../assets/images/fav_icon_deactivate.png')}
-                style={{ width: 18, height: 18 }}
-                resizeMode="contain"
-              />
-            )}
-          </View>
-        </TouchableOpacity>
-
-        <View>
-          <Text style={styles.rowText}>{title}</Text>
-          <Text style={styles.placeSub}>{subtitle}</Text>
+    <View style={styles.row}>
+      <TouchableOpacity
+        onPress={onToggleStar}
+        activeOpacity={0.6}
+        style={styles.starTouchable}
+      >
+        <View style={styles.star}>
+          {item.isFavorite ? (
+            <FavoriteIcon />
+          ) : (
+            <Image
+              source={require('../assets/images/fav_icon_deactivate.png')}
+              style={styles.starIcon}
+              resizeMode="contain"
+            />
+          )}
         </View>
-      </View>
-      <Text style={styles.milesText}>{miles}</Text>
-    </TouchableOpacity>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.rowContent}
+        activeOpacity={0.7}
+        onPress={onPressRow}
+      >
+        <View style={styles.rowTextContainer}>
+          <Text style={styles.rowText}>{item.title}</Text>
+          <Text style={styles.placeSub}>{item.subtitle}</Text>
+        </View>
+        <Text style={styles.milesText}>{item.miles}</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -137,7 +89,6 @@ function QuickItem({ title, subtitle, icon, onPress, style }: QuickItemProps) {
       activeOpacity={0.85}
       onPress={onPress}
     >
-      {/* Grey circle with ONLY the logo inside */}
       <View style={styles.quickCircle}>
         <Image source={icon} style={styles.quickCircleIcon} />
       </View>
@@ -150,6 +101,45 @@ function QuickItem({ title, subtitle, icon, onPress, style }: QuickItemProps) {
   );
 }
 
+// Initial data with unique IDs and isFavorite flag
+const INITIAL_LOCATIONS: RowData[] = [
+  {
+    id: 'loc-1',
+    title: 'Tesla Deer Creek',
+    subtitle: '3500 Deer Creek Rd, Palo Alto',
+    miles: '2.5 miles',
+    isFavorite: true,
+  },
+  {
+    id: 'loc-2',
+    title: 'Tesla Page Mill',
+    subtitle: '1501 Page Mill Rd, Palo Alto',
+    miles: '2.8 miles',
+    isFavorite: true,
+  },
+  {
+    id: 'loc-3',
+    title: 'Tesla Fremont Factory',
+    subtitle: '45500 Fremont Blvd, Fremont',
+    miles: '12.3 miles',
+    isFavorite: true,
+  },
+  {
+    id: 'loc-4',
+    title: 'Tesla Palo Alto HQ',
+    subtitle: '3500 Deer Creek Rd, Palo Alto',
+    miles: '2.5 miles',
+    isFavorite: false,
+  },
+  {
+    id: 'loc-5',
+    title: 'Tesla Sunnyvale',
+    subtitle: '1100 W Maude Ave, Sunnyvale',
+    miles: '5.2 miles',
+    isFavorite: false,
+  },
+];
+
 export default function SearchBar({
   value = '',
   onChangeText,
@@ -158,75 +148,82 @@ export default function SearchBar({
   onCollapse,
   onSelectDestination,
 }: Props) {
-  const [sort, setSort] = React.useState<'A-Z' | 'Z-A'>('A-Z');
+  const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
+  const [localSearchValue, setLocalSearchValue] = useState(value);
+  const [locations, setLocations] = useState<RowData[]>(INITIAL_LOCATIONS);
 
-  const [favorites, setFavorites] = React.useState<RowData[]>([
-    {
-      id: 'fav-1',
-      title: 'Tesla Deer Creek',
-      subtitle: '1501 Page Mill Rd, Palo Alto',
-      miles: '2.5 miles',
+  const handleSearchChange = useCallback(
+    (text: string) => {
+      setLocalSearchValue(text);
+      onChangeText?.(text);
     },
-    {
-      id: 'fav-2',
-      title: 'Tesla Page Mill',
-      subtitle: '1501 Page Mill Rd, Palo Alto',
-      miles: '2.5 miles',
-    },
-    {
-      id: 'fav-3',
-      title: 'Tesla Page Mill',
-      subtitle: '1501 Page Mill Rd, Palo Alto',
-      miles: '2.5 miles',
-    },
-  ]);
-
-  const [offices, setOffices] = React.useState<RowData[]>([
-    {
-      id: 'off-1',
-      title: 'Tesla Page Mill',
-      subtitle: '1501 Page Mill Rd, Palo Alto',
-      miles: '2.5 miles',
-    },
-    {
-      id: 'off-2',
-      title: 'Tesla Page Mill',
-      subtitle: '1501 Page Mill Rd, Palo Alto',
-      miles: '2.5 miles',
-    },
-  ]);
-
-  // - If item is in favorites: unstar -> move back to All Offices
-  // - If item is in offices: star -> move to Favorites
-  const toggleFavorite = React.useCallback(
-    (item: RowData) => {
-      setFavorites(prevFavs => {
-        const isFav = prevFavs.some(f => f.id === item.id);
-
-        if (isFav) return prevFavs.filter(f => f.id !== item.id);
-
-        return [item, ...prevFavs];
-      });
-
-      setOffices(prevOffices => {
-        const inOffices = prevOffices.some(o => o.id === item.id);
-
-        if (inOffices) {
-          return prevOffices.filter(o => o.id !== item.id);
-        }
-
-        return [...prevOffices, item];
-      });
-    },
-    [favorites]
+    [onChangeText]
   );
 
-  const sortedOffices = React.useMemo(() => {
-    const copy = [...offices];
-    copy.sort((a, b) => a.title.localeCompare(b.title));
-    if (sort === 'Z-A') copy.reverse();
-    return copy;
-  }, [offices, sort]);
+  const handleClearSearch = useCallback(() => {
+    setLocalSearchValue('');
+    onChangeText?.('');
+  }, [onChangeText]);
+
+  const handleCollapse = useCallback(() => {
+    handleClearSearch();
+    onCollapse?.();
+  }, [handleClearSearch, onCollapse]);
+
+  const toggleFavorite = useCallback((id: string) => {
+    setLocations(prev =>
+      prev.map(loc =>
+        loc.id === id ? { ...loc, isFavorite: !loc.isFavorite } : loc
+      )
+    );
+  }, []);
+
+  const handleSelectDestination = useCallback(
+    (item: RowData) => {
+      onSelectDestination?.({
+        id: item.id,
+        title: item.title,
+        subtitle: item.subtitle,
+      });
+    },
+    [onSelectDestination]
+  );
+
+  // Derived state - favorites
+  const favorites = useMemo(() => {
+    return locations.filter(loc => loc.isFavorite);
+  }, [locations]);
+
+  // Derived state - offices (non-favorites), sorted
+  const offices = useMemo(() => {
+    const nonFavorites = locations.filter(loc => !loc.isFavorite);
+    const sorted = [...nonFavorites].sort((a, b) =>
+      a.title.localeCompare(b.title)
+    );
+    if (sort === 'Z-A') sorted.reverse();
+    return sorted;
+  }, [locations, sort]);
+
+  // Filter based on search
+  const filteredFavorites = useMemo(() => {
+    if (!localSearchValue.trim()) return favorites;
+    const query = localSearchValue.toLowerCase();
+    return favorites.filter(
+      item =>
+        item.title.toLowerCase().includes(query) ||
+        item.subtitle.toLowerCase().includes(query)
+    );
+  }, [favorites, localSearchValue]);
+
+  const filteredOffices = useMemo(() => {
+    if (!localSearchValue.trim()) return offices;
+    const query = localSearchValue.toLowerCase();
+    return offices.filter(
+      item =>
+        item.title.toLowerCase().includes(query) ||
+        item.subtitle.toLowerCase().includes(query)
+    );
+  }, [offices, localSearchValue]);
 
   if (!expanded) {
     return (
@@ -234,8 +231,6 @@ export default function SearchBar({
         style={styles.collapsed}
         onPress={onExpand}
         activeOpacity={0.85}
-        accessibilityRole="button"
-        accessibilityLabel="Open search"
       >
         <Image
           source={require('../assets/images/search.png')}
@@ -255,17 +250,20 @@ export default function SearchBar({
           style={styles.searchIcon}
         />
         <TextInput
-          value={value}
-          onChangeText={onChangeText}
+          value={localSearchValue}
+          onChangeText={handleSearchChange}
           placeholder="Search Here"
           placeholderTextColor="#A0A0A0"
           style={styles.input}
+          autoCapitalize="none"
+          autoCorrect={false}
         />
         <TouchableOpacity
-          onPress={onCollapse}
+          onPress={
+            localSearchValue.length > 0 ? handleClearSearch : handleCollapse
+          }
           style={styles.clearBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Close search"
+          activeOpacity={0.7}
         >
           <Text style={styles.clear}>✕</Text>
         </TouchableOpacity>
@@ -277,35 +275,44 @@ export default function SearchBar({
           title="Home"
           subtitle="Set location"
           icon={require('../assets/images/search_house.png')}
+          onPress={() =>
+            onSelectDestination?.({
+              id: 'home',
+              title: 'Home',
+              subtitle: 'Set location',
+            })
+          }
         />
         <QuickItem
           title="Work"
           subtitle="Set location"
           icon={require('../assets/images/search_job.png')}
           style={{ marginLeft: -100 }}
+          onPress={() =>
+            onSelectDestination?.({
+              id: 'work',
+              title: 'Work',
+              subtitle: 'Set location',
+            })
+          }
         />
       </View>
 
       {/* favorites */}
       <Text style={styles.section}>My Favorites</Text>
-      {favorites.length === 0 ? (
-        <Text style={styles.emptyText}>No favorites yet</Text>
+      {filteredFavorites.length === 0 ? (
+        <Text style={styles.emptyText}>
+          {localSearchValue.trim()
+            ? 'No matching favorites'
+            : 'No favorites yet'}
+        </Text>
       ) : (
-        favorites.map(item => (
+        filteredFavorites.map(item => (
           <RowItem
             key={item.id}
-            title={item.title}
-            subtitle={item.subtitle}
-            miles={item.miles}
-            starred
-            onPressRow={() =>
-              onSelectDestination?.({
-                id: item.id,
-                title: item.title,
-                subtitle: item.subtitle,
-              })
-            }
-            onToggleStar={() => toggleFavorite(item)}
+            item={item}
+            onPressRow={() => handleSelectDestination(item)}
+            onToggleStar={() => toggleFavorite(item.id)}
           />
         ))
       )}
@@ -324,23 +331,20 @@ export default function SearchBar({
         </TouchableOpacity>
       </View>
 
-      {sortedOffices.map(item => (
-        <RowItem
-          key={item.id}
-          title={item.title}
-          subtitle={item.subtitle}
-          miles={item.miles}
-          starred={false}
-          onPressRow={() =>
-            onSelectDestination?.({
-              id: item.id,
-              title: item.title,
-              subtitle: item.subtitle,
-            })
-          }
-          onToggleStar={() => toggleFavorite(item)}
-        />
-      ))}
+      {filteredOffices.length === 0 ? (
+        <Text style={styles.emptyText}>
+          {localSearchValue.trim() ? 'No matching offices' : 'No offices'}
+        </Text>
+      ) : (
+        filteredOffices.map(item => (
+          <RowItem
+            key={item.id}
+            item={item}
+            onPressRow={() => handleSelectDestination(item)}
+            onToggleStar={() => toggleFavorite(item.id)}
+          />
+        ))
+      )}
     </View>
   );
 }
@@ -379,7 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#FCFCFC',
+    backgroundColor: '#F6F6F6',
     marginBottom: 12,
   },
 
@@ -387,7 +391,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     paddingVertical: 0,
-    color: '#A0A0A0',
+    color: '#1C1C1C',
   },
 
   clearBtn: {
@@ -491,24 +495,38 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
 
-  rowLeft: {
+  starTouchable: {
+    padding: 8,
+  },
+
+  rowContent: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+
+  rowTextContainer: {
+    flex: 1,
   },
 
   rowText: {
     fontSize: 12,
-    fontWeight: 400,
+    fontWeight: '400',
     color: '#1C1C1C',
   },
 
   star: {
+    width: 18,
+    height: 18,
+  },
+
+  starIcon: {
     width: 18,
     height: 18,
   },
@@ -523,6 +541,7 @@ const styles = StyleSheet.create({
     color: '#878585',
     fontWeight: '400',
     fontSize: 12,
+    marginLeft: 8,
   },
 
   emptyText: {

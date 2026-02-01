@@ -26,30 +26,16 @@ export default function MainHomeScreen() {
   const [searchExpanded, setSearchExpanded] = useState(true);
 
   // Handle destination selection - navigate to Routes
-  // #region agent log
   const handleSelectDestination = (destination: {
     id: string;
     title: string;
     subtitle: string;
   }) => {
-    fetch('http://127.0.0.1:7242/ingest/8cc27a84-2cd7-49c1-9a78-77fcf9fc4234', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location: 'MainHomeScreen.tsx:handleSelectDestination',
-        message: 'Destination selected',
-        data: { destination },
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        hypothesisId: 'C',
-      }),
-    }).catch(() => {});
     navigation.navigate('Routes', {
       destinationId: destination.id,
       destinationName: destination.title,
     });
   };
-  // #endregion
 
   return (
     <View style={styles.container}>
@@ -57,7 +43,7 @@ export default function MainHomeScreen() {
 
       {/* Map Background (placeholder for now) */}
       <View style={styles.mapContainer}>
-        <View style={styles.mapPlaceholder}>{/* Map will go here */}</View>
+        <View style={styles.mapPlaceholder} />
 
         {/* Settings button overlay on map */}
         <TouchableOpacity
@@ -75,10 +61,13 @@ export default function MainHomeScreen() {
         handleStyle={styles.handleStyle}
         alwaysOpen={450}
         modalHeight={650}
+        keyboardAvoidingBehavior="padding"
       >
         <ScrollView
           style={styles.sheetContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
         >
           {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
           <View style={styles.searchContainer}>
@@ -147,5 +136,6 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 16,
+    paddingBottom: 20,
   },
 });

@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -47,7 +47,7 @@ export default function ProfileScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Summary */}
         <View style={styles.profileSummary}>
           <View style={styles.avatar}>
@@ -66,6 +66,7 @@ export default function ProfileScreen() {
               key={item.id}
               style={styles.menuItem}
               onPress={item.onPress}
+              activeOpacity={0.7}
             >
               <Text style={styles.menuIcon}>{item.icon}</Text>
               <Text style={styles.menuTitle}>{item.title}</Text>
@@ -78,6 +79,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           style={styles.adminButton}
           onPress={() => navigation.navigate('Admin')}
+          activeOpacity={0.7}
         >
           <Text style={styles.adminIcon}>🔐</Text>
           <Text style={styles.adminText}>Admin Panel</Text>
@@ -85,7 +87,7 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         {/* Logout */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} activeOpacity={0.7}>
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>

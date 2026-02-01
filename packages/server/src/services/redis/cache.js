@@ -36,6 +36,16 @@ export async function cacheExists(key) {
   return redis.exists(key);
 }
 
+export async function getKeysByPattern(pattern) {
+  const redis = await getRedisClient();
+  return redis.keys(pattern);
+}
+
+export async function getSetSize(key) {
+  const redis = await getRedisClient();
+  return redis.sCard(key);
+}
+
 export async function getSetMembers(key) {
   const redis = await getRedisClient();
   return redis.sMembers(key);

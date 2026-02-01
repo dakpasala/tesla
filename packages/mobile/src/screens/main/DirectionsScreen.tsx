@@ -8,6 +8,8 @@ import {
   Platform,
   Alert,
   Image,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,12 +18,20 @@ import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRideContext, TravelMode } from '../../context/RideContext';
-
-// Import existing components
-import NavBox from '../../components/NavBox';
+import Svg, {
+  Circle,
+  Path,
+  Line,
+  G,
+  Defs,
+  LinearGradient,
+  Stop,
+} from 'react-native-svg';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
+
+const { width } = Dimensions.get('window');
 
 function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -29,12 +39,12 @@ function DirectionsScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { destination, travelMode, setTravelMode } = useRideContext();
 
-  // Fallback if no destination in context (shouldn't happen in flow)
+  // Fallback if no destination in context
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
   const destinationLng = destination?.coordinate?.longitude ?? -122.143;
   const destinationName = destination?.title ?? 'Tesla Deer Creek';
 
-  // Snap points: Peek (20%), Default (50%), Full (95%)
+  // Matches Figma: 20% peek, 50% half, 95% full
   const snapPoints = useMemo(() => ['20%', '50%', '95%'], []);
 
   const openInMaps = () => {
@@ -71,39 +81,96 @@ function DirectionsScreen() {
     ]);
   };
 
+  // Custom Route Header resembling Figma
+  const renderRouteHeader = () => (
+    <View style={styles.headerContainer}>
+      {/* Back Button (Floating left) */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Svg
+          width={24}
+          height={24}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#000"
+          strokeWidth={2}
+        >
+          <Path
+            d="M19 12H5M12 19l-7-7 7-7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </TouchableOpacity>
+
+      {/* Route Card */}
+      <View style={styles.routeHeaderCard}>
+        <View style={styles.routeRow}>
+          {/* Graphics Column */}
+          <View style={styles.graphicsCol}>
+            <Svg width={16} height={50} style={styles.routeSvg}>
+              {/* Current Dot */}
+              <Circle cx={8} cy={8} r={4} fill="#007AFF" />
+              {/* Vertical Dotted Line */}
+              <Line
+                x1={8}
+                y1={14}
+                x2={8}
+                y2={36}
+                stroke="#C7C7CC"
+                strokeWidth={2}
+                strokeDasharray="4 2"
+              />
+              {/* Destination Pin */}
+              <Path
+                d="M8 50 C8 50 14 44 14 39 C14 35.6863 11.3137 33 8 33 C4.68629 33 2 35.6863 2 39 C2 44 8 50 8 50 Z"
+                fill="#FF3B30"
+              />
+              <Circle cx={8} cy={39} r={2} fill="#FFF" />
+            </Svg>
+          </View>
+
+          {/* Text Column */}
+          <View style={styles.textCol}>
+            <View style={styles.locationItem}>
+              <Text style={styles.locationLabel}>Current Location</Text>
+            </View>
+            <View style={[styles.locationItem, { marginTop: 14 }]}>
+              <Text style={styles.locationTitle}>{destinationName}</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+
   const renderTabs = () => (
     <View style={styles.tabContainer}>
-      {(['car', 'shuttle', 'transit', 'bike'] as TravelMode[]).map(mode => (
-        <TouchableOpacity
-          key={mode}
-          style={[styles.tab, travelMode === mode && styles.activeTab]}
-          onPress={() => setTravelMode(mode)}
-        >
-          {/* Icons would go here, using text for now or simple placeholders */}
-          <Text
-            style={[
-              styles.tabText,
-              travelMode === mode && styles.activeTabText,
-            ]}
+      {(['car', 'shuttle', 'transit', 'bike'] as TravelMode[]).map(mode => {
+        const isActive = travelMode === mode;
+        return (
+          <TouchableOpacity
+            key={mode}
+            style={[styles.tab, isActive && styles.activeTab]}
+            onPress={() => setTravelMode(mode)}
           >
-            {mode === 'car' && '🚗'}
-            {mode === 'shuttle' && '🚌'}
-            {mode === 'transit' && '🚆'}
-            {mode === 'bike' && '🚲'}
-          </Text>
-          <Text
-            style={[
-              styles.tabLabel,
-              travelMode === mode && styles.activeTabText,
-            ]}
-          >
-            {mode === 'car' && '30m'}
-            {mode === 'shuttle' && '50m'}
-            {mode === 'transit' && '1h 5m'}
-            {mode === 'bike' && '35m'}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text style={styles.tabIcon}>
+              {mode === 'car' && (isActive ? '🚗' : '🚘')}
+              {mode === 'shuttle' && (isActive ? '🚌' : '🚍')}
+              {mode === 'transit' && (isActive ? '🚆' : '🚈')}
+              {mode === 'bike' && (isActive ? '🚲' : '🚲')}
+            </Text>
+            <Text style={[styles.tabTime, isActive && styles.activeTabTime]}>
+              {mode === 'car' && '30m'}
+              {mode === 'shuttle' && '50m'}
+              {mode === 'transit' && '1h 5m'}
+              {mode === 'bike' && '35m'}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 
@@ -124,30 +191,13 @@ function DirectionsScreen() {
           <Marker
             coordinate={{ latitude: destinationLat, longitude: destinationLng }}
             title={destinationName}
+            image={require('../../assets/icons/destination.png')}
           />
         </MapView>
       </View>
 
-      {/* NavBox overlay at top */}
-      <View style={styles.navBoxOverlay}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-
-        <View style={styles.navBoxWrapper}>
-          <NavBox
-            currentLocation="Current"
-            destination={destinationName}
-            currentLocationIcon={require('../../assets/icons/current.png')}
-            destinationIcon={require('../../assets/icons/destination.png')}
-            onCurrentLocationChange={() => {}}
-            onDestinationChange={() => {}}
-          />
-        </View>
-      </View>
+      {/* Header Overlay */}
+      {renderRouteHeader()}
 
       {/* Bottom Sheet - Route Planning */}
       <BottomSheet
@@ -161,44 +211,108 @@ function DirectionsScreen() {
           contentContainerStyle={styles.sheetContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Mode Tabs */}
           {renderTabs()}
 
           {/* Time Selector */}
           <View style={styles.timeSelector}>
-            <Text style={styles.timeLabel}>Time Selector</Text>
             <TouchableOpacity style={styles.timeButton}>
-              <Text style={styles.timeButtonText}>Now: 12:20 PM ▼</Text>
+              <Text style={styles.timeButtonText}>Now ▼</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.timeButton, { marginLeft: 10 }]}>
+              <Text style={styles.timeButtonText}>Leave at...</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Quick Start Card */}
-          <View style={styles.quickStartCard}>
-            <View style={styles.quickHeader}>
-              <Text style={styles.quickTitle}>✦ QUICK START</Text>
-            </View>
-            <View style={styles.quickBody}>
+          {/* Quick Start Card (Primary Route) */}
+          <TouchableOpacity
+            style={styles.routeCard}
+            activeOpacity={0.9}
+            onPress={openInGoogleMaps}
+          >
+            <View style={styles.routeHeader}>
               <View>
-                <Text style={styles.quickTime}>
-                  {travelMode === 'shuttle' ? '50m' : '30m'}{' '}
-                  <Text style={styles.quickEta}>9:30AM ETA</Text>
+                <Text style={styles.routeTitle}>
+                  {travelMode === 'shuttle'
+                    ? 'Tesla Shuttle A'
+                    : 'Recommended Route'}
                 </Text>
-                <Text style={styles.quickDetails}>
-                  Stevens Creek/Albany · Leaves At 8:45AM
-                </Text>
+                <Text style={styles.routeSub}>On Time · 10 min away</Text>
               </View>
+              <View style={styles.etaBadge}>
+                <Text style={styles.etaText}>50 Min</Text>
+                <Text style={styles.etaSub}>9:30 AM ETA</Text>
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.routeDetails}>
+              {/* Timeline / Steps simulation */}
+              <View style={styles.stepRow}>
+                <Svg width={12} height={40}>
+                  <Circle cx={6} cy={6} r={3} fill="#007AFF" />
+                  <Line
+                    x1={6}
+                    y1={6}
+                    x2={6}
+                    y2={40}
+                    stroke="#E5E5E5"
+                    strokeWidth={2}
+                  />
+                </Svg>
+                <Text style={styles.stepText}>Your Location</Text>
+                <Text style={styles.stepTime}>8:40 AM</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <Svg width={12} height={40}>
+                  <Line
+                    x1={6}
+                    y1={0}
+                    x2={6}
+                    y2={40}
+                    stroke="#E5E5E5"
+                    strokeWidth={2}
+                  />
+                  <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
+                </Svg>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepText}>10 min walk</Text>
+                </View>
+              </View>
+              <View style={styles.stepRow}>
+                <Svg width={12} height={12}>
+                  <Circle cx={6} cy={6} r={3} fill="#000" />
+                </Svg>
+                <Text style={styles.stepText}>
+                  Stevens Creek/Albany Bus Stop
+                </Text>
+                <Text style={styles.stepTime}>8:50 AM</Text>
+              </View>
+            </View>
+
+            <View style={styles.actionRow}>
               <TouchableOpacity
-                style={styles.goButton}
+                style={styles.startButton}
                 onPress={openInGoogleMaps}
               >
-                <Text style={styles.goButtonText}>→</Text>
+                <Text style={styles.startButtonText}>Start</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </TouchableOpacity>
 
           {/* Other Modes / Report Link */}
           <View style={styles.footerLinks}>
-            <Text style={styles.footerTitle}>✦ OTHER MODES</Text>
-            {/* Can add more details here later */}
+            <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
+            {/* Simple list of alternates */}
+            <View style={styles.altRow}>
+              <Text style={styles.altText}>Tesla Shuttle B</Text>
+              <Text style={styles.altTime}>55 min</Text>
+            </View>
+            <View style={styles.altRow}>
+              <Text style={styles.altText}>Public Transit</Text>
+              <Text style={styles.altTime}>1h 10m</Text>
+            </View>
           </View>
 
           <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
@@ -226,14 +340,13 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  navBoxOverlay: {
+  headerContainer: {
     position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
+    top: 60,
+    left: 20,
+    right: 20,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 10,
     zIndex: 10,
   },
   backButton: {
@@ -243,19 +356,52 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: '#111',
-  },
-  navBoxWrapper: {
+  routeHeaderCard: {
     flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  routeRow: {
+    flexDirection: 'row',
+  },
+  graphicsCol: {
+    width: 24,
+    alignItems: 'center',
+    marginRight: 12,
+    paddingTop: 4,
+  },
+  routeSvg: {},
+  textCol: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  locationItem: {
+    height: 24,
+    justifyContent: 'center',
+  },
+  locationLabel: {
+    fontSize: 14,
+    color: '#007AFF', // Blue for current
+    fontWeight: '500',
+  },
+  locationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
   },
   bottomSheetBackground: {
     backgroundColor: '#FCFCFC',
@@ -270,10 +416,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   bottomSheetHandle: {
-    backgroundColor: '#DEDEDE',
+    backgroundColor: '#E0E0E0',
     width: 40,
-    height: 4,
-    borderRadius: 2,
+    height: 5,
+    borderRadius: 3,
     marginTop: 8,
   },
   sheetContent: {
@@ -283,124 +429,168 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 24,
+    backgroundColor: '#F2F2F7',
+    padding: 4,
+    borderRadius: 12,
   },
   tab: {
-    alignItems: 'center',
     flex: 1,
+    alignItems: 'center',
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   activeTab: {
-    backgroundColor: '#E8F0FE',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  tabText: {
-    fontSize: 20,
-    marginBottom: 4,
-    color: '#888',
+  tabIcon: {
+    fontSize: 18,
+    marginBottom: 2,
   },
-  tabLabel: {
+  tabTime: {
     fontSize: 12,
-    color: '#888',
     fontWeight: '500',
+    color: '#8E8E93',
   },
-  activeTabText: {
-    color: '#1a73e8',
-    fontWeight: '700',
+  activeTabTime: {
+    color: '#000',
+    fontWeight: '600',
   },
   timeSelector: {
+    flexDirection: 'row',
     marginBottom: 20,
-  },
-  timeLabel: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 8,
-    color: '#111',
   },
   timeButton: {
-    backgroundColor: '#F1F1F1',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#F2F2F7',
     borderRadius: 8,
-    alignSelf: 'flex-start',
   },
   timeButtonText: {
-    fontSize: 14,
-    color: '#333',
+    fontSize: 13,
     fontWeight: '500',
-  },
-  quickStartCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-    marginBottom: 20,
-    overflow: 'hidden',
-  },
-  quickHeader: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEFEF',
-  },
-  quickTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#111',
-    letterSpacing: 0.5,
-  },
-  quickBody: {
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  quickTime: {
-    fontSize: 28,
-    fontWeight: '800',
     color: '#000',
   },
-  quickEta: {
+  routeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    marginBottom: 24,
+    overflow: 'hidden',
+  },
+  routeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    paddingBottom: 12,
+  },
+  routeTitle: {
     fontSize: 16,
-    fontWeight: '400',
-    color: '#555',
+    fontWeight: '700',
+    color: '#000',
   },
-  quickDetails: {
+  routeSub: {
     fontSize: 12,
-    color: '#777',
-    marginTop: 4,
+    color: '#34C759', // Green for 'On Time'
+    marginTop: 2,
+    fontWeight: '500',
   },
-  goButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#000',
+  etaBadge: {
+    alignItems: 'flex-end',
+  },
+  etaText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+  },
+  etaSub: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    marginHorizontal: 16,
+  },
+  routeDetails: {
+    padding: 16,
+    paddingVertical: 12,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  stepText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#000',
+    marginLeft: 8,
+    flex: 1,
+  },
+  stepContent: {
+    flex: 1,
+    marginLeft: 8,
+    paddingBottom: 4,
+  },
+  stepTime: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  actionRow: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  startButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  goButtonText: {
+  startButtonText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '600',
   },
   footerLinks: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   footerTitle: {
     fontSize: 12,
-    fontWeight: '800',
-    color: '#111',
-    marginBottom: 10,
+    fontWeight: '600',
+    color: '#8E8E93',
+    marginBottom: 12,
+  },
+  altRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  altText: {
+    fontSize: 15,
+    color: '#000',
+  },
+  altTime: {
+    fontSize: 15,
+    color: '#8E8E93',
   },
   reportLink: {
-    marginBottom: 40,
     alignSelf: 'center',
+    paddingBottom: 20,
   },
   reportText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#8E8E93',
   },
   reportLinkText: {
-    color: '#4285F4',
-    textDecorationLine: 'underline',
+    color: '#007AFF',
+    fontWeight: '500',
   },
 });

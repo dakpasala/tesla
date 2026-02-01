@@ -326,7 +326,7 @@ function SearchBar({
   );
 
   return (
-    <View style={[styles.container, expanded && styles.expandedContainer]}>
+    <View style={styles.container}>
       {/* Search Input Row - Always visible to prevent flash */}
       <View style={styles.inputRow}>
         <TouchableOpacity
@@ -365,16 +365,11 @@ const styles = StyleSheet.create({
     padding: 16,
     overflow: 'hidden',
   },
-  expandedContainer: {
-    // Styles unified
-  },
-  // Removed old 'collapsed' and 'expanded' styles in favor of 'container' + 'expandedContainer'
   searchIcon: { width: 18, height: 18, marginRight: 10, opacity: 0.9 },
   placeholder: { color: '#A0A0A0', fontSize: 14, flex: 1 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    // Consistent styling for row
     borderRadius: 22,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -382,8 +377,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   input: { flex: 1, fontSize: 14, paddingVertical: 0, color: '#1C1C1C' },
-  // clearBtn and clear styles removed
-  // ... rest of styles
   quickRow: { flexDirection: 'row', marginBottom: 10, marginTop: 10 },
   quickItem: {
     flex: 1,

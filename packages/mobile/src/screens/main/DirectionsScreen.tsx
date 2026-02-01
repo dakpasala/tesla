@@ -84,27 +84,6 @@ function DirectionsScreen() {
   // Custom Route Header resembling Figma
   const renderRouteHeader = () => (
     <View style={styles.headerContainer}>
-      {/* Back Button (Floating left) */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Svg
-          width={24}
-          height={24}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#000"
-          strokeWidth={2}
-        >
-          <Path
-            d="M19 12H5M12 19l-7-7 7-7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </Svg>
-      </TouchableOpacity>
-
       {/* Route Card */}
       <View style={styles.routeHeaderCard}>
         <View style={styles.routeRow}>
@@ -135,7 +114,7 @@ function DirectionsScreen() {
           {/* Text Column */}
           <View style={styles.textCol}>
             <View style={styles.locationItem}>
-              <Text style={styles.locationLabel}>Current Location</Text>
+              <Text style={styles.locationLabel}>Current</Text>
             </View>
             <View style={[styles.locationItem, { marginTop: 14 }]}>
               <Text style={styles.locationTitle}>{destinationName}</Text>
@@ -150,18 +129,37 @@ function DirectionsScreen() {
     <View style={styles.tabContainer}>
       {(['car', 'shuttle', 'transit', 'bike'] as TravelMode[]).map(mode => {
         const isActive = travelMode === mode;
+        let iconSource;
+        switch (mode) {
+          case 'car':
+            iconSource = require('../../assets/icons/new/newCar.png');
+            break;
+          case 'shuttle':
+            iconSource = require('../../assets/icons/new/newShuttle.png');
+            break;
+          case 'transit':
+            // Assuming newBus.png is for transit/bus
+            iconSource = require('../../assets/icons/new/newBus.png');
+            break;
+          case 'bike':
+            iconSource = require('../../assets/icons/new/newBike.png');
+            break;
+        }
+
         return (
           <TouchableOpacity
             key={mode}
             style={[styles.tab, isActive && styles.activeTab]}
             onPress={() => setTravelMode(mode)}
           >
-            <Text style={styles.tabIcon}>
-              {mode === 'car' && (isActive ? '🚗' : '🚘')}
-              {mode === 'shuttle' && (isActive ? '🚌' : '🚍')}
-              {mode === 'transit' && (isActive ? '🚆' : '🚈')}
-              {mode === 'bike' && (isActive ? '🚲' : '🚲')}
-            </Text>
+            <Image
+              source={iconSource}
+              style={[
+                styles.tabIconImage,
+                { tintColor: isActive ? '#007AFF' : '#8E8E93' },
+              ]}
+              resizeMode="contain"
+            />
             <Text style={[styles.tabTime, isActive && styles.activeTabTime]}>
               {mode === 'car' && '30m'}
               {mode === 'shuttle' && '50m'}
@@ -345,24 +343,10 @@ const styles = StyleSheet.create({
     top: 60,
     left: 20,
     right: 20,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     zIndex: 10,
+    // Removed flexDirection row since back button is gone
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
+  // backButton styles removed
   routeHeaderCard: {
     flex: 1,
     backgroundColor: '#fff',
@@ -448,9 +432,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  tabIcon: {
-    fontSize: 18,
-    marginBottom: 2,
+  tabIconImage: {
+    width: 28,
+    height: 28,
+    marginBottom: 4,
   },
   tabTime: {
     fontSize: 12,

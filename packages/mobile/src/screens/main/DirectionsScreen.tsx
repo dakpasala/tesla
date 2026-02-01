@@ -33,11 +33,26 @@ type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
 
 const { width } = Dimensions.get('window');
 
+interface ParkingLot {
+  id: string;
+  name: string;
+  status: string;
+  fullness: number;
+}
+
+const PARKING_LOTS: ParkingLot[] = [
+  { id: 'deer_creek', name: 'Deer Creek', status: 'Almost Full', fullness: 90 },
+  { id: 'page_mill', name: 'Page Mill', status: 'Available', fullness: 45 },
+  { id: 'hanover', name: 'Hanover', status: 'Available', fullness: 20 },
+];
+
 function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<DirectionsRouteProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { destination, travelMode, setTravelMode } = useRideContext();
+  const [selectedParkingId, setSelectedParkingId] =
+    useState<string>('deer_creek');
 
   // Fallback if no destination in context
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
@@ -80,6 +95,195 @@ function DirectionsScreen() {
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
+
+  const renderParkingContent = () => (
+    <View>
+      {/* Parking List */}
+      <View style={styles.parkingList}>
+        {PARKING_LOTS.map(lot => {
+          const isSelected = selectedParkingId === lot.id;
+          return (
+            <TouchableOpacity
+              key={lot.id}
+              style={[
+                styles.parkingRow,
+                isSelected && styles.parkingRowSelected,
+              ]}
+              onPress={() => setSelectedParkingId(lot.id)}
+            >
+              <View>
+                <Text style={styles.parkingName}>{lot.name}</Text>
+                <Text
+                  style={[
+                    styles.parkingStatus,
+                    lot.fullness > 80 ? styles.statusFull : styles.statusOk,
+                  ]}
+                >
+                  {lot.id === 'deer_creek' && 'Sublot B · '}
+                  {lot.status}
+                </Text>
+              </View>
+              {isSelected && (
+                <Svg
+                  width={20}
+                  height={20}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#007AFF"
+                  strokeWidth={2}
+                >
+                  <Path
+                    d="M20 6L9 17L4 12"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <Text style={styles.sectionHeader}>ALSO CONSIDER</Text>
+
+      {/* Shuttle Alternative */}
+      <View style={styles.altOptionCard}>
+        <View style={styles.altHeader}>
+          <Image
+            source={require('../../assets/icons/new/newShuttle.png')}
+            style={styles.altIcon}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.altTitle}>Shuttle A</Text>
+            <Text style={styles.altSub}>On Time</Text>
+          </View>
+          <Text style={styles.altRightTime}>Arrives in 5 min</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.altHeader}>
+          <Image
+            source={require('../../assets/icons/new/newShuttle.png')}
+            style={styles.altIcon}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.altTitle}>Shuttle B</Text>
+            <Text style={styles.altSub}>On Time</Text>
+          </View>
+          <Text style={styles.altRightTime}>Arrives in 15 min</Text>
+        </View>
+      </View>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.startButton} onPress={openInGoogleMaps}>
+          <Text style={styles.startButtonText}>
+            Route to {PARKING_LOTS.find(p => p.id === selectedParkingId)?.name}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderRouteContent = () => (
+    <>
+      {/* Quick Start Card (Primary Route) */}
+      <TouchableOpacity
+        style={styles.routeCard}
+        activeOpacity={0.9}
+        onPress={openInGoogleMaps}
+      >
+        <View style={styles.routeHeader}>
+          <View>
+            <Text style={styles.routeTitle}>
+              {travelMode === 'shuttle'
+                ? 'Tesla Shuttle A'
+                : 'Recommended Route'}
+            </Text>
+            <Text style={styles.routeSub}>On Time · 10 min away</Text>
+          </View>
+          <View style={styles.etaBadge}>
+            <Text style={styles.etaText}>50 Min</Text>
+            <Text style={styles.etaSub}>9:30 AM ETA</Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.routeDetails}>
+          {/* Timeline / Steps simulation */}
+          <View style={styles.stepRow}>
+            <Svg width={12} height={40}>
+              <Circle cx={6} cy={6} r={3} fill="#007AFF" />
+              <Line
+                x1={6}
+                y1={6}
+                x2={6}
+                y2={40}
+                stroke="#E5E5E5"
+                strokeWidth={2}
+              />
+            </Svg>
+            <Text style={styles.stepText}>Your Location</Text>
+            <Text style={styles.stepTime}>8:40 AM</Text>
+          </View>
+          <View style={styles.stepRow}>
+            <Svg width={12} height={40}>
+              <Line
+                x1={6}
+                y1={0}
+                x2={6}
+                y2={40}
+                stroke="#E5E5E5"
+                strokeWidth={2}
+              />
+              <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
+            </Svg>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepText}>10 min walk</Text>
+            </View>
+          </View>
+          <View style={styles.stepRow}>
+            <Svg width={12} height={12}>
+              <Circle cx={6} cy={6} r={3} fill="#000" />
+            </Svg>
+            <Text style={styles.stepText}>Stevens Creek/Albany Bus Stop</Text>
+            <Text style={styles.stepTime}>8:50 AM</Text>
+          </View>
+        </View>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={openInGoogleMaps}
+          >
+            <Text style={styles.startButtonText}>Start</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+
+      {/* Other Modes / Report Link */}
+      <View style={styles.footerLinks}>
+        <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
+        {/* Simple list of alternates */}
+        <View style={styles.altRow}>
+          <Text style={styles.altText}>Tesla Shuttle B</Text>
+          <Text style={styles.altTime}>55 min</Text>
+        </View>
+        <View style={styles.altRow}>
+          <Text style={styles.altText}>Public Transit</Text>
+          <Text style={styles.altTime}>1h 10m</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
+        <Text style={styles.reportText}>
+          See something off?{' '}
+          <Text style={styles.reportLinkText}>Report it</Text>
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
 
   // Custom Route Header resembling Figma
   const renderRouteHeader = () => (
@@ -215,103 +419,8 @@ function DirectionsScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Quick Start Card (Primary Route) */}
-          <TouchableOpacity
-            style={styles.routeCard}
-            activeOpacity={0.9}
-            onPress={openInGoogleMaps}
-          >
-            <View style={styles.routeHeader}>
-              <View>
-                <Text style={styles.routeTitle}>
-                  {travelMode === 'shuttle'
-                    ? 'Tesla Shuttle A'
-                    : 'Recommended Route'}
-                </Text>
-                <Text style={styles.routeSub}>On Time · 10 min away</Text>
-              </View>
-              <View style={styles.etaBadge}>
-                <Text style={styles.etaText}>50 Min</Text>
-                <Text style={styles.etaSub}>9:30 AM ETA</Text>
-              </View>
-            </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.routeDetails}>
-              {/* Timeline / Steps simulation */}
-              <View style={styles.stepRow}>
-                <Svg width={12} height={40}>
-                  <Circle cx={6} cy={6} r={3} fill="#007AFF" />
-                  <Line
-                    x1={6}
-                    y1={6}
-                    x2={6}
-                    y2={40}
-                    stroke="#E5E5E5"
-                    strokeWidth={2}
-                  />
-                </Svg>
-                <Text style={styles.stepText}>Your Location</Text>
-                <Text style={styles.stepTime}>8:40 AM</Text>
-              </View>
-              <View style={styles.stepRow}>
-                <Svg width={12} height={40}>
-                  <Line
-                    x1={6}
-                    y1={0}
-                    x2={6}
-                    y2={40}
-                    stroke="#E5E5E5"
-                    strokeWidth={2}
-                  />
-                  <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
-                </Svg>
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepText}>10 min walk</Text>
-                </View>
-              </View>
-              <View style={styles.stepRow}>
-                <Svg width={12} height={12}>
-                  <Circle cx={6} cy={6} r={3} fill="#000" />
-                </Svg>
-                <Text style={styles.stepText}>
-                  Stevens Creek/Albany Bus Stop
-                </Text>
-                <Text style={styles.stepTime}>8:50 AM</Text>
-              </View>
-            </View>
-
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.startButton}
-                onPress={openInGoogleMaps}
-              >
-                <Text style={styles.startButtonText}>Start</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-
-          {/* Other Modes / Report Link */}
-          <View style={styles.footerLinks}>
-            <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
-            {/* Simple list of alternates */}
-            <View style={styles.altRow}>
-              <Text style={styles.altText}>Tesla Shuttle B</Text>
-              <Text style={styles.altTime}>55 min</Text>
-            </View>
-            <View style={styles.altRow}>
-              <Text style={styles.altText}>Public Transit</Text>
-              <Text style={styles.altTime}>1h 10m</Text>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
-            <Text style={styles.reportText}>
-              See something off?{' '}
-              <Text style={styles.reportLinkText}>Report it</Text>
-            </Text>
-          </TouchableOpacity>
+          {/* Conditional Content */}
+          {travelMode === 'car' ? renderParkingContent() : renderRouteContent()}
         </BottomSheetScrollView>
       </BottomSheet>
     </View>
@@ -566,5 +675,80 @@ const styles = StyleSheet.create({
   reportLinkText: {
     color: '#007AFF',
     fontWeight: '500',
+  },
+  // Parking Styles
+  parkingList: {
+    marginBottom: 24,
+  },
+  parkingRow: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  parkingRowSelected: {
+    borderColor: '#007AFF',
+    borderWidth: 2,
+    backgroundColor: '#F2F8FF',
+  },
+  parkingName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  parkingStatus: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  statusFull: {
+    color: '#FF3B30',
+  },
+  statusOk: {
+    color: '#34C759',
+  },
+  sectionHeader: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8E8E93',
+    marginBottom: 12,
+    marginTop: 12,
+    textTransform: 'uppercase',
+  },
+  altOptionCard: {
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  altHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  altIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 12,
+    tintColor: '#000',
+  },
+  altTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+  },
+  altSub: {
+    fontSize: 13,
+    color: '#34C759',
+    fontWeight: '500',
+  },
+  altRightTime: {
+    marginLeft: 'auto',
+    fontSize: 13,
+    color: '#8E8E93',
   },
 });

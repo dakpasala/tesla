@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -17,25 +17,35 @@ import SearchBar from '../../components/SearchBar';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-export default function MainHomeScreen() {
+function MainHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const modalRef = useRef<Modalize>(null);
 
-  // Search state - expanded by default to show all content
-  const [searchValue, setSearchValue] = useState('');
+  // Search expanded state only - SearchBar manages its own search text
   const [searchExpanded, setSearchExpanded] = useState(true);
 
-  // Handle destination selection - navigate to Routes
-  const handleSelectDestination = (destination: {
-    id: string;
-    title: string;
-    subtitle: string;
-  }) => {
-    navigation.navigate('Routes', {
-      destinationId: destination.id,
-      destinationName: destination.title,
-    });
-  };
+  // Stable callbacks
+  const handleSelectDestination = useCallback(
+    (destination: { id: string; title: string; subtitle: string }) => {
+      navigation.navigate('Routes', {
+        destinationId: destination.id,
+        destinationName: destination.title,
+      });
+    },
+    [navigation]
+  );
+
+  const handleExpand = useCallback(() => {
+    setSearchExpanded(true);
+  }, []);
+
+  const handleCollapse = useCallback(() => {
+    setSearchExpanded(false);
+  }, []);
+
+  const handleSettingsPress = useCallback(() => {
+    navigation.navigate('Profile');
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -48,7 +58,7 @@ export default function MainHomeScreen() {
         {/* Settings button overlay on map */}
         <TouchableOpacity
           style={styles.settingsButton}
-          onPress={() => navigation.navigate('Profile')}
+          onPress={handleSettingsPress}
         >
           <Text style={styles.settingsIcon}>⚙️</Text>
         </TouchableOpacity>
@@ -61,22 +71,18 @@ export default function MainHomeScreen() {
         handleStyle={styles.handleStyle}
         alwaysOpen={450}
         modalHeight={650}
-        keyboardAvoidingBehavior="padding"
       >
         <ScrollView
           style={styles.sheetContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          nestedScrollEnabled={true}
         >
           {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
           <View style={styles.searchContainer}>
             <SearchBar
-              value={searchValue}
-              onChangeText={setSearchValue}
               expanded={searchExpanded}
-              onExpand={() => setSearchExpanded(true)}
-              onCollapse={() => setSearchExpanded(false)}
+              onExpand={handleExpand}
+              onCollapse={handleCollapse}
               onSelectDestination={handleSelectDestination}
             />
           </View>
@@ -85,6 +91,8 @@ export default function MainHomeScreen() {
     </View>
   );
 }
+
+export default memo(MainHomeScreen);
 
 const styles = StyleSheet.create({
   container: {

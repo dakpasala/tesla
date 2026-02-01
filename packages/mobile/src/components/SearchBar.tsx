@@ -91,7 +91,6 @@ const QuickItem = memo(function QuickItem({
       <View style={styles.quickCircle}>
         <Image source={icon} style={styles.quickCircleIcon} />
       </View>
-
       <View style={styles.quickTextWrap}>
         <Text style={styles.quickTitle}>{title}</Text>
         <Text style={styles.sub}>{subtitle}</Text>
@@ -100,7 +99,7 @@ const QuickItem = memo(function QuickItem({
   );
 });
 
-// Initial data with unique IDs and isFavorite flag
+// Initial data
 const INITIAL_LOCATIONS: RowData[] = [
   {
     id: 'loc-1',
@@ -140,8 +139,6 @@ const INITIAL_LOCATIONS: RowData[] = [
 ];
 
 type Props = {
-  value?: string;
-  onChangeText?: (text: string) => void;
   expanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
@@ -153,40 +150,28 @@ type Props = {
 };
 
 function SearchBar({
-  value = '',
-  onChangeText,
   expanded = false,
   onExpand,
   onCollapse,
   onSelectDestination,
 }: Props) {
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
-  const [localSearchValue, setLocalSearchValue] = useState(value);
+  const [searchText, setSearchText] = useState('');
   const [locations, setLocations] = useState<RowData[]>(INITIAL_LOCATIONS);
 
-  // Stable callback for search change
-  const handleSearchChange = useCallback(
-    (text: string) => {
-      setLocalSearchValue(text);
-      onChangeText?.(text);
-    },
-    [onChangeText]
-  );
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchText(text);
+  }, []);
 
-  // Stable callback for clear
   const handleClearSearch = useCallback(() => {
-    setLocalSearchValue('');
-    onChangeText?.('');
-  }, [onChangeText]);
+    setSearchText('');
+  }, []);
 
-  // Stable callback for collapse
   const handleCollapse = useCallback(() => {
-    setLocalSearchValue('');
-    onChangeText?.('');
+    setSearchText('');
     onCollapse?.();
-  }, [onChangeText, onCollapse]);
+  }, [onCollapse]);
 
-  // Stable callback for toggle - takes id as parameter
   const toggleFavorite = useCallback((id: string) => {
     setLocations(prev =>
       prev.map(loc =>
@@ -195,7 +180,6 @@ function SearchBar({
     );
   }, []);
 
-  // Stable callback for select - takes id as parameter
   const handleSelectDestination = useCallback(
     (id: string) => {
       const item = locations.find(loc => loc.id === id);
@@ -210,7 +194,6 @@ function SearchBar({
     [locations, onSelectDestination]
   );
 
-  // Stable callback for Home quick item
   const handleHomePress = useCallback(() => {
     onSelectDestination?.({
       id: 'home',
@@ -219,7 +202,6 @@ function SearchBar({
     });
   }, [onSelectDestination]);
 
-  // Stable callback for Work quick item
   const handleWorkPress = useCallback(() => {
     onSelectDestination?.({
       id: 'work',
@@ -228,17 +210,16 @@ function SearchBar({
     });
   }, [onSelectDestination]);
 
-  // Stable callback for sort toggle
   const handleSortToggle = useCallback(() => {
     setSort(s => (s === 'A-Z' ? 'Z-A' : 'A-Z'));
   }, []);
 
-  // Derived state - favorites
-  const favorites = useMemo(() => {
-    return locations.filter(loc => loc.isFavorite);
-  }, [locations]);
+  // Derived state
+  const favorites = useMemo(
+    () => locations.filter(loc => loc.isFavorite),
+    [locations]
+  );
 
-  // Derived state - offices (non-favorites), sorted
   const offices = useMemo(() => {
     const nonFavorites = locations.filter(loc => !loc.isFavorite);
     const sorted = [...nonFavorites].sort((a, b) =>
@@ -248,26 +229,25 @@ function SearchBar({
     return sorted;
   }, [locations, sort]);
 
-  // Filter based on search
   const filteredFavorites = useMemo(() => {
-    if (!localSearchValue.trim()) return favorites;
-    const query = localSearchValue.toLowerCase();
+    if (!searchText.trim()) return favorites;
+    const query = searchText.toLowerCase();
     return favorites.filter(
       item =>
         item.title.toLowerCase().includes(query) ||
         item.subtitle.toLowerCase().includes(query)
     );
-  }, [favorites, localSearchValue]);
+  }, [favorites, searchText]);
 
   const filteredOffices = useMemo(() => {
-    if (!localSearchValue.trim()) return offices;
-    const query = localSearchValue.toLowerCase();
+    if (!searchText.trim()) return offices;
+    const query = searchText.toLowerCase();
     return offices.filter(
       item =>
         item.title.toLowerCase().includes(query) ||
         item.subtitle.toLowerCase().includes(query)
     );
-  }, [offices, localSearchValue]);
+  }, [offices, searchText]);
 
   if (!expanded) {
     return (
@@ -287,14 +267,13 @@ function SearchBar({
 
   return (
     <View style={styles.expanded}>
-      {/* Search input row */}
       <View style={styles.inputRow}>
         <Image
           source={require('../assets/images/search_activate.png')}
           style={styles.searchIcon}
         />
         <TextInput
-          value={localSearchValue}
+          value={searchText}
           onChangeText={handleSearchChange}
           placeholder="Search Here"
           placeholderTextColor="#A0A0A0"
@@ -303,9 +282,7 @@ function SearchBar({
           autoCorrect={false}
         />
         <TouchableOpacity
-          onPress={
-            localSearchValue.length > 0 ? handleClearSearch : handleCollapse
-          }
+          onPress={searchText.length > 0 ? handleClearSearch : handleCollapse}
           style={styles.clearBtn}
           activeOpacity={0.7}
         >
@@ -313,7 +290,6 @@ function SearchBar({
         </TouchableOpacity>
       </View>
 
-      {/* home / work */}
       <View style={styles.quickRow}>
         <QuickItem
           title="Home"
@@ -330,13 +306,10 @@ function SearchBar({
         />
       </View>
 
-      {/* favorites */}
       <Text style={styles.section}>My Favorites</Text>
       {filteredFavorites.length === 0 ? (
         <Text style={styles.emptyText}>
-          {localSearchValue.trim()
-            ? 'No matching favorites'
-            : 'No favorites yet'}
+          {searchText.trim() ? 'No matching favorites' : 'No favorites yet'}
         </Text>
       ) : (
         filteredFavorites.map(item => (
@@ -349,10 +322,8 @@ function SearchBar({
         ))
       )}
 
-      {/* offices header with dropdown */}
       <View style={styles.sectionRow}>
         <Text style={styles.section}>All Offices</Text>
-
         <TouchableOpacity
           style={styles.sortBtn}
           activeOpacity={0.8}
@@ -365,7 +336,7 @@ function SearchBar({
 
       {filteredOffices.length === 0 ? (
         <Text style={styles.emptyText}>
-          {localSearchValue.trim() ? 'No matching offices' : 'No offices'}
+          {searchText.trim() ? 'No matching offices' : 'No offices'}
         </Text>
       ) : (
         filteredOffices.map(item => (
@@ -381,7 +352,6 @@ function SearchBar({
   );
 }
 
-// Export memoized SearchBar
 export default memo(SearchBar);
 
 const styles = StyleSheet.create({
@@ -393,25 +363,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-
-  expanded: {
-    backgroundColor: '#FCFCFC',
-    borderRadius: 22,
-    padding: 16,
-  },
-
-  searchIcon: {
-    width: 18,
-    height: 18,
-    marginRight: 10,
-    opacity: 0.9,
-  },
-
-  placeholder: {
-    color: '#A0A0A0',
-    fontSize: 14,
-  },
-
+  expanded: { backgroundColor: '#FCFCFC', borderRadius: 22, padding: 16 },
+  searchIcon: { width: 18, height: 18, marginRight: 10, opacity: 0.9 },
+  placeholder: { color: '#A0A0A0', fontSize: 14 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -421,14 +375,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F6F6F6',
     marginBottom: 12,
   },
-
-  input: {
-    flex: 1,
-    fontSize: 14,
-    paddingVertical: 0,
-    color: '#1C1C1C',
-  },
-
+  input: { flex: 1, fontSize: 14, paddingVertical: 0, color: '#1C1C1C' },
   clearBtn: {
     width: 26,
     height: 26,
@@ -438,18 +385,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#7878801F',
     marginLeft: 8,
   },
-
-  clear: {
-    fontSize: 14,
-    color: '#3C3C4399',
-    marginTop: -1,
-  },
-
-  quickRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-
+  clear: { fontSize: 14, color: '#3C3C4399', marginTop: -1 },
+  quickRow: { flexDirection: 'row', marginBottom: 10 },
   quickItem: {
     flex: 1,
     flexDirection: 'row',
@@ -457,11 +394,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
-
-  workItem: {
-    marginLeft: -80,
-  },
-
+  workItem: { marginLeft: -80 },
   quickCircle: {
     width: 36,
     height: 36,
@@ -471,30 +404,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-
   quickCircleIcon: {
     width: 20,
     height: 17,
     resizeMode: 'contain',
     opacity: 0.9,
   },
-
-  quickTextWrap: {
-    flex: 1,
-  },
-
-  quickTitle: {
-    fontWeight: '400',
-    fontSize: 12,
-    color: '#000000',
-  },
-
-  sub: {
-    fontSize: 8,
-    color: '#878585',
-    marginTop: 1,
-  },
-
+  quickTextWrap: { flex: 1 },
+  quickTitle: { fontWeight: '400', fontSize: 12, color: '#000000' },
+  sub: { fontSize: 8, color: '#878585', marginTop: 1 },
   section: {
     fontWeight: '500',
     fontSize: 14,
@@ -502,14 +420,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 6,
   },
-
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
     marginTop: 12,
   },
-
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -517,29 +433,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
   },
-
   sortText: {
     color: '#878585',
     fontWeight: '400',
     fontSize: 12,
     marginRight: 6,
   },
-
-  sortChevron: {
-    color: '#878585',
-    fontSize: 12,
-  },
-
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-
-  starTouchable: {
-    padding: 8,
-  },
-
+  sortChevron: { color: '#878585', fontSize: 12 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  starTouchable: { padding: 8 },
   rowContent: {
     flex: 1,
     flexDirection: 'row',
@@ -547,42 +449,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 4,
   },
-
-  rowTextContainer: {
-    flex: 1,
-  },
-
-  rowText: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#1C1C1C',
-  },
-
-  star: {
-    width: 18,
-    height: 18,
-  },
-
-  starIcon: {
-    width: 18,
-    height: 18,
-  },
-
-  placeSub: {
-    fontSize: 8,
-    color: '#878585',
-    marginTop: 1,
-  },
-
+  rowTextContainer: { flex: 1 },
+  rowText: { fontSize: 12, fontWeight: '400', color: '#1C1C1C' },
+  star: { width: 18, height: 18 },
+  starIcon: { width: 18, height: 18 },
+  placeSub: { fontSize: 8, color: '#878585', marginTop: 1 },
   milesText: {
     color: '#878585',
     fontWeight: '400',
     fontSize: 12,
     marginLeft: 8,
   },
-
-  emptyText: {
-    color: '#888',
-    paddingVertical: 8,
-  },
+  emptyText: { color: '#888', paddingVertical: 8 },
 });

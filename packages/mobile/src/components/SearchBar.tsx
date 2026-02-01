@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, memo } from 'react';
 import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
 
@@ -11,19 +11,6 @@ import {
   Image,
 } from 'react-native';
 
-type Props = {
-  value?: string;
-  onChangeText?: (text: string) => void;
-  expanded?: boolean;
-  onExpand?: () => void;
-  onCollapse?: () => void;
-  onSelectDestination?: (destination: {
-    id: string;
-    title: string;
-    subtitle: string;
-  }) => void;
-};
-
 type RowData = {
   id: string;
   title: string;
@@ -34,15 +21,20 @@ type RowData = {
 
 type RowItemProps = {
   item: RowData;
-  onPressRow: () => void;
-  onToggleStar: () => void;
+  onPressRow: (id: string) => void;
+  onToggleStar: (id: string) => void;
 };
 
-function RowItem({ item, onPressRow, onToggleStar }: RowItemProps) {
+// Memoized RowItem - only re-renders when props change
+const RowItem = memo(function RowItem({
+  item,
+  onPressRow,
+  onToggleStar,
+}: RowItemProps) {
   return (
     <View style={styles.row}>
       <TouchableOpacity
-        onPress={onToggleStar}
+        onPress={() => onToggleStar(item.id)}
         activeOpacity={0.6}
         style={styles.starTouchable}
       >
@@ -62,7 +54,7 @@ function RowItem({ item, onPressRow, onToggleStar }: RowItemProps) {
       <TouchableOpacity
         style={styles.rowContent}
         activeOpacity={0.7}
-        onPress={onPressRow}
+        onPress={() => onPressRow(item.id)}
       >
         <View style={styles.rowTextContainer}>
           <Text style={styles.rowText}>{item.title}</Text>
@@ -72,7 +64,7 @@ function RowItem({ item, onPressRow, onToggleStar }: RowItemProps) {
       </TouchableOpacity>
     </View>
   );
-}
+});
 
 type QuickItemProps = {
   title: string;
@@ -82,7 +74,14 @@ type QuickItemProps = {
   style?: ViewStyle;
 };
 
-function QuickItem({ title, subtitle, icon, onPress, style }: QuickItemProps) {
+// Memoized QuickItem
+const QuickItem = memo(function QuickItem({
+  title,
+  subtitle,
+  icon,
+  onPress,
+  style,
+}: QuickItemProps) {
   return (
     <TouchableOpacity
       style={[styles.quickItem, style]}
@@ -99,7 +98,7 @@ function QuickItem({ title, subtitle, icon, onPress, style }: QuickItemProps) {
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 // Initial data with unique IDs and isFavorite flag
 const INITIAL_LOCATIONS: RowData[] = [
@@ -140,7 +139,20 @@ const INITIAL_LOCATIONS: RowData[] = [
   },
 ];
 
-export default function SearchBar({
+type Props = {
+  value?: string;
+  onChangeText?: (text: string) => void;
+  expanded?: boolean;
+  onExpand?: () => void;
+  onCollapse?: () => void;
+  onSelectDestination?: (destination: {
+    id: string;
+    title: string;
+    subtitle: string;
+  }) => void;
+};
+
+function SearchBar({
   value = '',
   onChangeText,
   expanded = false,
@@ -152,6 +164,7 @@ export default function SearchBar({
   const [localSearchValue, setLocalSearchValue] = useState(value);
   const [locations, setLocations] = useState<RowData[]>(INITIAL_LOCATIONS);
 
+  // Stable callback for search change
   const handleSearchChange = useCallback(
     (text: string) => {
       setLocalSearchValue(text);
@@ -160,16 +173,20 @@ export default function SearchBar({
     [onChangeText]
   );
 
+  // Stable callback for clear
   const handleClearSearch = useCallback(() => {
     setLocalSearchValue('');
     onChangeText?.('');
   }, [onChangeText]);
 
+  // Stable callback for collapse
   const handleCollapse = useCallback(() => {
-    handleClearSearch();
+    setLocalSearchValue('');
+    onChangeText?.('');
     onCollapse?.();
-  }, [handleClearSearch, onCollapse]);
+  }, [onChangeText, onCollapse]);
 
+  // Stable callback for toggle - takes id as parameter
   const toggleFavorite = useCallback((id: string) => {
     setLocations(prev =>
       prev.map(loc =>
@@ -178,16 +195,43 @@ export default function SearchBar({
     );
   }, []);
 
+  // Stable callback for select - takes id as parameter
   const handleSelectDestination = useCallback(
-    (item: RowData) => {
-      onSelectDestination?.({
-        id: item.id,
-        title: item.title,
-        subtitle: item.subtitle,
-      });
+    (id: string) => {
+      const item = locations.find(loc => loc.id === id);
+      if (item && onSelectDestination) {
+        onSelectDestination({
+          id: item.id,
+          title: item.title,
+          subtitle: item.subtitle,
+        });
+      }
     },
-    [onSelectDestination]
+    [locations, onSelectDestination]
   );
+
+  // Stable callback for Home quick item
+  const handleHomePress = useCallback(() => {
+    onSelectDestination?.({
+      id: 'home',
+      title: 'Home',
+      subtitle: 'Set location',
+    });
+  }, [onSelectDestination]);
+
+  // Stable callback for Work quick item
+  const handleWorkPress = useCallback(() => {
+    onSelectDestination?.({
+      id: 'work',
+      title: 'Work',
+      subtitle: 'Set location',
+    });
+  }, [onSelectDestination]);
+
+  // Stable callback for sort toggle
+  const handleSortToggle = useCallback(() => {
+    setSort(s => (s === 'A-Z' ? 'Z-A' : 'A-Z'));
+  }, []);
 
   // Derived state - favorites
   const favorites = useMemo(() => {
@@ -275,26 +319,14 @@ export default function SearchBar({
           title="Home"
           subtitle="Set location"
           icon={require('../assets/images/search_house.png')}
-          onPress={() =>
-            onSelectDestination?.({
-              id: 'home',
-              title: 'Home',
-              subtitle: 'Set location',
-            })
-          }
+          onPress={handleHomePress}
         />
         <QuickItem
           title="Work"
           subtitle="Set location"
           icon={require('../assets/images/search_job.png')}
-          style={{ marginLeft: -100 }}
-          onPress={() =>
-            onSelectDestination?.({
-              id: 'work',
-              title: 'Work',
-              subtitle: 'Set location',
-            })
-          }
+          style={styles.workItem}
+          onPress={handleWorkPress}
         />
       </View>
 
@@ -311,8 +343,8 @@ export default function SearchBar({
           <RowItem
             key={item.id}
             item={item}
-            onPressRow={() => handleSelectDestination(item)}
-            onToggleStar={() => toggleFavorite(item.id)}
+            onPressRow={handleSelectDestination}
+            onToggleStar={toggleFavorite}
           />
         ))
       )}
@@ -324,7 +356,7 @@ export default function SearchBar({
         <TouchableOpacity
           style={styles.sortBtn}
           activeOpacity={0.8}
-          onPress={() => setSort(s => (s === 'A-Z' ? 'Z-A' : 'A-Z'))}
+          onPress={handleSortToggle}
         >
           <Text style={styles.sortText}>{sort}</Text>
           <Text style={styles.sortChevron}>▾</Text>
@@ -340,14 +372,17 @@ export default function SearchBar({
           <RowItem
             key={item.id}
             item={item}
-            onPressRow={() => handleSelectDestination(item)}
-            onToggleStar={() => toggleFavorite(item.id)}
+            onPressRow={handleSelectDestination}
+            onToggleStar={toggleFavorite}
           />
         ))
       )}
     </View>
   );
 }
+
+// Export memoized SearchBar
+export default memo(SearchBar);
 
 const styles = StyleSheet.create({
   collapsed: {
@@ -412,7 +447,6 @@ const styles = StyleSheet.create({
 
   quickRow: {
     flexDirection: 'row',
-    gap: 4,
     marginBottom: 10,
   },
 
@@ -420,9 +454,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
+  },
+
+  workItem: {
+    marginLeft: -80,
   },
 
   quickCircle: {
@@ -432,6 +469,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F1F1',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
 
   quickCircleIcon: {
@@ -475,7 +513,6 @@ const styles = StyleSheet.create({
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 10,
@@ -485,12 +522,12 @@ const styles = StyleSheet.create({
     color: '#878585',
     fontWeight: '400',
     fontSize: 12,
+    marginRight: 6,
   },
 
   sortChevron: {
     color: '#878585',
     fontSize: 12,
-    marginTop: 1,
   },
 
   row: {

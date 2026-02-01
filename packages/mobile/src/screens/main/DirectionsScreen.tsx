@@ -89,23 +89,23 @@ function DirectionsScreen() {
         <View style={styles.routeRow}>
           {/* Graphics Column */}
           <View style={styles.graphicsCol}>
-            <Svg width={16} height={72} style={styles.routeSvg}>
-              {/* Current Dot - Aligned with top text (approx center y=12) */}
+            <Svg width={16} height={68} style={styles.routeSvg}>
+              {/* Current Dot - Aligned with top text (center y=12) */}
               <Circle cx={8} cy={12} r={6} fill="#007AFF" />
               {/* Vertical Dotted Line - Connecting dot to pin */}
               <Line
                 x1={8}
                 y1={20}
                 x2={8}
-                y2={52}
+                y2={45}
                 stroke="#C7C7CC"
                 strokeWidth={2}
                 strokeDasharray="4 2"
               />
-              {/* Destination Pin - Aligned with bottom text (approx center y=61)
-                  Shifted path down by ~22px from original y=39 center
+              {/* Destination Pin - Aligned with bottom text (center y=53)
+                  Original center y=39. Offset = 53 - 39 = 14.
                */}
-              <G translateY={22}>
+              <G translateY={14}>
                 <Path
                   d="M8 50 C8 50 14 44 14 39 C14 35.6863 11.3137 33 8 33 C4.68629 33 2 35.6863 2 39 C2 44 8 50 8 50 Z"
                   fill="#FF3B30"
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   headerDivider: {
     height: 1,
     backgroundColor: '#E5E5E5',
-    marginVertical: 12,
+    marginVertical: 8,
   },
   bottomSheetBackground: {
     backgroundColor: '#FCFCFC',

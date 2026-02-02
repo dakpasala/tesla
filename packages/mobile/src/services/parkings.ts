@@ -47,3 +47,7 @@ export async function updateParkingAvailability(params: {
 export async function getAllLocations(): Promise<Location[]> {
   return get<Location[]>('parkings/locations');
 }
+
+export async function getAllParkingAvailability(): Promise<ParkingRow[]> {
+  return get<ParkingRow[]>('parkings/all');
+}

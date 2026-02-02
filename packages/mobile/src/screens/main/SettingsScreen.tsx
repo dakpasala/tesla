@@ -6,22 +6,21 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import LinearGradient from 'react-native-linear-gradient';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
 
+  const [liveActivity, setLiveActivity] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [trafficAlerts, setTrafficAlerts] = useState(true);
-  const [parkingAlerts, setParkingAlerts] = useState(true);
-  const [locationServices, setLocationServices] = useState(true);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -34,113 +33,63 @@ export default function SettingsScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Rewards Card */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('Rewards' as any)} // Temporary cast until types updated
+        >
+          <LinearGradient
+            colors={['#000', '#222']}
+            style={styles.rewardsCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.rewardsContent}>
+              <Text style={styles.rewardsLabel}>REWARDS</Text>
+              <Text style={styles.rewardsValue}>150 Kg CO2e</Text>
+              <Text style={styles.rewardsSub}>Total Saved</Text>
+            </View>
+            <View style={styles.rewardsIconContainer}>
+              <Text style={styles.rewardsIcon}>🌿</Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* Notifications Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Push Notifications</Text>
-              <Text style={styles.settingDescription}>
-                Receive updates about your commute
-              </Text>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Traffic Alerts</Text>
-              <Text style={styles.settingDescription}>
-                Get notified about traffic changes
-              </Text>
-            </View>
-            <Switch
-              value={trafficAlerts}
-              onValueChange={setTrafficAlerts}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Parking Alerts</Text>
-              <Text style={styles.settingDescription}>
-                Updates about parking availability
-              </Text>
-            </View>
-            <Switch
-              value={parkingAlerts}
-              onValueChange={setParkingAlerts}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
         </View>
 
-        {/* Appearance Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Dark Mode</Text>
-              <Text style={styles.settingDescription}>Use dark theme</Text>
-            </View>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingText}>Live Activity Notifications</Text>
+          <Switch
+            value={liveActivity}
+            onValueChange={setLiveActivity}
+            trackColor={{ false: '#E5E5E5', true: '#34C759' }}
+          />
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.settingRow}>
+          <Text style={styles.settingText}>Engagement Rewards</Text>
+          <Switch
+            value={notifications}
+            onValueChange={setNotifications}
+            trackColor={{ false: '#E5E5E5', true: '#34C759' }}
+          />
         </View>
 
-        {/* Privacy Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Location Services</Text>
-              <Text style={styles.settingDescription}>
-                Allow access to your location
-              </Text>
-            </View>
-            <Switch
-              value={locationServices}
-              onValueChange={setLocationServices}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Privacy Policy</Text>
-            </View>
-            <Text style={styles.settingArrow}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Terms of Service</Text>
-            </View>
-            <Text style={styles.settingArrow}>›</Text>
-          </TouchableOpacity>
+        {/* Admin View (Temp Entry) */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>ADMIN VIEW</Text>
         </View>
-
-        {/* App Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingTitle}>Version</Text>
-            <Text style={styles.settingValue}>1.0.0</Text>
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => navigation.navigate('Admin' as any)}
+        >
+          <Text style={styles.settingText}>Admin Home</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -155,64 +104,95 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   backButton: {
     fontSize: 24,
-    color: '#111',
+    color: '#000',
+    fontWeight: '300',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111',
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#000',
+    marginTop: 8,
   },
   headerSpacer: {
     width: 24,
   },
-  section: {
-    paddingTop: 24,
-    paddingBottom: 8,
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  rewardsCard: {
+    marginTop: 20,
+    marginBottom: 32,
+    borderRadius: 20,
+    padding: 24,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rewardsContent: {
+    flex: 1,
+  },
+  rewardsLabel: {
+    color: '#FF3B30', // Red/Orange tint for label
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 4,
+    letterSpacing: 1,
+  },
+  rewardsValue: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  rewardsSub: {
+    color: '#8E8E93',
+    fontSize: 14,
+  },
+  rewardsIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rewardsIcon: {
+    fontSize: 24,
+  },
+  sectionHeader: {
+    marginBottom: 8,
+    marginTop: 12,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#8E8E93',
     textTransform: 'uppercase',
-    paddingHorizontal: 20,
-    marginBottom: 8,
   },
   settingRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
+    paddingVertical: 16,
   },
-  settingInfo: {
-    flex: 1,
-    marginRight: 12,
+  settingText: {
+    fontSize: 17,
+    color: '#000',
+    fontWeight: '400',
   },
-  settingTitle: {
-    fontSize: 16,
-    color: '#111',
+  divider: {
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    marginLeft: 16, // Indented divider
   },
-  settingDescription: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  settingArrow: {
+  arrow: {
     fontSize: 20,
-    color: '#ccc',
-  },
-  settingValue: {
-    fontSize: 16,
-    color: '#666',
+    color: '#C7C7CC',
   },
 });

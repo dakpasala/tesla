@@ -6,6 +6,7 @@ export { default as FavoritesScreen } from './FavoritesScreen';
 export { default as ProfileScreen } from './ProfileScreen';
 export { default as SettingsScreen } from './SettingsScreen';
 export { default as ParkingScreen } from './ParkingScreen';
+export { default as RewardsScreen } from './RewardsScreen';
 
 // Note: Legacy screens preserved in parent directory (../):
 // - HomeScreen.tsx, MapScreen.tsx, Car.tsx, Bike.tsx, Bus.tsx, Train.tsx, Walk.tsx

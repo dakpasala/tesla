@@ -65,7 +65,7 @@ function MainHomeScreen() {
   }, []);
 
   const handleSettingsPress = useCallback(() => {
-    navigation.navigate('Profile');
+    navigation.navigate('Settings');
   }, [navigation]);
 
   return (

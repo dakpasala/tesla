@@ -134,41 +134,93 @@ export default function ParkingScreen() {
 
           {/* Parking Lots */}
           <View style={styles.lotsSection}>
-            {PARKING_DATA.map(lot => (
-              <TouchableOpacity
-                key={lot.id}
-                style={[
-                  styles.lotCard,
-                  selectedLot === lot.id && styles.lotCardSelected,
-                ]}
-                onPress={() => handleSelectLot(lot)}
-              >
-                <View style={styles.lotInfo}>
-                  <Text style={styles.lotName}>
-                    {lot.name}
-                    {lot.sublot && (
-                      <Text style={styles.sublotText}> {lot.sublot}</Text>
-                    )}
-                  </Text>
-                  <View style={styles.statusRow}>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        { backgroundColor: STATUS_COLORS[lot.status] },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: STATUS_COLORS[lot.status] },
-                      ]}
-                    >
-                      {STATUS_LABELS[lot.status]}
-                    </Text>
+            {PARKING_DATA.map(lot => {
+              const isSelected = selectedLot === lot.id;
+
+              return (
+                <TouchableOpacity
+                  key={lot.id}
+                  style={[styles.lotCard, isSelected && styles.lotCardSelected]}
+                  onPress={() => handleSelectLot(lot)}
+                  activeOpacity={0.9}
+                >
+                  <View
+                    style={[
+                      styles.lotHeaderRow,
+                      isSelected && { marginBottom: 12 },
+                    ]}
+                  >
+                    <View style={styles.lotInfo}>
+                      <Text style={styles.lotName}>{lot.name}</Text>
+                      <View style={styles.statusRow}>
+                        <View
+                          style={[
+                            styles.statusDot,
+                            { backgroundColor: STATUS_COLORS[lot.status] },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.statusText,
+                            { color: STATUS_COLORS[lot.status] },
+                          ]}
+                        >
+                          {STATUS_LABELS[lot.status]}
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Chevron or Selection Indicator */}
+                    <View style={styles.chevronContainer}>
+                      {isSelected ? (
+                        <Text style={{ color: '#4285F4', fontWeight: 'bold' }}>
+                          ✓
+                        </Text>
+                      ) : (
+                        <Text style={{ color: '#ccc' }}>›</Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+
+                  {/* Expanded/Selected View with Sublots details or Metrics */}
+                  {isSelected &&
+                    lot.id === '1' && ( // Hardcoded for demo: Deer Creek only showing extra details
+                      <View style={styles.lotDetails}>
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailLabel}>SUBLOT A</Text>
+                          <Text style={styles.detailValue}>
+                            95% Full · Limited
+                          </Text>
+                        </View>
+                        <View style={styles.detailRowSelected}>
+                          <Text style={styles.detailLabelSelected}>
+                            SUBLOT B
+                          </Text>
+                          <Text style={styles.detailValueSelected}>
+                            60% Full · Available
+                          </Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailLabel}>SUBLOT C</Text>
+                          <Text style={styles.detailValue}>
+                            80% Full · Limited
+                          </Text>
+                        </View>
+                        <Text style={styles.forecastText}>
+                          Also consider Shuttle: 5 mins wait
+                        </Text>
+                      </View>
+                    )}
+
+                  {isSelected && lot.id !== '1' && (
+                    <View style={styles.lotDetails}>
+                      <Text style={styles.forecastText}>
+                        Typically fills up by 9:00 AM
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Also Consider Shuttles */}
@@ -410,5 +462,59 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#fff',
+  },
+  lotHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  chevronContainer: {
+    justifyContent: 'center',
+    paddingLeft: 10,
+  },
+  lotDetails: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  detailValue: {
+    fontSize: 12,
+    color: '#000',
+  },
+  detailRowSelected: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    backgroundColor: '#E8F2FF',
+    marginHorizontal: -8,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  detailLabelSelected: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4285F4',
+  },
+  detailValueSelected: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4285F4',
+  },
+  forecastText: {
+    fontSize: 12,
+    color: '#F57C00',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });

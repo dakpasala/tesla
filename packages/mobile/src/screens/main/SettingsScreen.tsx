@@ -85,7 +85,7 @@ export default function SettingsScreen() {
         </View>
         <TouchableOpacity
           style={styles.settingRow}
-          onPress={() => navigation.navigate('AdminHome' as any)}
+          onPress={() => navigation.navigate('Admin' as any)}
         >
           <Text style={styles.settingText}>Admin Home</Text>
           <Text style={styles.arrow}>›</Text>

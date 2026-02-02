@@ -39,13 +39,6 @@ export default function AdminHomeScreen() {
       icon: '⚠️',
       route: 'LiveAlerts',
     },
-    {
-      id: 'settings',
-      title: 'Settings',
-      subtitle: 'System configuration',
-      icon: '⚙️',
-      route: 'Settings', // Goes back to main settings or admin settings? Assuming main for now or separate
-    },
   ];
 
   return (
@@ -75,11 +68,9 @@ export default function AdminHomeScreen() {
               key={item.id}
               style={styles.menuCard}
               onPress={() => {
-                if (item.route && item.route !== 'Settings') {
+                if (item.route) {
                   // @ts-ignore - dynamic nav
                   navigation.navigate(item.route);
-                } else if (item.route === 'Settings') {
-                  navigation.navigate('Settings');
                 }
               }}
             >

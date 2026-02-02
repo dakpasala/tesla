@@ -13,14 +13,6 @@ import {
   ParkingScreen,
 } from '../screens/main';
 
-// Admin Screens
-import {
-  AdminDashboardScreen,
-  AdminUsersScreen,
-  AdminParkingScreen,
-  AdminAlertsScreen,
-} from '../screens/admin';
-
 // Note: Legacy screens are preserved in src/screens/ but not included in navigation
 // - HomeScreen.tsx (original home with Modalize)
 // - MapScreen.tsx
@@ -47,12 +39,6 @@ export default function AppNavigator() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Parking" component={ParkingScreen} />
-
-      {/* Admin Screens */}
-      <Stack.Screen name="Admin" component={AdminDashboardScreen} />
-      <Stack.Screen name="AdminUsers" component={AdminUsersScreen} />
-      <Stack.Screen name="AdminParking" component={AdminParkingScreen} />
-      <Stack.Screen name="AdminAlerts" component={AdminAlertsScreen} />
     </Stack.Navigator>
   );
 }

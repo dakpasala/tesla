@@ -30,6 +30,7 @@ import Svg, {
 } from 'react-native-svg';
 import { BackButton } from '../../components/BackButton';
 
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
 

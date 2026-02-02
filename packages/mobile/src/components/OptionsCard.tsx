@@ -11,7 +11,7 @@ import {
 
 export type OptionItem = {
   id: string;
-  icon: ImageSourcePropType;
+  icon?: ImageSourcePropType;
 
   title: string;
   subtitle: string;
@@ -22,6 +22,7 @@ export type OptionItem = {
 
   selected?: boolean;
   disabled?: boolean;
+  extraContent?: React.ReactNode;
 };
 
 interface OptionsCardProps {
@@ -62,9 +63,11 @@ export default function OptionsCard({
               idx !== items.length - 1 ? styles.optionRowSpacer : null,
             ]}
           >
-            <View style={styles.iconBox}>
-              <Image source={item.icon} style={styles.icon} />
-            </View>
+            {item.icon && (
+              <View style={styles.iconBox}>
+                <Image source={item.icon} style={styles.icon} />
+              </View>
+            )}
 
             <View style={styles.textCol}>
               <Text style={styles.title}>{item.title}</Text>
@@ -83,6 +86,8 @@ export default function OptionsCard({
                 <Text style={styles.incentiveText}>{item.incentiveText}</Text>
               </View>
             ) : null}
+
+            {item.extraContent}
           </Pressable>
         );
       })}

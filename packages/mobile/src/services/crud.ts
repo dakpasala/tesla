@@ -1,3 +1,5 @@
+// packages/mobile/src/services/crud.ts
+
 import { CONFIG } from '../config/base_url';
 const { API_BASE_URL } = CONFIG;
 

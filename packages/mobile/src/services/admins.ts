@@ -1,3 +1,5 @@
+// packages/mobile/src/services/admins.ts
+
 import { get, post } from './crud';
 
 export type Admin = {

@@ -5,14 +5,41 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 
+import { getUserIncentives, getUserBalance } from '../../services/users';
+
 export default function RewardsScreen() {
   const navigation = useNavigation();
+
+  const USER_ID = 1; // TODO: replace with auth context
+
+  const [balance, setBalance] = React.useState<number>(0);
+  const [incentives, setIncentives] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function loadRewards() {
+      try {
+        const [balanceRes, incentivesRes] = await Promise.all([
+          getUserBalance(USER_ID),
+          getUserIncentives(USER_ID),
+        ]);
+
+        setBalance(balanceRes.balance);
+        setIncentives(incentivesRes);
+      } catch (err) {
+        console.error('Failed to load rewards', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadRewards();
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -37,10 +64,12 @@ export default function RewardsScreen() {
           end={{ x: 1, y: 1 }}
         >
           <View>
-            <Text style={styles.cardLabel}>TOTAL SAVED</Text>
-            <Text style={styles.cardValue}>150 Kg CO2e</Text>
+            <Text style={styles.cardLabel}>TOTAL POINTS</Text>
+            <Text style={styles.cardValue}>
+              {loading ? '—' : `${balance} pts`}
+            </Text>
             <Text style={styles.cardSub}>
-              Keep using shuttles to earn more!
+              Keep using sustainable transport to earn more!
             </Text>
           </View>
           <View style={styles.iconCircle}>
@@ -50,39 +79,46 @@ export default function RewardsScreen() {
 
         <Text style={styles.sectionHeader}>History</Text>
 
-        {/* History Items */}
-        <View style={styles.historyItem}>
-          <View style={styles.historyIcon}>
-            <Text style={styles.historyEmoji}>🚌</Text>
-          </View>
-          <View style={styles.historyInfo}>
-            <Text style={styles.historyTitle}>Shuttle Trip</Text>
-            <Text style={styles.historyDate}>Today, 8:45 AM</Text>
-          </View>
-          <Text style={styles.historyPoints}>+12 pts</Text>
-        </View>
+        {loading && (
+          <Text style={{ textAlign: 'center', color: '#666' }}>
+            Loading reward history…
+          </Text>
+        )}
 
-        <View style={styles.historyItem}>
-          <View style={styles.historyIcon}>
-            <Text style={styles.historyEmoji}>🚌</Text>
-          </View>
-          <View style={styles.historyInfo}>
-            <Text style={styles.historyTitle}>Shuttle Trip</Text>
-            <Text style={styles.historyDate}>Yesterday, 5:30 PM</Text>
-          </View>
-          <Text style={styles.historyPoints}>+12 pts</Text>
-        </View>
+        {!loading &&
+          incentives.map(inc => {
+            const isShuttle = inc.transit_type === 'shuttle';
 
-        <View style={styles.historyItem}>
-          <View style={[styles.historyIcon, { backgroundColor: '#E3F2FD' }]}>
-            <Text style={styles.historyEmoji}>🚲</Text>
-          </View>
-          <View style={styles.historyInfo}>
-            <Text style={styles.historyTitle}>Bike Commute</Text>
-            <Text style={styles.historyDate}>Yesterday, 8:00 AM</Text>
-          </View>
-          <Text style={styles.historyPoints}>+25 pts</Text>
-        </View>
+            return (
+              <View key={inc.id} style={styles.historyItem}>
+                <View
+                  style={[
+                    styles.historyIcon,
+                    {
+                      backgroundColor: isShuttle ? '#E8F5E9' : '#E3F2FD',
+                    },
+                  ]}
+                >
+                  <Text style={styles.historyEmoji}>
+                    {isShuttle ? '🚌' : '🚲'}
+                  </Text>
+                </View>
+
+                <View style={styles.historyInfo}>
+                  <Text style={styles.historyTitle}>
+                    {isShuttle ? 'Shuttle Trip' : 'Bike Commute'}
+                  </Text>
+                  <Text style={styles.historyDate}>
+                    {new Date(inc.created_at).toLocaleString()}
+                  </Text>
+                </View>
+
+                <Text style={styles.historyPoints}>
+                  +{inc.amount} pts
+                </Text>
+              </View>
+            );
+          })}
       </ScrollView>
     </SafeAreaView>
   );
@@ -167,13 +203,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    backgroundColor: '#fff',
   },
   historyIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E8F5E9',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,

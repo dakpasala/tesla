@@ -8,6 +8,17 @@ export type ParkingRow = {
   error?: string;
 };
 
+export type Location = {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  region: string;
+  lat: number;
+  lng: number;
+};
+
+
 export async function getParkingForLocation(
   locName: string
 ): Promise<ParkingRow[]> {
@@ -31,4 +42,8 @@ export async function updateParkingAvailability(params: {
     lot_name: string;
     availability: number;
   }>('parkings', params);
+}
+
+export async function getAllLocations(): Promise<Location[]> {
+  return get<Location[]>('parkings/locations');
 }

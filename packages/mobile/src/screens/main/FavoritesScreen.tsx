@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
+import { getUserFavorites } from '../../services/users';
 import {
   View,
   Text,
@@ -25,33 +27,34 @@ interface FavoriteLocation {
   starred: boolean;
 }
 
-const INITIAL_FAVORITES: FavoriteLocation[] = [
-  {
-    id: '1',
-    name: 'Tesla Deer Creek',
-    address: '1501 Page Mill Rd, Palo Alto',
-    miles: '2.5 miles',
-    starred: true,
-  },
-  {
-    id: '2',
-    name: 'Tesla Page Mill',
-    address: '1501 Page Mill Rd, Palo Alto',
-    miles: '2.5 miles',
-    starred: true,
-  },
-  {
-    id: '3',
-    name: 'Tesla Page Mill',
-    address: '1501 Page Mill Rd, Palo Alto',
-    miles: '2.5 miles',
-    starred: true,
-  },
-];
-
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const [favorites, setFavorites] = useState(INITIAL_FAVORITES);
+  const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
+
+  useEffect(() => {
+    async function loadFavorites() {
+      try {
+        const USER_ID = 1; 
+
+        const apiFavorites = await getUserFavorites(USER_ID);
+
+        setFavorites(
+          apiFavorites.map((fav, index) => ({
+            id: String(index),
+            name: fav.name,
+            address: fav.address,
+            miles: '',        
+            starred: true,    
+          }))
+        );
+      } catch (err) {
+        console.error('Failed to load favorites', err);
+      }
+    }
+
+    loadFavorites();
+  }, []);
+
 
   const toggleFavorite = (id: string) => {
     setFavorites(prev =>

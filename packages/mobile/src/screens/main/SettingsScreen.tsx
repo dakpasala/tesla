@@ -11,136 +11,90 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
+import LinearGradient from 'react-native-linear-gradient';
+import { theme } from '../../theme/theme';
+import { BackButton } from '../../components/BackButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
 
+  const [liveActivity, setLiveActivity] = useState(true);
   const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [trafficAlerts, setTrafficAlerts] = useState(true);
-  const [parkingAlerts, setParkingAlerts] = useState(true);
-  const [locationServices, setLocationServices] = useState(true);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        <BackButton />
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Rewards Card */}
+        <TouchableOpacity
+          activeOpacity={0.9}
+          onPress={() => navigation.navigate('Rewards' as any)} // Temporary cast until types updated
+        >
+          <LinearGradient
+            colors={theme.gradients.darkCard}
+            style={styles.rewardsCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.rewardsContent}>
+              <Text style={styles.rewardsLabel}>REWARDS</Text>
+              <Text style={styles.rewardsValue}>150 Kg CO2e</Text>
+              <Text style={styles.rewardsSub}>Total Saved</Text>
+            </View>
+            <View style={styles.rewardsIconContainer}>
+              <Text style={styles.rewardsIcon}>🌿</Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
         {/* Notifications Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Push Notifications</Text>
-              <Text style={styles.settingDescription}>
-                Receive updates about your commute
-              </Text>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={setNotifications}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Traffic Alerts</Text>
-              <Text style={styles.settingDescription}>
-                Get notified about traffic changes
-              </Text>
-            </View>
-            <Switch
-              value={trafficAlerts}
-              onValueChange={setTrafficAlerts}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Parking Alerts</Text>
-              <Text style={styles.settingDescription}>
-                Updates about parking availability
-              </Text>
-            </View>
-            <Switch
-              value={parkingAlerts}
-              onValueChange={setParkingAlerts}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>NOTIFICATIONS</Text>
         </View>
 
-        {/* Appearance Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Dark Mode</Text>
-              <Text style={styles.settingDescription}>Use dark theme</Text>
-            </View>
-            <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
+        <View style={styles.settingRow}>
+          <Text style={styles.settingText}>Live Activity Notifications</Text>
+          <Switch
+            value={liveActivity}
+            onValueChange={setLiveActivity}
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.status.success,
+            }}
+          />
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.settingRow}>
+          <Text style={styles.settingText}>Engagement Rewards</Text>
+          <Switch
+            value={notifications}
+            onValueChange={setNotifications}
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.status.success,
+            }}
+          />
         </View>
 
-        {/* Privacy Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy</Text>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Location Services</Text>
-              <Text style={styles.settingDescription}>
-                Allow access to your location
-              </Text>
-            </View>
-            <Switch
-              value={locationServices}
-              onValueChange={setLocationServices}
-              trackColor={{ false: '#ddd', true: '#4285F4' }}
-            />
-          </View>
-
-          <TouchableOpacity style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Privacy Policy</Text>
-            </View>
-            <Text style={styles.settingArrow}>›</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Terms of Service</Text>
-            </View>
-            <Text style={styles.settingArrow}>›</Text>
-          </TouchableOpacity>
+        {/* Admin View (Temp Entry) */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>ADMIN VIEW</Text>
         </View>
-
-        {/* App Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-
-          <View style={styles.settingRow}>
-            <Text style={styles.settingTitle}>Version</Text>
-            <Text style={styles.settingValue}>1.0.0</Text>
-          </View>
-        </View>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => navigation.navigate('Admin' as any)}
+        >
+          <Text style={styles.settingText}>Admin Home</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -149,70 +103,98 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.white,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    paddingHorizontal: theme.spacing.xl, // 20 -> xl is 24, l is 16. Let's use 20 if we want consistency or stick to theme. User had 20. Closest is xl (24) or l+s (20). Let's use 20 hardcoded for now or define a new spacing?
+    // Actually, theme.spacing.xl is 24 on line 52 of theme.ts. theme.spacing.l is 16.
+    // Let's just use 20 explicitly or update theme? I'll use 20 for now to match exactly, or use theme.spacing.xl (24) for better alignment.
+    // I'll stick to user's 20 for safety, but maybe update theme later.
+    paddingVertical: theme.spacing.m, // 12
   },
   backButton: {
     fontSize: 24,
-    color: '#111',
+    color: theme.colors.text.primary,
+    fontWeight: '300',
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#111',
+    ...theme.typography.display,
+    marginTop: theme.spacing.s,
   },
   headerSpacer: {
     width: 24,
   },
-  section: {
-    paddingTop: 24,
-    paddingBottom: 8,
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  rewardsCard: {
+    marginTop: 20,
+    marginBottom: theme.spacing.xxl, // 32
+    borderRadius: 20,
+    padding: theme.spacing.xl, // 24
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  rewardsContent: {
+    flex: 1,
+  },
+  rewardsLabel: {
+    color: theme.colors.status.error,
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: theme.spacing.xs, // 4
+    letterSpacing: 1,
+  },
+  rewardsValue: {
+    color: theme.colors.white,
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: theme.spacing.xs,
+  },
+  rewardsSub: {
+    ...theme.typography.sub,
+    color: theme.colors.text.secondary,
+    fontSize: 14, // Override theme 13
+  },
+  rewardsIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: theme.components.rewards.iconBg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rewardsIcon: {
+    fontSize: 24,
+  },
+  sectionHeader: {
+    marginBottom: theme.spacing.s,
+    marginTop: theme.spacing.m,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    textTransform: 'uppercase',
-    paddingHorizontal: 20,
-    marginBottom: 8,
+    ...theme.typography.sectionHeader,
   },
   settingRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.l, // 16
   },
-  settingInfo: {
-    flex: 1,
-    marginRight: 12,
+  settingText: {
+    ...theme.typography.listItem,
   },
-  settingTitle: {
-    fontSize: 16,
-    color: '#111',
+  divider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginLeft: theme.spacing.l, // 16
   },
-  settingDescription: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 2,
-  },
-  settingArrow: {
+  arrow: {
     fontSize: 20,
-    color: '#ccc',
-  },
-  settingValue: {
-    fontSize: 16,
-    color: '#666',
+    color: theme.components.icon,
   },
 });

@@ -1,3 +1,5 @@
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
@@ -11,7 +13,14 @@ import {
   ProfileScreen,
   SettingsScreen,
   ParkingScreen,
+  RewardsScreen,
 } from '../screens/main';
+
+// Admin Screens
+import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
+import ShuttleDashboardScreen from '../screens/admin/ShuttleDashboardScreen';
+import LiveAlertsScreen from '../screens/admin/LiveAlertsScreen';
+import ParkingManagementScreen from '../screens/admin/ParkingManagementScreen';
 
 // Note: Legacy screens are preserved in src/screens/ but not included in navigation
 // - HomeScreen.tsx (original home with Modalize)
@@ -39,6 +48,19 @@ export default function AppNavigator() {
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Parking" component={ParkingScreen} />
+      <Stack.Screen name="Rewards" component={RewardsScreen} />
+
+      {/* Admin Screens (Unprotected for now) */}
+      <Stack.Screen name="Admin" component={AdminHomeScreen} />
+      <Stack.Screen
+        name="ShuttleDashboard"
+        component={ShuttleDashboardScreen}
+      />
+      <Stack.Screen name="LiveAlerts" component={LiveAlertsScreen} />
+      <Stack.Screen
+        name="ParkingManagement"
+        component={ParkingManagementScreen}
+      />
     </Stack.Navigator>
   );
 }

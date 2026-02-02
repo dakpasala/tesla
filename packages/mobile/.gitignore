@@ -76,3 +76,5 @@ yarn-error.log
 
 # Env
 .env
+
+ios/tesla/Secrets.swift

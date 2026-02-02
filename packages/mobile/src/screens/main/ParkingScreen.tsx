@@ -16,6 +16,9 @@ import { Modalize } from 'react-native-modalize';
 import NavBox from '../../components/NavBox';
 import NavBar, { NavScreen } from '../../components/NavBar';
 
+import { getAllParkingAvailability } from '../../services/parkings';
+
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ParkingRouteProp = RouteProp<RootStackParamList, 'Parking'>;
 
@@ -29,24 +32,6 @@ interface ParkingLot {
   sublots?: { name: string; range: string; color: string }[];
 }
 
-const PARKING_DATA: ParkingLot[] = [
-  {
-    id: '1',
-    name: 'Deer Creek',
-    sublot: 'Sublot B',
-    status: 'full',
-  },
-  {
-    id: '2',
-    name: 'Page Mill',
-    status: 'available',
-  },
-  {
-    id: '3',
-    name: 'Hanover',
-    status: 'limited',
-  },
-];
 
 const SHUTTLE_OPTIONS = [
   { id: 's1', name: 'Shuttle A', status: 'On Time', time: 'Arrives in 5 min' },
@@ -75,6 +60,37 @@ export default function ParkingScreen() {
   // Transport mode state
   const [transportMode, setTransportMode] = useState<NavScreen>('car');
   const [selectedLot, setSelectedLot] = useState<string | null>(null);
+
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  function availabilityToStatus(availability: number): ParkingLot['status'] {
+    if (availability > 30) return 'available';
+    if (availability > 10) return 'limited';
+    return 'full';
+  }
+
+  React.useEffect(() => {
+    async function loadParking() {
+      try {
+        const rows = await getAllParkingAvailability();
+
+        const mapped: ParkingLot[] = rows.map((row, idx) => ({
+          id: `${row.loc_name}-${row.lot_name}`,
+          name: row.lot_name,
+          status: availabilityToStatus(row.availability),
+        }));
+
+        setParkingLots(mapped);
+      } catch (e) {
+        console.error('Failed to load parking data', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadParking();
+  }, []);
 
   const handleSelectLot = (lot: ParkingLot) => {
     setSelectedLot(lot.id);
@@ -134,41 +150,93 @@ export default function ParkingScreen() {
 
           {/* Parking Lots */}
           <View style={styles.lotsSection}>
-            {PARKING_DATA.map(lot => (
-              <TouchableOpacity
-                key={lot.id}
-                style={[
-                  styles.lotCard,
-                  selectedLot === lot.id && styles.lotCardSelected,
-                ]}
-                onPress={() => handleSelectLot(lot)}
-              >
-                <View style={styles.lotInfo}>
-                  <Text style={styles.lotName}>
-                    {lot.name}
-                    {lot.sublot && (
-                      <Text style={styles.sublotText}> {lot.sublot}</Text>
-                    )}
-                  </Text>
-                  <View style={styles.statusRow}>
-                    <View
-                      style={[
-                        styles.statusDot,
-                        { backgroundColor: STATUS_COLORS[lot.status] },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: STATUS_COLORS[lot.status] },
-                      ]}
-                    >
-                      {STATUS_LABELS[lot.status]}
-                    </Text>
+            {parkingLots.map(lot => {
+              const isSelected = selectedLot === lot.id;
+
+              return (
+                <TouchableOpacity
+                  key={lot.id}
+                  style={[styles.lotCard, isSelected && styles.lotCardSelected]}
+                  onPress={() => handleSelectLot(lot)}
+                  activeOpacity={0.9}
+                >
+                  <View
+                    style={[
+                      styles.lotHeaderRow,
+                      isSelected && { marginBottom: 12 },
+                    ]}
+                  >
+                    <View style={styles.lotInfo}>
+                      <Text style={styles.lotName}>{lot.name}</Text>
+                      <View style={styles.statusRow}>
+                        <View
+                          style={[
+                            styles.statusDot,
+                            { backgroundColor: STATUS_COLORS[lot.status] },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.statusText,
+                            { color: STATUS_COLORS[lot.status] },
+                          ]}
+                        >
+                          {STATUS_LABELS[lot.status]}
+                        </Text>
+                      </View>
+                    </View>
+                    {/* Chevron or Selection Indicator */}
+                    <View style={styles.chevronContainer}>
+                      {isSelected ? (
+                        <Text style={{ color: '#4285F4', fontWeight: 'bold' }}>
+                          ✓
+                        </Text>
+                      ) : (
+                        <Text style={{ color: '#ccc' }}>›</Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+
+                  {/* Expanded/Selected View with Sublots details or Metrics */}
+                  {isSelected &&
+                    lot.id === '1' && ( // Hardcoded for demo: Deer Creek only showing extra details
+                      <View style={styles.lotDetails}>
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailLabel}>SUBLOT A</Text>
+                          <Text style={styles.detailValue}>
+                            95% Full · Limited
+                          </Text>
+                        </View>
+                        <View style={styles.detailRowSelected}>
+                          <Text style={styles.detailLabelSelected}>
+                            SUBLOT B
+                          </Text>
+                          <Text style={styles.detailValueSelected}>
+                            60% Full · Available
+                          </Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <Text style={styles.detailLabel}>SUBLOT C</Text>
+                          <Text style={styles.detailValue}>
+                            80% Full · Limited
+                          </Text>
+                        </View>
+                        <Text style={styles.forecastText}>
+                          Also consider Shuttle: 5 mins wait
+                        </Text>
+                      </View>
+                    )}
+
+                  {isSelected && lot.id !== '1' && (
+                    <View style={styles.lotDetails}>
+                      <Text style={styles.forecastText}>
+                        Typically fills up by 9:00 AM
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Also Consider Shuttles */}
@@ -208,7 +276,7 @@ export default function ParkingScreen() {
               <Text style={styles.routeBtnText}>
                 Route to{' '}
                 {selectedLot
-                  ? PARKING_DATA.find(l => l.id === selectedLot)?.name
+                  ? parkingLots.find(l => l.id === selectedLot)?.name
                   : 'Lot'}
               </Text>
             </TouchableOpacity>
@@ -410,5 +478,59 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#fff',
+  },
+  lotHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  chevronContainer: {
+    justifyContent: 'center',
+    paddingLeft: 10,
+  },
+  lotDetails: {
+    marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#8E8E93',
+  },
+  detailValue: {
+    fontSize: 12,
+    color: '#000',
+  },
+  detailRowSelected: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    backgroundColor: '#E8F2FF',
+    marginHorizontal: -8,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  detailLabelSelected: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4285F4',
+  },
+  detailValueSelected: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#4285F4',
+  },
+  forecastText: {
+    fontSize: 12,
+    color: '#F57C00',
+    marginTop: 8,
+    fontStyle: 'italic',
   },
 });

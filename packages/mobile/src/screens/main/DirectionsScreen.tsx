@@ -28,6 +28,7 @@ import Svg, {
   LinearGradient,
   Stop,
 } from 'react-native-svg';
+import { BackButton } from '../../components/BackButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
@@ -39,29 +40,80 @@ interface ParkingLot {
   name: string;
   status: string;
   fullness: number;
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 const PARKING_LOTS: ParkingLot[] = [
-  { id: 'deer_creek', name: 'Deer Creek', status: 'Almost Full', fullness: 90 },
-  { id: 'page_mill', name: 'Page Mill', status: 'Available', fullness: 45 },
-  { id: 'hanover', name: 'Hanover', status: 'Available', fullness: 20 },
+  {
+    id: 'deer_creek',
+    name: 'Deer Creek',
+    status: 'Almost Full',
+    fullness: 90,
+    coordinate: { latitude: 37.4419, longitude: -122.143 },
+  },
+  {
+    id: 'page_mill',
+    name: 'Page Mill',
+    status: 'Available',
+    fullness: 45,
+    coordinate: { latitude: 37.426, longitude: -122.145 }, // Approx nearby
+  },
+  {
+    id: 'hanover',
+    name: 'Hanover',
+    status: 'Available',
+    fullness: 20,
+    coordinate: { latitude: 37.425, longitude: -122.155 }, // Approx nearby
+  },
 ];
 
 function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<DirectionsRouteProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const { destination, travelMode, setTravelMode } = useRideContext();
+  const mapRef = useRef<MapView>(null);
+  const { destination, setDestination, travelMode, setTravelMode } =
+    useRideContext();
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedParkingId, setSelectedParkingId] =
     useState<string>('deer_creek');
+  const [selectedSublot, setSelectedSublot] = useState<string>('Sublot B');
 
   // Fallback if no destination in context
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
   const destinationLng = destination?.coordinate?.longitude ?? -122.143;
   const destinationName = destination?.title ?? 'Tesla Deer Creek';
 
-  // Matches Figma: 20% peek, 50% half, 95% full
-  const snapPoints = useMemo(() => ['20%', '50%', '95%'], []);
+  // Matches Figma: 20% peek, 50% half, 80% full (to avoid covering header)
+  const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
+
+  const handleParkingSelect = (id: string) => {
+    const lot = PARKING_LOTS.find(p => p.id === id);
+    if (!lot) return;
+
+    // 1. Update selection state
+    setSelectedParkingId(id);
+
+    // 2. Update global destination context (updates header)
+    setDestination({
+      id: lot.id,
+      title: `Tesla ${lot.name}`,
+      subtitle: `${lot.fullness}% Full`,
+      coordinate: lot.coordinate,
+    });
+
+    // 3. Animate Map Camera
+    mapRef.current?.animateCamera({
+      center: lot.coordinate,
+      pitch: 0,
+      heading: 0,
+      altitude: 1000,
+      zoom: 15,
+    });
+  };
 
   const openInMaps = () => {
     const url = Platform.select({
@@ -85,6 +137,14 @@ function DirectionsScreen() {
     Linking.openURL(url);
   };
 
+  const handleRoutePress = () => {
+    if (viewMode === 'list') {
+      setViewMode('detail');
+    } else {
+      openInGoogleMaps();
+    }
+  };
+
   const handleReport = () => {
     Alert.alert('Report an Issue', 'Select an issue type:', [
       {
@@ -97,53 +157,215 @@ function DirectionsScreen() {
     ]);
   };
 
-  const renderParkingContent = () => (
+  const renderParkingDetail = () => {
+    const lot = PARKING_LOTS.find(p => p.id === selectedParkingId);
+    if (!lot) return null;
+
+    return (
+      <View style={styles.detailContainer}>
+        {/* Header */}
+        <View style={styles.detailHeaderRow}>
+          <Image
+            source={require('../../assets/icons/new/newCar.png')}
+            style={{ width: 24, height: 24, tintColor: '#000', marginRight: 8 }}
+          />
+          <Text style={styles.detailTitle}>{lot.name}</Text>
+          <Text style={styles.detailUpdateText}>Updated 2 min ago</Text>
+        </View>
+
+        {/* Status / Forecast */}
+        <View style={styles.statusSection}>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>CURRENTLY</Text>
+            <View style={styles.dotYellow} />
+            <Text style={styles.statusValue}>{lot.fullness}% full</Text>
+          </View>
+          <View style={styles.statusRow}>
+            <Text style={styles.statusLabel}>FORECAST</Text>
+            <View style={styles.dotRed} />
+            <Text style={styles.statusValue}>
+              About {Math.min(lot.fullness + 20, 100)}% full by 9:30 AM
+            </Text>
+          </View>
+        </View>
+
+        {/* Sublot List */}
+        <View style={styles.sublotList}>
+          {lot.id === 'deer_creek' ? (
+            <>
+              {/* Sublot A */}
+              <TouchableOpacity
+                style={
+                  selectedSublot === 'Sublot A'
+                    ? styles.sublotRowSelected
+                    : styles.sublotRow
+                }
+                onPress={() => setSelectedSublot('Sublot A')}
+              >
+                <Text
+                  style={
+                    selectedSublot === 'Sublot A'
+                      ? styles.sublotNameSelected
+                      : styles.sublotName
+                  }
+                >
+                  SUBLOT A
+                </Text>
+                <Text
+                  style={
+                    selectedSublot === 'Sublot A'
+                      ? styles.sublotStatsSelected
+                      : styles.sublotStats
+                  }
+                >
+                  85% → 90%
+                </Text>
+                <View style={styles.dotRed} />
+              </TouchableOpacity>
+              {/* Sublot B */}
+              <TouchableOpacity
+                style={
+                  selectedSublot === 'Sublot B'
+                    ? styles.sublotRowSelected
+                    : styles.sublotRow
+                }
+                onPress={() => setSelectedSublot('Sublot B')}
+              >
+                <Text
+                  style={
+                    selectedSublot === 'Sublot B'
+                      ? styles.sublotNameSelected
+                      : styles.sublotName
+                  }
+                >
+                  SUBLOT B
+                </Text>
+                <Text
+                  style={
+                    selectedSublot === 'Sublot B'
+                      ? styles.sublotStatsSelected
+                      : styles.sublotStats
+                  }
+                >
+                  65% → 75%
+                </Text>
+                <View style={styles.dotYellow} />
+              </TouchableOpacity>
+              {/* Sublot C */}
+              <TouchableOpacity
+                style={
+                  selectedSublot === 'Sublot C'
+                    ? styles.sublotRowSelected
+                    : styles.sublotRow
+                }
+                onPress={() => setSelectedSublot('Sublot C')}
+              >
+                <Text
+                  style={
+                    selectedSublot === 'Sublot C'
+                      ? styles.sublotNameSelected
+                      : styles.sublotName
+                  }
+                >
+                  SUBLOT C
+                </Text>
+                <Text
+                  style={
+                    selectedSublot === 'Sublot C'
+                      ? styles.sublotStatsSelected
+                      : styles.sublotStats
+                  }
+                >
+                  90% → 97%
+                </Text>
+                <View style={styles.dotRed} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.sublotRowSelected}
+                onPress={() => setSelectedSublot('Main Lot')}
+              >
+                <Text style={styles.sublotNameSelected}>MAIN LOT</Text>
+                <Text style={styles.sublotStatsSelected}>
+                  {lot.status === 'Available' ? 'Verified Space' : 'Limited'}
+                </Text>
+                <View style={styles.dotGreen} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sublotRow}
+                onPress={() => setSelectedSublot('Overflow')}
+              >
+                <Text style={styles.sublotName}>OVERFLOW</Text>
+                <Text style={styles.sublotStats}>Empty</Text>
+                <View style={styles.dotGreen} />
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+
+        {/* Also Consider Shuttle */}
+        <Text style={styles.sectionHeader}>ALSO CONSIDER SHUTTLE</Text>
+        <TouchableOpacity
+          style={styles.shuttleSuggestionCard}
+          onPress={() => setTravelMode('shuttle')}
+        >
+          <Image
+            source={require('../../assets/icons/new/newShuttle.png')}
+            style={{ width: 24, height: 24, marginRight: 12 }}
+          />
+          <Text style={styles.shuttleSuggestionText}>50 min</Text>
+          <View style={{ flex: 1 }} />
+          <View style={styles.dotYellow} />
+          <Text style={styles.statusValue}>65% full</Text>
+        </TouchableOpacity>
+
+        {/* Footer Actions */}
+        <View style={styles.detailFooter}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setViewMode('list')}
+          >
+            <Text style={styles.backButtonText}>Other Lots</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={openInGoogleMaps}
+          >
+            <Text style={styles.startButtonText}>
+              Route to {lot.id === 'deer_creek' ? selectedSublot : lot.name}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderParkingList = () => (
     <View>
       {/* Parking List */}
-      <View style={styles.parkingList}>
-        {PARKING_LOTS.map(lot => {
+      <OptionsCard
+        items={PARKING_LOTS.map(lot => {
           const isSelected = selectedParkingId === lot.id;
-          return (
-            <TouchableOpacity
-              key={lot.id}
-              style={[
-                styles.parkingRow,
-                isSelected && styles.parkingRowSelected,
-              ]}
-              onPress={() => setSelectedParkingId(lot.id)}
-            >
-              <View>
-                <Text style={styles.parkingName}>{lot.name}</Text>
-                <Text
-                  style={[
-                    styles.parkingStatus,
-                    lot.fullness > 80 ? styles.statusFull : styles.statusOk,
-                  ]}
-                >
-                  {lot.id === 'deer_creek' && 'Sublot B · '}
-                  {lot.status}
-                </Text>
-              </View>
-              {isSelected && (
-                <Svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#007AFF"
-                  strokeWidth={2}
-                >
-                  <Path
-                    d="M20 6L9 17L4 12"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              )}
-            </TouchableOpacity>
-          );
+          return {
+            id: lot.id,
+            title: lot.name,
+            subtitle: lot.status,
+            rightText: `${lot.fullness}% Full`,
+            selected: isSelected,
+          };
         })}
-      </View>
+        onSelect={item => handleParkingSelect(item.id)}
+        style={{ borderWidth: 0, padding: 0 }}
+        itemStyle={{
+          backgroundColor: '#fff',
+          marginBottom: 12,
+          minHeight: 80, // Allow flexible height
+          height: 'auto',
+          alignItems: 'center', // Standard center alignment for list items
+        }}
+      />
 
       <Text style={styles.sectionHeader}>ALSO CONSIDER</Text>
 
@@ -164,12 +386,16 @@ function DirectionsScreen() {
             icon: require('../../assets/icons/new/newShuttle.png'),
           },
         ]}
+        onSelect={() => setTravelMode('shuttle')}
         style={{ borderWidth: 0, padding: 0 }}
-        itemStyle={{ backgroundColor: '#fff', marginBottom: 12 }}
+        itemStyle={{
+          backgroundColor: '#fff',
+          marginBottom: 12,
+        }}
       />
 
       <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.startButton} onPress={openInGoogleMaps}>
+        <TouchableOpacity style={styles.startButton} onPress={handleRoutePress}>
           <Text style={styles.startButtonText}>
             Route to {PARKING_LOTS.find(p => p.id === selectedParkingId)?.name}
           </Text>
@@ -259,14 +485,20 @@ function DirectionsScreen() {
       <View style={styles.footerLinks}>
         <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
         {/* Simple list of alternates */}
-        <View style={styles.altRow}>
+        <TouchableOpacity
+          style={styles.altRow}
+          onPress={() => setTravelMode('shuttle')}
+        >
           <Text style={styles.altText}>Tesla Shuttle B</Text>
           <Text style={styles.altTime}>55 min</Text>
-        </View>
-        <View style={styles.altRow}>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.altRow}
+          onPress={() => setTravelMode('transit')}
+        >
           <Text style={styles.altText}>Public Transit</Text>
           <Text style={styles.altTime}>1h 10m</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
@@ -367,6 +599,7 @@ function DirectionsScreen() {
       {/* Map Background */}
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           region={{
@@ -394,11 +627,20 @@ function DirectionsScreen() {
         snapPoints={snapPoints}
         backgroundStyle={styles.bottomSheetBackground}
         handleIndicatorStyle={styles.bottomSheetHandle}
+        style={{ zIndex: 100 }}
       >
         <BottomSheetScrollView
           contentContainerStyle={styles.sheetContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Back Button Row */}
+          <View style={{ marginBottom: 16 }}>
+            <BackButton
+              onPress={() => navigation.goBack()}
+              style={{ alignSelf: 'flex-start' }}
+            />
+          </View>
+
           {/* Mode Tabs */}
           {renderTabs()}
 
@@ -413,7 +655,11 @@ function DirectionsScreen() {
           </View>
 
           {/* Conditional Content */}
-          {travelMode === 'car' ? renderParkingContent() : renderRouteContent()}
+          {travelMode === 'car'
+            ? viewMode === 'list'
+              ? renderParkingList()
+              : renderParkingDetail()
+            : renderRouteContent()}
         </BottomSheetScrollView>
       </BottomSheet>
     </View>
@@ -438,7 +684,7 @@ const styles = StyleSheet.create({
     top: 60,
     left: 35,
     right: 35,
-    zIndex: 10,
+    zIndex: 1, // Lowered so Bottom Sheet covers it
     // Removed flexDirection row since back button is gone
   },
   // backButton styles removed
@@ -625,8 +871,9 @@ const styles = StyleSheet.create({
   startButton: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12, // Reduced padding for sleekness
     alignItems: 'center',
+    flex: 1, // Ensure equal width if in row
   },
   startButtonText: {
     color: '#fff',
@@ -712,5 +959,142 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 12,
     textTransform: 'uppercase',
+  },
+  // Detail View Styles
+  detailContainer: {
+    paddingBottom: 20,
+  },
+  detailHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  detailTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
+    flex: 1,
+  },
+  detailUpdateText: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  statusSection: {
+    marginBottom: 16,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8E8E93',
+    width: 80,
+  },
+  statusValue: {
+    fontSize: 13,
+    color: '#000',
+  },
+  dotYellow: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FFCC00',
+    marginRight: 8,
+  },
+  dotRed: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF3B30',
+    marginRight: 8,
+  },
+  dotGreen: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#34C759',
+    marginRight: 8,
+  },
+  sublotList: {
+    marginBottom: 20,
+  },
+  sublotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    marginBottom: 8,
+  },
+  sublotRowSelected: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F8FF',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#007AFF', // Blue border for selected
+    marginBottom: 8,
+  },
+  sublotName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#8E8E93',
+    flex: 1,
+  },
+  sublotNameSelected: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+    flex: 1,
+  },
+  sublotStats: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginRight: 12,
+  },
+  sublotStatsSelected: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginRight: 12,
+  },
+  shuttleSuggestionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  shuttleSuggestionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+  },
+  detailFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    paddingVertical: 12, // Reduced padding for sleekness
+    paddingHorizontal: 20,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    flex: 1, // Even width
+    marginRight: 12, // Spacing
+    alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
   },
 });

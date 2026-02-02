@@ -8,6 +8,13 @@ export type RootStackParamList = {
   Profile: undefined;
   Settings: undefined;
   Parking: { fromRoutes?: boolean } | undefined;
+  Rewards: undefined;
+
+  // Admin
+  AdminHome: undefined;
+  ShuttleDashboard: undefined;
+  LiveAlerts: undefined;
+  ParkingManagement: undefined;
 
   // Admin Screens
   Admin: undefined;

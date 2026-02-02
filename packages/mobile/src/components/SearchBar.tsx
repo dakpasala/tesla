@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
+import { theme } from '../theme/theme';
 
 type RowData = {
   id: string;
@@ -152,6 +153,7 @@ type Props = {
   expanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  onFocus?: () => void;
   onSelectDestination?: (destination: {
     id: string;
     title: string;
@@ -164,6 +166,7 @@ function SearchBar({
   expanded = false,
   onExpand,
   onCollapse,
+  onFocus,
   onSelectDestination,
 }: Props) {
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
@@ -342,8 +345,9 @@ function SearchBar({
         <TextInput
           value={searchText}
           onChangeText={handleSearchChange}
+          onFocus={onFocus}
           placeholder="Search Here"
-          placeholderTextColor="#A0A0A0"
+          placeholderTextColor={theme.colors.text.light} // theme usage
           style={styles.input}
           autoCapitalize="none"
           autoCorrect={false}
@@ -360,79 +364,123 @@ export default memo(SearchBar);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FCFCFC',
-    borderRadius: 22,
-    padding: 16,
-    overflow: 'hidden',
+    backgroundColor: theme.colors.background,
+    // Removed overflow: hidden to allow shadows to show if we add them to inner elements,
+    // but here the container itself is mainly a wrapper.
+    // If we want the search bar to look like the route card, we might style the inputRow mainly.
+    padding: theme.spacing.l,
   },
-  searchIcon: { width: 18, height: 18, marginRight: 10, opacity: 0.9 },
-  placeholder: { color: '#A0A0A0', fontSize: 14, flex: 1 },
+  searchIcon: {
+    width: 20,
+    height: 20,
+    marginRight: 12,
+    tintColor: '#000', // Sharp black for contrast
+    opacity: 1,
+  },
+  placeholder: {
+    color: theme.colors.text.secondary,
+    fontSize: 16, // Larger font for premium feel
+    fontWeight: '500',
+    flex: 1,
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 22,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: '#F6F6F6',
-    marginBottom: 12,
+    marginBottom: theme.spacing.l,
+    // Removed shadows and borders
   },
-  input: { flex: 1, fontSize: 14, paddingVertical: 0, color: '#1C1C1C' },
-  quickRow: { flexDirection: 'row', marginBottom: 10, marginTop: 10 },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    paddingVertical: 0,
+    color: '#000000',
+  },
+  quickRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    marginTop: 8,
+    justifyContent: 'space-between',
+  },
   quickItem: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.background,
   },
-  workItem: { marginLeft: -80 },
+  workItem: {
+    marginLeft: 0,
+  },
   quickCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F1F1F1',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   quickCircleIcon: {
-    width: 20,
-    height: 17,
+    width: 16,
+    height: 16,
     resizeMode: 'contain',
-    opacity: 0.9,
+    opacity: 0.8,
   },
-  quickTextWrap: { flex: 1 },
-  quickTitle: { fontWeight: '400', fontSize: 12, color: '#000000' },
-  sub: { fontSize: 8, color: '#878585', marginTop: 1 },
-  section: {
+  quickTextWrap: {
+    flex: 1,
+  },
+  quickTitle: {
     fontWeight: '500',
-    fontSize: 14,
+    fontSize: 16,
     color: '#000000',
-    marginTop: 12,
-    marginBottom: 6,
+  },
+  sub: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 2,
+  },
+  section: {
+    fontWeight: '700',
+    fontSize: 14,
+    paddingVertical: 12,
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sectionRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
   },
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
   },
   sortText: {
-    color: '#878585',
-    fontWeight: '400',
-    fontSize: 12,
-    marginRight: 6,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
+    marginRight: 4,
   },
-  sortChevron: { color: '#878585', fontSize: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  starTouchable: { padding: 8 },
+  sortChevron: {
+    color: theme.colors.primary,
+    fontSize: 14,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomColor: '#F2F2F7',
+  },
+  starTouchable: {
+    padding: 8,
+    marginRight: 8,
+  },
   rowContent: {
     flex: 1,
     flexDirection: 'row',
@@ -440,16 +488,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 4,
   },
-  rowTextContainer: { flex: 1 },
-  rowText: { fontSize: 12, fontWeight: '400', color: '#1C1C1C' },
-  star: { width: 18, height: 18 },
-  starIcon: { width: 18, height: 18 },
-  placeSub: { fontSize: 8, color: '#878585', marginTop: 1 },
-  milesText: {
-    color: '#878585',
-    fontWeight: '400',
-    fontSize: 12,
-    marginLeft: 8,
+  rowTextContainer: {
+    flex: 1,
   },
-  emptyText: { color: '#888', paddingVertical: 8 },
+  rowText: {
+    fontSize: 16, // Larger title
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 4,
+  },
+  star: {
+    width: 20,
+    height: 20,
+  },
+  starIcon: {
+    width: 20,
+    height: 20,
+    tintColor: '#C7C7CC', // Light gray for inactive star
+  },
+  placeSub: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  milesText: {
+    color: '#8E8E93',
+    fontWeight: '500',
+    fontSize: 13,
+    marginLeft: 12,
+  },
+  emptyText: {
+    color: '#8E8E93',
+    paddingVertical: 20,
+    textAlign: 'center',
+    fontSize: 14,
+  },
 });

@@ -11,6 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
+import { theme } from '../theme/theme';
 
 type RowData = {
   id: string;
@@ -152,6 +153,7 @@ type Props = {
   expanded?: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  onFocus?: () => void;
   onSelectDestination?: (destination: {
     id: string;
     title: string;
@@ -164,6 +166,7 @@ function SearchBar({
   expanded = false,
   onExpand,
   onCollapse,
+  onFocus,
   onSelectDestination,
 }: Props) {
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
@@ -342,8 +345,9 @@ function SearchBar({
         <TextInput
           value={searchText}
           onChangeText={handleSearchChange}
+          onFocus={onFocus}
           placeholder="Search Here"
-          placeholderTextColor="#A0A0A0"
+          placeholderTextColor={theme.colors.text.light} // theme usage
           style={styles.input}
           autoCapitalize="none"
           autoCorrect={false}
@@ -360,24 +364,44 @@ export default memo(SearchBar);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#FCFCFC',
-    borderRadius: 22,
-    padding: 16,
+    backgroundColor: theme.colors.background, // #FCFCFC
+    borderRadius: theme.borderRadius.xl, // 22? theme.xl is 22. Correct.
+    padding: theme.spacing.l, // 16
     overflow: 'hidden',
   },
-  searchIcon: { width: 18, height: 18, marginRight: 10, opacity: 0.9 },
-  placeholder: { color: '#A0A0A0', fontSize: 14, flex: 1 },
+  searchIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 10,
+    opacity: 0.9,
+  },
+  placeholder: {
+    color: theme.colors.text.light,
+    fontSize: 14,
+    flex: 1,
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 22,
+    borderRadius: theme.borderRadius.xl, // 22
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: '#F6F6F6',
-    marginBottom: 12,
+    backgroundColor: '#F6F6F6', // TODO: Add to theme or use backgroundAlt (#F2F2F7)? User had F6F6F6. theme.backgroundAlt is close enough or use user's.
+    // I will stick to user's hardcoded for now or maybe define input bg.
+    // Let's use #F6F6F6 for now as it wasn't in theme.
+    marginBottom: theme.spacing.m, // 12
   },
-  input: { flex: 1, fontSize: 14, paddingVertical: 0, color: '#1C1C1C' },
-  quickRow: { flexDirection: 'row', marginBottom: 10, marginTop: 10 },
+  input: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
+    color: '#1C1C1C', // Dark grey, close to black. theme.text.primary is #000.
+  },
+  quickRow: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    marginTop: 10,
+  },
   quickItem: {
     flex: 1,
     flexDirection: 'row',
@@ -385,12 +409,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
   },
-  workItem: { marginLeft: -80 },
+  workItem: {
+    marginLeft: -80,
+  },
   quickCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F1F1F1',
+    backgroundColor: '#F1F1F1', // Light grey
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -401,13 +427,23 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     opacity: 0.9,
   },
-  quickTextWrap: { flex: 1 },
-  quickTitle: { fontWeight: '400', fontSize: 12, color: '#000000' },
-  sub: { fontSize: 8, color: '#878585', marginTop: 1 },
+  quickTextWrap: {
+    flex: 1,
+  },
+  quickTitle: {
+    fontWeight: '400',
+    fontSize: 12,
+    color: theme.colors.text.primary, // #000000
+  },
+  sub: {
+    fontSize: 8,
+    color: '#878585', // Grey
+    marginTop: 1,
+  },
   section: {
     fontWeight: '500',
     fontSize: 14,
-    color: '#000000',
+    color: theme.colors.text.primary,
     marginTop: 12,
     marginBottom: 6,
   },
@@ -430,9 +466,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginRight: 6,
   },
-  sortChevron: { color: '#878585', fontSize: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  starTouchable: { padding: 8 },
+  sortChevron: {
+    color: '#878585',
+    fontSize: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  starTouchable: {
+    padding: 8,
+  },
   rowContent: {
     flex: 1,
     flexDirection: 'row',
@@ -440,16 +485,35 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 4,
   },
-  rowTextContainer: { flex: 1 },
-  rowText: { fontSize: 12, fontWeight: '400', color: '#1C1C1C' },
-  star: { width: 18, height: 18 },
-  starIcon: { width: 18, height: 18 },
-  placeSub: { fontSize: 8, color: '#878585', marginTop: 1 },
+  rowTextContainer: {
+    flex: 1,
+  },
+  rowText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#1C1C1C',
+  },
+  star: {
+    width: 18,
+    height: 18,
+  },
+  starIcon: {
+    width: 18,
+    height: 18,
+  },
+  placeSub: {
+    fontSize: 8,
+    color: '#878585',
+    marginTop: 1,
+  },
   milesText: {
     color: '#878585',
     fontWeight: '400',
     fontSize: 12,
     marginLeft: 8,
   },
-  emptyText: { color: '#888', paddingVertical: 8 },
+  emptyText: {
+    color: '#888',
+    paddingVertical: 8,
+  },
 });

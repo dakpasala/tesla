@@ -18,6 +18,7 @@ import BottomSheet, {
 // Import existing components
 import SearchBar from '../../components/SearchBar';
 import { useRideContext } from '../../context/RideContext';
+import { theme } from '../../theme/theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,7 +31,8 @@ function MainHomeScreen() {
   const { setDestination } = useRideContext();
 
   // Snap points for the bottom sheet
-  const snapPoints = useMemo(() => ['15%', '45%', '90%'], []);
+  // Added 80% snap point for typing
+  const snapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
 
   // Stable callbacks
   const handleSelectDestination = useCallback(
@@ -41,7 +43,6 @@ function MainHomeScreen() {
       coordinate?: { latitude: number; longitude: number };
     }) => {
       setDestination(dest);
-      // For now we pass a dummy 'route-1' or similar, but the context holds the real data
       navigation.navigate('Directions', { routeId: 'route-1' });
     },
     [navigation, setDestination]
@@ -57,10 +58,12 @@ function MainHomeScreen() {
     setSearchExpanded(false);
   }, []);
 
+  const handleSearchFocus = useCallback(() => {
+    bottomSheetRef.current?.snapToIndex(4);
+    setSearchExpanded(true);
+  }, []);
+
   const handleSheetChanges = useCallback((index: number) => {
-    // Index 0 = collapsed (15%)
-    // Index 1 = half-open (45%)
-    // Index 2 = full-open (90%)
     setSearchExpanded(index > 0);
   }, []);
 
@@ -113,6 +116,7 @@ function MainHomeScreen() {
               expanded={searchExpanded}
               onExpand={handleExpand}
               onCollapse={handleCollapse}
+              onFocus={handleSearchFocus}
               onSelectDestination={handleSelectDestination}
             />
           </View>
@@ -127,7 +131,7 @@ export default memo(MainHomeScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.backgroundAlt,
   },
   mapContainer: {
     flex: 1,
@@ -143,7 +147,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -154,10 +158,11 @@ const styles = StyleSheet.create({
   },
   settingsIcon: {
     fontSize: 20,
+    color: theme.components.icon,
   },
   bottomSheetBackground: {
-    backgroundColor: '#FCFCFC',
-    borderRadius: 24,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.xl,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -168,18 +173,18 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   bottomSheetHandle: {
-    backgroundColor: '#DEDEDE',
+    backgroundColor: theme.colors.border,
     width: 40,
     height: 4,
     borderRadius: 2,
-    marginTop: 8,
+    marginTop: theme.spacing.s,
   },
   sheetContent: {
     paddingTop: 10,
     paddingBottom: 20,
   },
   searchContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.l,
     paddingBottom: 20,
   },
 });

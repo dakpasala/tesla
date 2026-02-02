@@ -8,13 +8,18 @@ import {
   getUserWorkAddress,
   setUserWorkAddress,
   getUserFavorites,
-  addUserFavorite,
-  removeUserFavorite,
   addUserFavoriteRow,
   removeUserFavoriteRow,
   getLocationIdByName
 } from '../services/db/mssqlPool.js';
-import { getRedisClient } from '../services/redis/redisClient.js'; 
+import { 
+  addUserToLocation,
+  removeUserFromLocation,
+  subscribeUserToShuttle,
+  unsubscribeUserFromShuttle,
+  suppressUserNotifications,
+  unsuppressUserNotifications,
+} from '../services/redis/cache.js';
 
 const router = express.Router();
 
@@ -227,37 +232,33 @@ router.get('/:id/favorites', async (req, res) => {
 // add favorite
 router.post('/:id/favorites', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
-  const { label, name, address } = req.body;
+  const { name, address } = req.body;
 
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
 
-  if (!label || !name || !address) {
+  if (!name || !address) {
     return res.status(400).json({
-      error: 'label, name, and address are required',
+      error: 'name and address are required',
     });
   }
 
   try {
-    await addUserFavorite(userId, { label, name, address });
-
     const locationId = await getLocationIdByName(name);
     if (!locationId) {
       return res.status(404).json({ error: 'Location not found' });
     }
 
-    await addUserFavoriteRow(userId, locationId);
-
-    const redis = await getRedisClient();
-    await redis.sAdd(`location:${locationId}:users`, String(userId));
+    await addUserFavoriteRow(userId, locationId, name, address);
+    await addUserToLocation(locationId, userId);
 
     res.status(201).json({
       success: true,
-      added: { label, name, address },
+      added: { name, address },
     });
   } catch (err) {
-      res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -271,16 +272,17 @@ router.delete('/:id/favorites/:name', async (req, res) => {
   }
 
   if (!name) {
-    return res.status(404).json({ error: 'Provide name of place' });
+    return res.status(400).json({ error: 'Provide name of place' });
   }
 
   try {
     const locationId = await getLocationIdByName(name);
-    await removeUserFavorite(userId, name);
-    await removeUserFavoriteRow(userId, locationId);
+    if (!locationId) {
+      return res.status(404).json({ error: 'Location not found' });
+    }
 
-    const redis = await getRedisClient();
-    await redis.sRem(`location:${locationId}:users`, String(userId));
+    await removeUserFavoriteRow(userId, locationId);
+    await removeUserFromLocation(locationId, userId);
 
     res.json({
       success: true,
@@ -308,16 +310,10 @@ router.post("/:id/location-state", async (req, res) => {
   }
 
   try {
-    const redis = await getRedisClient();
-
-    if (state === "AT_LOCATION") {
-      await redis.set(
-        `user:${userId}:suppress_notifications`,
-        "true"
-      );
-    }
-    else if (state === "LEFT_LOCATION") {
-      await redis.del(`user:${userId}:suppress_notifications`);
+    if (state === 'AT_LOCATION') {
+      await suppressUserNotifications(userId);
+    } else if (state === 'LEFT_LOCATION') {
+      await unsuppressUserNotifications(userId);
     }
     else { return res.status(404).json({ error: 'Please provide a correct state'} )}
 
@@ -329,3 +325,57 @@ router.post("/:id/location-state", async (req, res) => {
 });
 
 export default router;
+
+// --------------------
+// shuttle-subscriptions
+// --------------------
+
+// add user to shuttle
+router.post('/:id/shuttle', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { shuttleId } = req.body;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!shuttleId) {
+    return res.status(400).json({ error: 'shuttleId is required' });
+  }
+
+  try {
+    await subscribeUserToShuttle(userId, shuttleId);
+
+    res.status(201).json({
+      success: true,
+      subscribed: { shuttleId },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// remove user from shuttle
+router.delete('/:id/shuttle/:shuttleId', async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { shuttleId } = req.params;
+
+  if (Number.isNaN(userId)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
+
+  if (!shuttleId) {
+    return res.status(400).json({ error: 'shuttleId is required' });
+  }
+
+  try {
+    await unsubscribeUserFromShuttle(userId, shuttleId);
+
+    res.json({
+      success: true,
+      unsubscribed: { shuttleId },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

@@ -1,6 +1,6 @@
 import express from 'express';
 import { getAllTransportOptions } from '../services/maps/directionsService.js';
-import { getRedisClient } from '../services/redis/redisClient.js';
+import { getCache, setCache } from '../services/redis/cache.js';
 import {
   getParkingLotByOfficeAndName,
   findNearbyOffice,
@@ -46,22 +46,20 @@ router.get('/to-office', async (req, res) => {
         ? `${parkingLot.lat},${parkingLot.lng}`
         : parkingLot.address;
 
-    const redis = await getRedisClient();
     const cacheKey = `maps:to_office:${normalize(
       office_name
     )}:${normalize(parking_lot_name)}:${normalize(origin)}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = await getCache(cacheKey);
     if (cached) {
       console.log('Redis cache hit');
-      return res.json(JSON.parse(cached));
+      return res.json(cached);
     }
 
     console.log('Redis cache miss → calling Google Maps');
 
     const routes = await getAllTransportOptions(origin, destination);
-
-    await redis.set(cacheKey, JSON.stringify(routes), { EX: 60 });
+    await setCache(cacheKey, routes, 60);
 
     res.json({
       mode: 'TO_OFFICE',
@@ -99,22 +97,20 @@ router.get('/go-home', async (req, res) => {
 
     const origin = `${office.lat},${office.lng}`;
 
-    const redis = await getRedisClient();
     const cacheKey = `maps:from_office:${normalize(
       office.name
     )}:${normalize(destination)}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = await getCache(cacheKey);
     if (cached) {
       console.log('Redis cache hit');
-      return res.json(JSON.parse(cached));
+      return res.json(cached);
     }
 
     console.log('Redis cache miss → calling Google Maps');
 
     const routes = await getAllTransportOptions(origin, destination);
-
-    await redis.set(cacheKey, JSON.stringify(routes), { EX: 60 });
+    await setCache(cacheKey, routes, 60);
 
     res.json({
       mode: 'FROM_OFFICE',

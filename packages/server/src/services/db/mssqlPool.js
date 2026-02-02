@@ -435,92 +435,33 @@ export async function getUserFavorites(userId) {
   const result = await pool.request()
     .input('userId', sql.Int, userId)
     .query(`
-      SELECT favorites
-      FROM users
-      WHERE id = @userId
+      SELECT
+        location_id,
+        name,
+        address,
+        created_at
+      FROM user_favorites
+      WHERE user_id = @userId
+      ORDER BY created_at DESC;
     `);
 
-  await sql.close();
-
-  if (!result.recordset[0]?.favorites) {
-    return [];
-  }
-
-  const parsed = JSON.parse(result.recordset[0].favorites);
-  return parsed.favorites || [];
-}
-
-// add a favorite
-export async function addUserFavorite(userId, favorite) {
-  const pool = await getPool();
-
-  const favoriteJson = JSON.stringify(favorite);
-
-  await pool.request()
-    .input('userId', sql.Int, userId)
-    .input('favorite', sql.NVarChar(sql.MAX), favoriteJson)
-    .query(`
-      UPDATE users
-      SET favorites =
-        CASE
-          WHEN favorites IS NULL
-          THEN JSON_QUERY('{"favorites": [' + @favorite + ']}')
-          ELSE JSON_MODIFY(
-            favorites,
-            'append $.favorites',
-            JSON_QUERY(@favorite)
-          )
-        END
-      WHERE id = @userId;
-    `);
-
-  await sql.close();
-  return true;
-}
-
-// remove a favorite
-export async function removeUserFavorite(userId, name) {
-  const pool = await getPool();
-
-  await pool.request()
-    .input('userId', sql.Int, userId)
-    .input('name', sql.VarChar, name)
-    .query(`
-      UPDATE users
-      SET favorites = (
-        SELECT JSON_QUERY(
-          '{"favorites":' +
-          ISNULL((
-            SELECT
-              '[' +
-              STRING_AGG(value, ',') +
-              ']'
-            FROM OPENJSON(favorites, '$.favorites')
-            WHERE JSON_VALUE(value, '$.name') <> @name
-          ), '[]') +
-          '}'
-        )
-      )
-      WHERE id = @userId;
-    `);
-
-  await sql.close();
-  return true;
+  return result.recordset;
 }
 
 // add to favorites table
-export async function addUserFavoriteRow(userId, locationId) {
+export async function addUserFavoriteRow(userId, locationId, name, address) {
   const pool = await getPool();
 
   await pool.request()
     .input('userId', sql.Int, userId)
     .input('locationId', sql.Int, locationId)
+    .input('name', sql.NVarChar, name)
+    .input('address', sql.NVarChar, address)
     .query(`
-      INSERT INTO user_favorites (user_id, location_id)
-      VALUES (@userId, @locationId);
+      INSERT INTO user_favorites (user_id, location_id, name, address)
+      VALUES (@userId, @locationId, @name, @address);
     `);
 
-  await sql.close();
   return true;
 }
 

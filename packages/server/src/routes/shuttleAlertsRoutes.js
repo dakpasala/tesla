@@ -4,7 +4,7 @@ import {
   getShuttleReports,
   createShuttleAlert,
   getShuttleAlerts,
-} from '../services/redis/shuttleAlerts.js';
+} from '../services/redis/shuttleNotifications.js';
 
 const router = express.Router();
 

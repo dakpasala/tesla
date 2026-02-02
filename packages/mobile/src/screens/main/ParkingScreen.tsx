@@ -16,6 +16,9 @@ import { Modalize } from 'react-native-modalize';
 import NavBox from '../../components/NavBox';
 import NavBar, { NavScreen } from '../../components/NavBar';
 
+import { getAllParkingAvailability } from '../../services/parkings';
+
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ParkingRouteProp = RouteProp<RootStackParamList, 'Parking'>;
 
@@ -29,24 +32,6 @@ interface ParkingLot {
   sublots?: { name: string; range: string; color: string }[];
 }
 
-const PARKING_DATA: ParkingLot[] = [
-  {
-    id: '1',
-    name: 'Deer Creek',
-    sublot: 'Sublot B',
-    status: 'full',
-  },
-  {
-    id: '2',
-    name: 'Page Mill',
-    status: 'available',
-  },
-  {
-    id: '3',
-    name: 'Hanover',
-    status: 'limited',
-  },
-];
 
 const SHUTTLE_OPTIONS = [
   { id: 's1', name: 'Shuttle A', status: 'On Time', time: 'Arrives in 5 min' },
@@ -75,6 +60,37 @@ export default function ParkingScreen() {
   // Transport mode state
   const [transportMode, setTransportMode] = useState<NavScreen>('car');
   const [selectedLot, setSelectedLot] = useState<string | null>(null);
+
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  function availabilityToStatus(availability: number): ParkingLot['status'] {
+    if (availability > 30) return 'available';
+    if (availability > 10) return 'limited';
+    return 'full';
+  }
+
+  React.useEffect(() => {
+    async function loadParking() {
+      try {
+        const rows = await getAllParkingAvailability();
+
+        const mapped: ParkingLot[] = rows.map((row, idx) => ({
+          id: `${row.loc_name}-${row.lot_name}`,
+          name: row.lot_name,
+          status: availabilityToStatus(row.availability),
+        }));
+
+        setParkingLots(mapped);
+      } catch (e) {
+        console.error('Failed to load parking data', e);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadParking();
+  }, []);
 
   const handleSelectLot = (lot: ParkingLot) => {
     setSelectedLot(lot.id);
@@ -134,7 +150,7 @@ export default function ParkingScreen() {
 
           {/* Parking Lots */}
           <View style={styles.lotsSection}>
-            {PARKING_DATA.map(lot => {
+            {parkingLots.map(lot => {
               const isSelected = selectedLot === lot.id;
 
               return (
@@ -260,7 +276,7 @@ export default function ParkingScreen() {
               <Text style={styles.routeBtnText}>
                 Route to{' '}
                 {selectedLot
-                  ? PARKING_DATA.find(l => l.id === selectedLot)?.name
+                  ? parkingLots.find(l => l.id === selectedLot)?.name
                   : 'Lot'}
               </Text>
             </TouchableOpacity>

@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../navigation/types';
+import { BackButton } from '../../components/BackButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -44,9 +45,12 @@ export default function AdminHomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.userName}>Amanda</Text>
+        <View style={styles.headerLeft}>
+          <BackButton style={styles.backButton} />
+          <View>
+            <Text style={styles.welcomeText}>Welcome back,</Text>
+            <Text style={styles.userName}>Amanda</Text>
+          </View>
         </View>
         <Image
           source={{ uri: 'https://via.placeholder.com/40' }} // Placeholder for profile
@@ -104,6 +108,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     marginBottom: 24,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 12,
   },
   welcomeText: {
     fontSize: 16,

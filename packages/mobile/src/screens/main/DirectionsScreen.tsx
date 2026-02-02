@@ -28,6 +28,7 @@ import Svg, {
   LinearGradient,
   Stop,
 } from 'react-native-svg';
+import { BackButton } from '../../components/BackButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
@@ -632,6 +633,14 @@ function DirectionsScreen() {
           contentContainerStyle={styles.sheetContent}
           showsVerticalScrollIndicator={false}
         >
+          {/* Back Button Row */}
+          <View style={{ marginBottom: 16 }}>
+            <BackButton
+              onPress={() => navigation.goBack()}
+              style={{ alignSelf: 'flex-start' }}
+            />
+          </View>
+
           {/* Mode Tabs */}
           {renderTabs()}
 

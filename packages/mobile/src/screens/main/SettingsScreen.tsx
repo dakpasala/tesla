@@ -13,6 +13,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import LinearGradient from 'react-native-linear-gradient';
 import { theme } from '../../theme/theme';
+import { BackButton } from '../../components/BackButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,9 +27,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
-        </TouchableOpacity>
+        <BackButton />
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={styles.headerSpacer} />
       </View>

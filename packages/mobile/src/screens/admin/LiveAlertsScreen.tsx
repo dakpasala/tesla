@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { LIVE_ALERTS_MOCK } from '../../helpers/AdminHelper';
+import { BackButton } from '../../components/BackButton';
 
 export default function LiveAlertsScreen() {
   const navigation = useNavigation();
@@ -17,12 +18,7 @@ export default function LiveAlertsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
+        <BackButton />
         <Text style={styles.headerTitle}>Live Alerts</Text>
         <View style={{ width: 40 }} />
       </View>

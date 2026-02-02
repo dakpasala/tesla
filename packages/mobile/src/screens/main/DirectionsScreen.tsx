@@ -1,6 +1,6 @@
 // packages/mobile/src/screens/main/DirectionsScreen.tsx
 
-import React, { useRef, useState, useMemo, memo } from 'react';
+import React, { useRef, useState, useMemo, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -31,6 +32,7 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 import { BackButton } from '../../components/BackButton';
+import { getAllLocations, getAllParkingAvailability } from '../../services/parkings';
 
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -38,6 +40,7 @@ type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
 
 const { width } = Dimensions.get('window');
 
+// Internal shape the component uses — built from the two API responses
 interface ParkingLot {
   id: string;
   name: string;
@@ -49,29 +52,12 @@ interface ParkingLot {
   };
 }
 
-const PARKING_LOTS: ParkingLot[] = [
-  {
-    id: 'deer_creek',
-    name: 'Deer Creek',
-    status: 'Almost Full',
-    fullness: 90,
-    coordinate: { latitude: 37.4419, longitude: -122.143 },
-  },
-  {
-    id: 'page_mill',
-    name: 'Page Mill',
-    status: 'Available',
-    fullness: 45,
-    coordinate: { latitude: 37.426, longitude: -122.145 }, // Approx nearby
-  },
-  {
-    id: 'hanover',
-    name: 'Hanover',
-    status: 'Available',
-    fullness: 20,
-    coordinate: { latitude: 37.425, longitude: -122.155 }, // Approx nearby
-  },
-];
+// Helper: maps availability (0–100) to a human-readable status
+function getStatus(availability: number): string {
+  if (availability >= 80) return 'Almost Full';
+  if (availability >= 50) return 'Filling Up';
+  return 'Available';
+}
 
 function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -82,8 +68,77 @@ function DirectionsScreen() {
     useRideContext();
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedParkingId, setSelectedParkingId] =
-    useState<string>('deer_creek');
+    useState<string | null>(null);
   const [selectedSublot, setSelectedSublot] = useState<string>('Sublot B');
+
+  // --- API state ---
+  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch locations + availability, then merge
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchLots() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [locations, availabilities] = await Promise.all([
+          getAllLocations(),
+          getAllParkingAvailability(),
+        ]);
+
+        if (cancelled) return;
+
+        // Build a quick lookup: loc_name -> availability rows
+        const availMap = new Map<string, number>();
+        for (const row of availabilities) {
+          // If multiple lot_names per location, you could key on
+          // `${row.loc_name}::${row.lot_name}` for sublot granularity later.
+          // For now we just use the first one we find per location.
+          if (!availMap.has(row.loc_name)) {
+            availMap.set(row.loc_name, row.availability);
+          }
+        }
+
+        // Merge into ParkingLot[]
+        const merged: ParkingLot[] = locations.map(loc => {
+          const fullness = availMap.get(loc.name) ?? 0;
+          return {
+            id: loc.name.toLowerCase().replace(/\s+/g, '_'),
+            name: loc.name,
+            status: getStatus(fullness),
+            fullness,
+            coordinate: {
+              latitude: loc.lat,
+              longitude: loc.lng,
+            },
+          };
+        });
+
+        setParkingLots(merged);
+
+        // Auto-select the first lot if none selected yet
+        if (merged.length > 0) {
+          setSelectedParkingId(merged[0].id);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError('Failed to load parking lots. Please try again.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchLots();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fallback if no destination in context
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
@@ -94,7 +149,7 @@ function DirectionsScreen() {
   const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
 
   const handleParkingSelect = (id: string) => {
-    const lot = PARKING_LOTS.find(p => p.id === id);
+    const lot = parkingLots.find(p => p.id === id);
     if (!lot) return;
 
     // 1. Update selection state
@@ -161,7 +216,7 @@ function DirectionsScreen() {
   };
 
   const renderParkingDetail = () => {
-    const lot = PARKING_LOTS.find(p => p.id === selectedParkingId);
+    const lot = parkingLots.find(p => p.id === selectedParkingId);
     if (!lot) return null;
 
     return (
@@ -194,7 +249,7 @@ function DirectionsScreen() {
 
         {/* Sublot List */}
         <View style={styles.sublotList}>
-          {lot.id === 'deer_creek' ? (
+          {lot.id === selectedParkingId && parkingLots.length > 0 ? (
             <>
               {/* Sublot A */}
               <TouchableOpacity
@@ -221,9 +276,9 @@ function DirectionsScreen() {
                       : styles.sublotStats
                   }
                 >
-                  85% → 90%
+                  {lot.fullness}% → {Math.min(lot.fullness + 5, 100)}%
                 </Text>
-                <View style={styles.dotRed} />
+                <View style={lot.fullness >= 80 ? styles.dotRed : styles.dotYellow} />
               </TouchableOpacity>
               {/* Sublot B */}
               <TouchableOpacity
@@ -250,9 +305,9 @@ function DirectionsScreen() {
                       : styles.sublotStats
                   }
                 >
-                  65% → 75%
+                  {Math.max(lot.fullness - 20, 0)}% → {lot.fullness}%
                 </Text>
-                <View style={styles.dotYellow} />
+                <View style={lot.fullness >= 60 ? styles.dotYellow : styles.dotGreen} />
               </TouchableOpacity>
               {/* Sublot C */}
               <TouchableOpacity
@@ -279,7 +334,7 @@ function DirectionsScreen() {
                       : styles.sublotStats
                   }
                 >
-                  90% → 97%
+                  {Math.min(lot.fullness + 10, 100)}% → {Math.min(lot.fullness + 20, 100)}%
                 </Text>
                 <View style={styles.dotRed} />
               </TouchableOpacity>
@@ -337,7 +392,7 @@ function DirectionsScreen() {
             onPress={openInGoogleMaps}
           >
             <Text style={styles.startButtonText}>
-              Route to {lot.id === 'deer_creek' ? selectedSublot : lot.name}
+              Route to {selectedSublot}
             </Text>
           </TouchableOpacity>
         </View>
@@ -349,7 +404,7 @@ function DirectionsScreen() {
     <View>
       {/* Parking List */}
       <OptionsCard
-        items={PARKING_LOTS.map(lot => {
+        items={parkingLots.map(lot => {
           const isSelected = selectedParkingId === lot.id;
           return {
             id: lot.id,
@@ -364,9 +419,9 @@ function DirectionsScreen() {
         itemStyle={{
           backgroundColor: '#fff',
           marginBottom: 12,
-          minHeight: 80, // Allow flexible height
+          minHeight: 80,
           height: 'auto',
-          alignItems: 'center', // Standard center alignment for list items
+          alignItems: 'center',
         }}
       />
 
@@ -400,7 +455,7 @@ function DirectionsScreen() {
       <View style={styles.actionRow}>
         <TouchableOpacity style={styles.startButton} onPress={handleRoutePress}>
           <Text style={styles.startButtonText}>
-            Route to {PARKING_LOTS.find(p => p.id === selectedParkingId)?.name}
+            Route to {parkingLots.find(p => p.id === selectedParkingId)?.name ?? '...'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -563,7 +618,6 @@ function DirectionsScreen() {
             iconSource = require('../../assets/icons/new/newShuttle.png');
             break;
           case 'transit':
-            // Assuming newBus.png is for transit/bus
             iconSource = require('../../assets/icons/new/newBus.png');
             break;
           case 'bike':
@@ -597,6 +651,30 @@ function DirectionsScreen() {
     </View>
   );
 
+  // --- Loading / Error states ---
+  const renderLoading = () => (
+    <View style={styles.centeredState}>
+      <ActivityIndicator size="large" color="#007AFF" />
+      <Text style={styles.stateText}>Loading parking lots...</Text>
+    </View>
+  );
+
+  const renderError = () => (
+    <View style={styles.centeredState}>
+      <Text style={styles.stateText}>{error}</Text>
+      <TouchableOpacity
+        style={[styles.startButton, { marginTop: 12, flex: 0, paddingHorizontal: 24 }]}
+        onPress={() => {
+          // Re-trigger the effect by toggling loading
+          setLoading(true);
+          setError(null);
+        }}
+      >
+        <Text style={styles.startButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       {/* Map Background */}
@@ -612,11 +690,33 @@ function DirectionsScreen() {
             longitudeDelta: 0.05,
           }}
         >
-          <Marker
-            coordinate={{ latitude: destinationLat, longitude: destinationLng }}
-            title={destinationName}
-            image={require('../../assets/icons/destination.png')}
-          />
+          {/* Pin for each fetched lot */}
+          {parkingLots.map(lot => (
+              <Marker
+                key={lot.id}
+                coordinate={lot.coordinate}
+                title={`Tesla ${lot.name}`}
+                description={`${lot.fullness}% Full`}
+              >
+                <View style={{
+                  backgroundColor: lot.id === selectedParkingId ? '#007AFF' : '#FF3B30',
+                  borderRadius: 12,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderWidth: 2,
+                  borderColor: '#fff',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 2,
+                  elevation: 3,
+                }}>
+                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                  {lot.fullness}%
+                </Text>
+              </View>
+            </Marker>
+          ))}
         </MapView>
       </View>
 
@@ -658,11 +758,15 @@ function DirectionsScreen() {
           </View>
 
           {/* Conditional Content */}
-          {travelMode === 'car'
-            ? viewMode === 'list'
-              ? renderParkingList()
-              : renderParkingDetail()
-            : renderRouteContent()}
+          {loading ? (
+            renderLoading()
+          ) : error ? (
+            renderError()
+          ) : travelMode === 'car' ? (
+            viewMode === 'list' ? renderParkingList() : renderParkingDetail()
+          ) : (
+            renderRouteContent()
+          )}
         </BottomSheetScrollView>
       </BottomSheet>
     </View>
@@ -687,10 +791,8 @@ const styles = StyleSheet.create({
     top: 60,
     left: 35,
     right: 35,
-    zIndex: 1, // Lowered so Bottom Sheet covers it
-    // Removed flexDirection row since back button is gone
+    zIndex: 1,
   },
-  // backButton styles removed
   routeHeaderCard: {
     flex: 1,
     backgroundColor: '#fff',
@@ -822,7 +924,7 @@ const styles = StyleSheet.create({
   },
   routeSub: {
     fontSize: 12,
-    color: '#34C759', // Green for 'On Time'
+    color: '#34C759',
     marginTop: 2,
     fontWeight: '500',
   },
@@ -874,9 +976,9 @@ const styles = StyleSheet.create({
   startButton: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
-    paddingVertical: 12, // Reduced padding for sleekness
+    paddingVertical: 12,
     alignItems: 'center',
-    flex: 1, // Ensure equal width if in row
+    flex: 1,
   },
   startButtonText: {
     color: '#fff',
@@ -1041,7 +1143,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#007AFF', // Blue border for selected
+    borderColor: '#007AFF',
     marginBottom: 8,
   },
   sublotName: {
@@ -1087,17 +1189,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   backButton: {
-    paddingVertical: 12, // Reduced padding for sleekness
+    paddingVertical: 12,
     paddingHorizontal: 20,
     backgroundColor: '#F2F2F7',
     borderRadius: 12,
-    flex: 1, // Even width
-    marginRight: 12, // Spacing
+    flex: 1,
+    marginRight: 12,
     alignItems: 'center',
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+  },
+  // Loading / Error
+  centeredState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  stateText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 12,
   },
 });

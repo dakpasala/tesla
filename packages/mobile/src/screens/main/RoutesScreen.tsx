@@ -16,7 +16,6 @@ import { Modalize } from 'react-native-modalize';
 import NavBox from '../../components/NavBox';
 import NavBar, { NavScreen } from '../../components/NavBar';
 import RouteCards, { RouteCardItem } from '../../components/RouteCards';
-import TimeSelector from '../../components/SubViews/TimeSelector';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type RoutesRouteProp = RouteProp<RootStackParamList, 'Routes'>;
@@ -129,7 +128,7 @@ export default function RoutesScreen() {
 
           {/* Time Selector */}
           <View style={styles.section}>
-            <TimeSelector />
+            <Text>Time Selector placeholder</Text>
           </View>
 
           {/* Quick Start Routes */}

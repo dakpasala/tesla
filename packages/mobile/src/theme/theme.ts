@@ -17,6 +17,11 @@ export const theme = {
     white: '#FFFFFF',
   },
   typography: {
+    display: {
+      fontSize: 32,
+      fontWeight: '700' as const,
+      color: '#000000',
+    },
     header: {
       fontSize: 20,
       fontWeight: '700' as const,
@@ -31,6 +36,11 @@ export const theme = {
     body: {
       fontSize: 16,
       fontWeight: '600' as const,
+      color: '#000000',
+    },
+    listItem: {
+      fontSize: 17,
+      fontWeight: '400' as const,
       color: '#000000',
     },
     sub: {
@@ -57,5 +67,14 @@ export const theme = {
     m: 12,
     l: 16,
     xl: 22,
+  },
+  gradients: {
+    darkCard: ['#000000', '#222222'],
+  },
+  components: {
+    rewards: {
+      iconBg: 'rgba(255,255,255,0.15)',
+    },
+    icon: '#C7C7CC',
   },
 };

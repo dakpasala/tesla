@@ -6,13 +6,13 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import LinearGradient from 'react-native-linear-gradient';
+import { theme } from '../../theme/theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -40,7 +40,7 @@ export default function SettingsScreen() {
           onPress={() => navigation.navigate('Rewards' as any)} // Temporary cast until types updated
         >
           <LinearGradient
-            colors={['#000', '#222']}
+            colors={theme.gradients.darkCard}
             style={styles.rewardsCard}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
@@ -66,7 +66,10 @@ export default function SettingsScreen() {
           <Switch
             value={liveActivity}
             onValueChange={setLiveActivity}
-            trackColor={{ false: '#E5E5E5', true: '#34C759' }}
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.status.success,
+            }}
           />
         </View>
         <View style={styles.divider} />
@@ -75,7 +78,10 @@ export default function SettingsScreen() {
           <Switch
             value={notifications}
             onValueChange={setNotifications}
-            trackColor={{ false: '#E5E5E5', true: '#34C759' }}
+            trackColor={{
+              false: theme.colors.border,
+              true: theme.colors.status.success,
+            }}
           />
         </View>
 
@@ -98,25 +104,26 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.white,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: theme.spacing.xl, // 20 -> xl is 24, l is 16. Let's use 20 if we want consistency or stick to theme. User had 20. Closest is xl (24) or l+s (20). Let's use 20 hardcoded for now or define a new spacing?
+    // Actually, theme.spacing.xl is 24 on line 52 of theme.ts. theme.spacing.l is 16.
+    // Let's just use 20 explicitly or update theme? I'll use 20 for now to match exactly, or use theme.spacing.xl (24) for better alignment.
+    // I'll stick to user's 20 for safety, but maybe update theme later.
+    paddingVertical: theme.spacing.m, // 12
   },
   backButton: {
     fontSize: 24,
-    color: '#000',
+    color: theme.colors.text.primary,
     fontWeight: '300',
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#000',
-    marginTop: 8,
+    ...theme.typography.display,
+    marginTop: theme.spacing.s,
   },
   headerSpacer: {
     width: 24,
@@ -127,9 +134,9 @@ const styles = StyleSheet.create({
   },
   rewardsCard: {
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: theme.spacing.xxl, // 32
     borderRadius: 20,
-    padding: 24,
+    padding: theme.spacing.xl, // 24
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -138,27 +145,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rewardsLabel: {
-    color: '#FF3B30', // Red/Orange tint for label
+    color: theme.colors.status.error,
     fontSize: 12,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: theme.spacing.xs, // 4
     letterSpacing: 1,
   },
   rewardsValue: {
-    color: '#fff',
+    color: theme.colors.white,
     fontSize: 32,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: theme.spacing.xs,
   },
   rewardsSub: {
-    color: '#8E8E93',
-    fontSize: 14,
+    ...theme.typography.sub,
+    color: theme.colors.text.secondary,
+    fontSize: 14, // Override theme 13
   },
   rewardsIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: theme.components.rewards.iconBg,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -166,33 +174,28 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   sectionHeader: {
-    marginBottom: 8,
-    marginTop: 12,
+    marginBottom: theme.spacing.s,
+    marginTop: theme.spacing.m,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
+    ...theme.typography.sectionHeader,
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: theme.spacing.l, // 16
   },
   settingText: {
-    fontSize: 17,
-    color: '#000',
-    fontWeight: '400',
+    ...theme.typography.listItem,
   },
   divider: {
     height: 1,
-    backgroundColor: '#E5E5E5',
-    marginLeft: 16, // Indented divider
+    backgroundColor: theme.colors.border,
+    marginLeft: theme.spacing.l, // 16
   },
   arrow: {
     fontSize: 20,
-    color: '#C7C7CC',
+    color: theme.components.icon,
   },
 });

@@ -39,19 +39,43 @@ interface ParkingLot {
   name: string;
   status: string;
   fullness: number;
+  coordinate: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 const PARKING_LOTS: ParkingLot[] = [
-  { id: 'deer_creek', name: 'Deer Creek', status: 'Almost Full', fullness: 90 },
-  { id: 'page_mill', name: 'Page Mill', status: 'Available', fullness: 45 },
-  { id: 'hanover', name: 'Hanover', status: 'Available', fullness: 20 },
+  {
+    id: 'deer_creek',
+    name: 'Deer Creek',
+    status: 'Almost Full',
+    fullness: 90,
+    coordinate: { latitude: 37.4419, longitude: -122.143 },
+  },
+  {
+    id: 'page_mill',
+    name: 'Page Mill',
+    status: 'Available',
+    fullness: 45,
+    coordinate: { latitude: 37.426, longitude: -122.145 }, // Approx nearby
+  },
+  {
+    id: 'hanover',
+    name: 'Hanover',
+    status: 'Available',
+    fullness: 20,
+    coordinate: { latitude: 37.425, longitude: -122.155 }, // Approx nearby
+  },
 ];
 
 function DirectionsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<DirectionsRouteProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const { destination, travelMode, setTravelMode } = useRideContext();
+  const mapRef = useRef<MapView>(null);
+  const { destination, setDestination, travelMode, setTravelMode } =
+    useRideContext();
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedParkingId, setSelectedParkingId] =
     useState<string>('deer_creek');
@@ -64,6 +88,31 @@ function DirectionsScreen() {
 
   // Matches Figma: 20% peek, 50% half, 80% full (to avoid covering header)
   const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
+
+  const handleParkingSelect = (id: string) => {
+    const lot = PARKING_LOTS.find(p => p.id === id);
+    if (!lot) return;
+
+    // 1. Update selection state
+    setSelectedParkingId(id);
+
+    // 2. Update global destination context (updates header)
+    setDestination({
+      id: lot.id,
+      title: `Tesla ${lot.name}`,
+      subtitle: `${lot.fullness}% Full`,
+      coordinate: lot.coordinate,
+    });
+
+    // 3. Animate Map Camera
+    mapRef.current?.animateCamera({
+      center: lot.coordinate,
+      pitch: 0,
+      heading: 0,
+      altitude: 1000,
+      zoom: 15,
+    });
+  };
 
   const openInMaps = () => {
     const url = Platform.select({
@@ -306,7 +355,7 @@ function DirectionsScreen() {
             selected: isSelected,
           };
         })}
-        onSelect={item => setSelectedParkingId(item.id)}
+        onSelect={item => handleParkingSelect(item.id)}
         style={{ borderWidth: 0, padding: 0 }}
         itemStyle={{
           backgroundColor: '#fff',
@@ -549,6 +598,7 @@ function DirectionsScreen() {
       {/* Map Background */}
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           region={{

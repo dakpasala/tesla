@@ -20,7 +20,12 @@ export default function RewardsScreen() {
   const USER_ID = 1; // TODO: replace with auth context
 
   const [balance, setBalance] = React.useState<number>(0);
-  const [incentives, setIncentives] = React.useState<any[]>([]);
+  const [incentives, setIncentives] = React.useState<Array<{
+    id: number;
+    transit_type: string;
+    amount: number;
+    created_at: string;
+  }>>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -32,7 +37,7 @@ export default function RewardsScreen() {
         ]);
 
         setBalance(balanceRes.balance);
-        setIncentives(incentivesRes);
+        setIncentives(incentivesRes as typeof incentives);
       } catch (err) {
         console.error('Failed to load rewards', err);
       } finally {

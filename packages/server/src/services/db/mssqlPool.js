@@ -36,6 +36,35 @@ export async function testConnection() {
 }
 
 // --------------------
+// locations
+// --------------------
+
+export async function getAllLocations({ activeOnly = true } = {}) {
+  const pool = await getPool();
+
+  const query = `
+    SELECT
+      id,
+      name,
+      address,
+      city,
+      region,
+      is_active,
+      lat,
+      lng,
+      created_at,
+      updated_at
+    FROM locations
+    ${activeOnly ? 'WHERE is_active = 1' : ''}
+    ORDER BY name ASC
+  `;
+
+  const result = await pool.request().query(query);
+  return result.recordset;
+}
+
+
+// --------------------
 // parking availability
 // --------------------
 

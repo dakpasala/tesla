@@ -2,9 +2,23 @@ import express from 'express';
 import {
   getParkingAvailabilityByLocationName,
   updateParkingAvailability,
+  getAllLocations,
 } from '../services/db/mssqlPool.js';
 
 const router = express.Router();
+
+// --------------------
+// locations
+// --------------------
+
+router.get('/locations', async (req, res) => {
+  try {
+    const locations = await getAllLocations();
+    res.json(locations);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // --------------------
 // parking availability

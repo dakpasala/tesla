@@ -57,6 +57,22 @@ react {
     autolinkLibrariesWithApp()
 }
 
+def loadDotEnv() {
+    def envFile = file("../../../../.env")
+    def env = [:]
+    if (envFile.exists()) {
+        envFile.eachLine { line ->
+            def matcher = (line =~ /^\s*([^=\s#]+)\s*=\s*(.*)$/)
+            if (matcher.matches()) {
+                env[matcher[0][1]] = matcher[0][2]
+            }
+        }
+    }
+    return env
+}
+
+def env = loadDotEnv()
+
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
@@ -88,6 +104,7 @@ android {
         targetSdk = rootProject.ext.targetSdkVersion
         versionCode = 1
         versionName = "1.0"
+        manifestPlaceholders = [GOOGLE_MAPS_API_KEY: env.get("GOOGLE_MAPS_API_KEY", "")]
     }
 
     signingConfigs {

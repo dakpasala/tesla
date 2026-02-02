@@ -1,0 +1,185 @@
+import React, { useRef, useState, useCallback, useMemo, memo } from 'react';
+import {
+  View,
+  StyleSheet,
+  StatusBar,
+  TouchableOpacity,
+  Text,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../navigation/types';
+import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
+import BottomSheet, {
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@gorhom/bottom-sheet';
+
+// Import existing components
+import SearchBar from '../../components/SearchBar';
+import { useRideContext } from '../../context/RideContext';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+function MainHomeScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const bottomSheetRef = useRef<BottomSheet>(null);
+
+  // Search expanded state only - SearchBar manages its own search text
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const { setDestination } = useRideContext();
+
+  // Snap points for the bottom sheet
+  const snapPoints = useMemo(() => ['15%', '45%', '90%'], []);
+
+  // Stable callbacks
+  const handleSelectDestination = useCallback(
+    (dest: {
+      id: string;
+      title: string;
+      subtitle: string;
+      coordinate?: { latitude: number; longitude: number };
+    }) => {
+      setDestination(dest);
+      // For now we pass a dummy 'route-1' or similar, but the context holds the real data
+      navigation.navigate('Directions', { routeId: 'route-1' });
+    },
+    [navigation, setDestination]
+  );
+
+  const handleExpand = useCallback(() => {
+    bottomSheetRef.current?.snapToIndex(1);
+    setSearchExpanded(true);
+  }, []);
+
+  const handleCollapse = useCallback(() => {
+    bottomSheetRef.current?.snapToIndex(0);
+    setSearchExpanded(false);
+  }, []);
+
+  const handleSheetChanges = useCallback((index: number) => {
+    // Index 0 = collapsed (15%)
+    // Index 1 = half-open (45%)
+    // Index 2 = full-open (90%)
+    setSearchExpanded(index > 0);
+  }, []);
+
+  const handleSettingsPress = useCallback(() => {
+    navigation.navigate('Profile');
+  }, [navigation]);
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Map Background */}
+      <View style={styles.mapContainer}>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          initialRegion={{
+            latitude: 37.3935, // Tesla HQ area
+            longitude: -122.15,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+        />
+
+        {/* Settings button overlay on map */}
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={handleSettingsPress}
+        >
+          <Text style={styles.settingsIcon}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bottom Sheet - Landing page content */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={0}
+        snapPoints={snapPoints}
+        onChange={handleSheetChanges}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetHandle}
+      >
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheetContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* SearchBar - shows search, Home/Work, Favorites, All Offices */}
+          <View style={styles.searchContainer}>
+            <SearchBar
+              expanded={searchExpanded}
+              onExpand={handleExpand}
+              onCollapse={handleCollapse}
+              onSelectDestination={handleSelectDestination}
+            />
+          </View>
+        </BottomSheetScrollView>
+      </BottomSheet>
+    </View>
+  );
+}
+
+export default memo(MainHomeScreen);
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 50,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  settingsIcon: {
+    fontSize: 20,
+  },
+  bottomSheetBackground: {
+    backgroundColor: '#FCFCFC',
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  bottomSheetHandle: {
+    backgroundColor: '#DEDEDE',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 8,
+  },
+  sheetContent: {
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+});

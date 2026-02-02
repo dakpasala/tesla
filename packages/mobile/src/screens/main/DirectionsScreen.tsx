@@ -55,6 +55,7 @@ function DirectionsScreen() {
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedParkingId, setSelectedParkingId] =
     useState<string>('deer_creek');
+  const [selectedSublot, setSelectedSublot] = useState<string>('Sublot B');
 
   // Fallback if no destination in context
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
@@ -143,45 +144,123 @@ function DirectionsScreen() {
           {lot.id === 'deer_creek' ? (
             <>
               {/* Sublot A */}
-              <View style={styles.sublotRow}>
-                <Text style={styles.sublotName}>SUBLOT A</Text>
-                <Text style={styles.sublotStats}>85% → 90%</Text>
+              <TouchableOpacity
+                style={
+                  selectedSublot === 'Sublot A'
+                    ? styles.sublotRowSelected
+                    : styles.sublotRow
+                }
+                onPress={() => setSelectedSublot('Sublot A')}
+              >
+                <Text
+                  style={
+                    selectedSublot === 'Sublot A'
+                      ? styles.sublotNameSelected
+                      : styles.sublotName
+                  }
+                >
+                  SUBLOT A
+                </Text>
+                <Text
+                  style={
+                    selectedSublot === 'Sublot A'
+                      ? styles.sublotStatsSelected
+                      : styles.sublotStats
+                  }
+                >
+                  85% → 90%
+                </Text>
                 <View style={styles.dotRed} />
-              </View>
-              {/* Sublot B (Selected) */}
-              <View style={styles.sublotRowSelected}>
-                <Text style={styles.sublotNameSelected}>SUBLOT B</Text>
-                <Text style={styles.sublotStatsSelected}>65% → 75%</Text>
+              </TouchableOpacity>
+              {/* Sublot B */}
+              <TouchableOpacity
+                style={
+                  selectedSublot === 'Sublot B'
+                    ? styles.sublotRowSelected
+                    : styles.sublotRow
+                }
+                onPress={() => setSelectedSublot('Sublot B')}
+              >
+                <Text
+                  style={
+                    selectedSublot === 'Sublot B'
+                      ? styles.sublotNameSelected
+                      : styles.sublotName
+                  }
+                >
+                  SUBLOT B
+                </Text>
+                <Text
+                  style={
+                    selectedSublot === 'Sublot B'
+                      ? styles.sublotStatsSelected
+                      : styles.sublotStats
+                  }
+                >
+                  65% → 75%
+                </Text>
                 <View style={styles.dotYellow} />
-              </View>
+              </TouchableOpacity>
               {/* Sublot C */}
-              <View style={styles.sublotRow}>
-                <Text style={styles.sublotName}>SUBLOT C</Text>
-                <Text style={styles.sublotStats}>90% → 97%</Text>
+              <TouchableOpacity
+                style={
+                  selectedSublot === 'Sublot C'
+                    ? styles.sublotRowSelected
+                    : styles.sublotRow
+                }
+                onPress={() => setSelectedSublot('Sublot C')}
+              >
+                <Text
+                  style={
+                    selectedSublot === 'Sublot C'
+                      ? styles.sublotNameSelected
+                      : styles.sublotName
+                  }
+                >
+                  SUBLOT C
+                </Text>
+                <Text
+                  style={
+                    selectedSublot === 'Sublot C'
+                      ? styles.sublotStatsSelected
+                      : styles.sublotStats
+                  }
+                >
+                  90% → 97%
+                </Text>
                 <View style={styles.dotRed} />
-              </View>
+              </TouchableOpacity>
             </>
           ) : (
             <>
-              <View style={styles.sublotRowSelected}>
+              <TouchableOpacity
+                style={styles.sublotRowSelected}
+                onPress={() => setSelectedSublot('Main Lot')}
+              >
                 <Text style={styles.sublotNameSelected}>MAIN LOT</Text>
                 <Text style={styles.sublotStatsSelected}>
                   {lot.status === 'Available' ? 'Verified Space' : 'Limited'}
                 </Text>
                 <View style={styles.dotGreen} />
-              </View>
-              <View style={styles.sublotRow}>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.sublotRow}
+                onPress={() => setSelectedSublot('Overflow')}
+              >
                 <Text style={styles.sublotName}>OVERFLOW</Text>
                 <Text style={styles.sublotStats}>Empty</Text>
                 <View style={styles.dotGreen} />
-              </View>
+              </TouchableOpacity>
             </>
           )}
         </View>
 
         {/* Also Consider Shuttle */}
         <Text style={styles.sectionHeader}>ALSO CONSIDER SHUTTLE</Text>
-        <View style={styles.shuttleSuggestionCard}>
+        <TouchableOpacity
+          style={styles.shuttleSuggestionCard}
+          onPress={() => setTravelMode('shuttle')}
+        >
           <Image
             source={require('../../assets/icons/new/newShuttle.png')}
             style={{ width: 24, height: 24, marginRight: 12 }}
@@ -190,7 +269,7 @@ function DirectionsScreen() {
           <View style={{ flex: 1 }} />
           <View style={styles.dotYellow} />
           <Text style={styles.statusValue}>65% full</Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Footer Actions */}
         <View style={styles.detailFooter}>
@@ -201,11 +280,11 @@ function DirectionsScreen() {
             <Text style={styles.backButtonText}>Other Lots</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.startButton, { flex: 1, marginLeft: 12 }]}
+            style={styles.startButton}
             onPress={openInGoogleMaps}
           >
             <Text style={styles.startButtonText}>
-              Route to {lot.id === 'deer_creek' ? 'Sublot B' : lot.name}
+              Route to {lot.id === 'deer_creek' ? selectedSublot : lot.name}
             </Text>
           </TouchableOpacity>
         </View>
@@ -257,6 +336,7 @@ function DirectionsScreen() {
             icon: require('../../assets/icons/new/newShuttle.png'),
           },
         ]}
+        onSelect={() => setTravelMode('shuttle')}
         style={{ borderWidth: 0, padding: 0 }}
         itemStyle={{
           backgroundColor: '#fff',
@@ -355,14 +435,20 @@ function DirectionsScreen() {
       <View style={styles.footerLinks}>
         <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
         {/* Simple list of alternates */}
-        <View style={styles.altRow}>
+        <TouchableOpacity
+          style={styles.altRow}
+          onPress={() => setTravelMode('shuttle')}
+        >
           <Text style={styles.altText}>Tesla Shuttle B</Text>
           <Text style={styles.altTime}>55 min</Text>
-        </View>
-        <View style={styles.altRow}>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.altRow}
+          onPress={() => setTravelMode('transit')}
+        >
           <Text style={styles.altText}>Public Transit</Text>
           <Text style={styles.altTime}>1h 10m</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
@@ -490,6 +576,7 @@ function DirectionsScreen() {
         snapPoints={snapPoints}
         backgroundStyle={styles.bottomSheetBackground}
         handleIndicatorStyle={styles.bottomSheetHandle}
+        style={{ zIndex: 100 }}
       >
         <BottomSheetScrollView
           contentContainerStyle={styles.sheetContent}
@@ -538,7 +625,7 @@ const styles = StyleSheet.create({
     top: 60,
     left: 35,
     right: 35,
-    zIndex: 10,
+    zIndex: 1, // Lowered so Bottom Sheet covers it
     // Removed flexDirection row since back button is gone
   },
   // backButton styles removed
@@ -725,8 +812,9 @@ const styles = StyleSheet.create({
   startButton: {
     backgroundColor: '#007AFF',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12, // Reduced padding for sleekness
     alignItems: 'center',
+    flex: 1, // Ensure equal width if in row
   },
   startButtonText: {
     color: '#fff',
@@ -934,12 +1022,16 @@ const styles = StyleSheet.create({
   detailFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backButton: {
-    paddingVertical: 14,
+    paddingVertical: 12, // Reduced padding for sleekness
     paddingHorizontal: 20,
     backgroundColor: '#F2F2F7',
     borderRadius: 12,
+    flex: 1, // Even width
+    marginRight: 12, // Spacing
+    alignItems: 'center',
   },
   backButtonText: {
     fontSize: 16,

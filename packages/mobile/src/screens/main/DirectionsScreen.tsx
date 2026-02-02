@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/DirectionsScreen.tsx
+
 import React, { useRef, useState, useMemo, memo } from 'react';
 import {
   View,

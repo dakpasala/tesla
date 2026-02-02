@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/MainHomeScreen.tsx
+
 import React, { useRef, useState, useCallback, useMemo, memo } from 'react';
 import {
   View,

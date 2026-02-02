@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/FavoritesScreen.txt
+
 import React, { useState } from 'react';
 import { useEffect } from 'react';
 import { getUserFavorites } from '../../services/users';

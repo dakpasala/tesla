@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/ProfileScreen.tsx
+
 import React from 'react';
 import {
   View,

@@ -35,6 +35,12 @@ target 'tesla' do
       :mac_catalyst_enabled => false
     )
 
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['DEFINES_MODULE'] = 'YES'
+      end
+    end
+
     # Attach secrets.xcconfig safely (no secrets in git)
     installer.generated_projects.each do |project|
       project.targets.each do |target|

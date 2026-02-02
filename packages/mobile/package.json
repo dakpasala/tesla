@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "android": "react-native run-android",
-    "ios": "react-native run-ios",
+    "create-secrets": "node scripts/set-ios-env.js",
+    "ios": "yarn create-secrets && react-native run-ios",
     "start": "react-native start",
     "test": "jest"
   },

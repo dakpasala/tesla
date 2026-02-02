@@ -364,119 +364,122 @@ export default memo(SearchBar);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.background, // #FCFCFC
-    borderRadius: theme.borderRadius.xl, // 22? theme.xl is 22. Correct.
-    padding: theme.spacing.l, // 16
-    overflow: 'hidden',
+    backgroundColor: theme.colors.background,
+    // Removed overflow: hidden to allow shadows to show if we add them to inner elements,
+    // but here the container itself is mainly a wrapper.
+    // If we want the search bar to look like the route card, we might style the inputRow mainly.
+    padding: theme.spacing.l,
   },
   searchIcon: {
-    width: 18,
-    height: 18,
-    marginRight: 10,
-    opacity: 0.9,
+    width: 20,
+    height: 20,
+    marginRight: 12,
+    tintColor: '#000', // Sharp black for contrast
+    opacity: 1,
   },
   placeholder: {
-    color: theme.colors.text.light,
-    fontSize: 14,
+    color: theme.colors.text.secondary,
+    fontSize: 16, // Larger font for premium feel
+    fontWeight: '500',
     flex: 1,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: theme.borderRadius.xl, // 22
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: '#F6F6F6', // TODO: Add to theme or use backgroundAlt (#F2F2F7)? User had F6F6F6. theme.backgroundAlt is close enough or use user's.
-    // I will stick to user's hardcoded for now or maybe define input bg.
-    // Let's use #F6F6F6 for now as it wasn't in theme.
-    marginBottom: theme.spacing.m, // 12
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F6F6F6',
+    marginBottom: theme.spacing.l,
+    // Removed shadows and borders
   },
   input: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: '500',
     paddingVertical: 0,
-    color: '#1C1C1C', // Dark grey, close to black. theme.text.primary is #000.
+    color: '#000000',
   },
   quickRow: {
     flexDirection: 'row',
-    marginBottom: 10,
-    marginTop: 10,
+    marginBottom: 20,
+    marginTop: 8,
+    justifyContent: 'space-between',
   },
   quickItem: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    backgroundColor: theme.colors.background,
   },
   workItem: {
-    marginLeft: -80,
+    marginLeft: 0,
   },
   quickCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F1F1F1', // Light grey
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   quickCircleIcon: {
-    width: 20,
-    height: 17,
+    width: 16,
+    height: 16,
     resizeMode: 'contain',
-    opacity: 0.9,
+    opacity: 0.8,
   },
   quickTextWrap: {
     flex: 1,
   },
   quickTitle: {
-    fontWeight: '400',
-    fontSize: 12,
-    color: theme.colors.text.primary, // #000000
+    fontWeight: '500',
+    fontSize: 16,
+    color: '#000000',
   },
   sub: {
-    fontSize: 8,
-    color: '#878585', // Grey
-    marginTop: 1,
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 2,
   },
   section: {
-    fontWeight: '500',
+    fontWeight: '700',
     fontSize: 14,
-    color: theme.colors.text.primary,
-    marginTop: 12,
-    marginBottom: 6,
+    paddingVertical: 12,
+    color: '#8E8E93',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   sectionRow: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
   },
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 10,
   },
   sortText: {
-    color: '#878585',
-    fontWeight: '400',
-    fontSize: 12,
-    marginRight: 6,
+    color: theme.colors.primary,
+    fontWeight: '600',
+    fontSize: 14,
+    marginRight: 4,
   },
   sortChevron: {
-    color: '#878585',
-    fontSize: 12,
+    color: theme.colors.primary,
+    fontSize: 14,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 8,
+    borderBottomColor: '#F2F2F7',
   },
   starTouchable: {
     padding: 8,
+    marginRight: 8,
   },
   rowContent: {
     flex: 1,
@@ -489,31 +492,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rowText: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#1C1C1C',
+    fontSize: 16, // Larger title
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: 4,
   },
   star: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
   },
   starIcon: {
-    width: 18,
-    height: 18,
+    width: 20,
+    height: 20,
+    tintColor: '#C7C7CC', // Light gray for inactive star
   },
   placeSub: {
-    fontSize: 8,
-    color: '#878585',
-    marginTop: 1,
+    fontSize: 13,
+    color: '#8E8E93',
   },
   milesText: {
-    color: '#878585',
-    fontWeight: '400',
-    fontSize: 12,
-    marginLeft: 8,
+    color: '#8E8E93',
+    fontWeight: '500',
+    fontSize: 13,
+    marginLeft: 12,
   },
   emptyText: {
-    color: '#888',
-    paddingVertical: 8,
+    color: '#8E8E93',
+    paddingVertical: 20,
+    textAlign: 'center',
+    fontSize: 14,
   },
 });

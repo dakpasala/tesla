@@ -1,6 +1,8 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
+
+import { getUserHomeAddress, getUserWorkAddress } from '../services/users';
 
 import {
   View,
@@ -160,6 +162,8 @@ type Props = {
     subtitle: string;
     coordinate?: { latitude: number; longitude: number };
   }) => void;
+  onHomePress?: () => void;
+  onWorkPress?: () => void;
 };
 
 function SearchBar({
@@ -168,10 +172,30 @@ function SearchBar({
   onCollapse,
   onFocus,
   onSelectDestination,
+  onHomePress,
+  onWorkPress,
 }: Props) {
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
   const [searchText, setSearchText] = useState('');
   const [locations, setLocations] = useState<RowData[]>(INITIAL_LOCATIONS);
+  const [homeAddress, setHomeAddress] = useState<string | null>(null);
+  const [workAddress, setWorkAddress] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchAddresses() {
+      try {
+        const [homeRes, workRes] = await Promise.all([
+          getUserHomeAddress(1),
+          getUserWorkAddress(1),
+        ]);
+        setHomeAddress(homeRes?.home_address?.trim() || null);
+        setWorkAddress(workRes?.work_address?.trim() || null);
+      } catch (err) {
+        console.error('Failed to fetch addresses in SearchBar', err);
+      }
+    }
+    fetchAddresses();
+  }, []);
 
   const handleSearchChange = useCallback((text: string) => {
     setSearchText(text);
@@ -210,20 +234,12 @@ function SearchBar({
   );
 
   const handleHomePress = useCallback(() => {
-    onSelectDestination?.({
-      id: 'home',
-      title: 'Home',
-      subtitle: 'Set location',
-    });
-  }, [onSelectDestination]);
+    onHomePress?.();
+  }, [onHomePress]);
 
   const handleWorkPress = useCallback(() => {
-    onSelectDestination?.({
-      id: 'work',
-      title: 'Work',
-      subtitle: 'Set location',
-    });
-  }, [onSelectDestination]);
+    onWorkPress?.();
+  }, [onWorkPress]);
 
   const handleSortToggle = useCallback(() => {
     setSort(s => (s === 'A-Z' ? 'Z-A' : 'A-Z'));
@@ -270,13 +286,13 @@ function SearchBar({
       <View style={styles.quickRow}>
         <QuickItem
           title="Home"
-          subtitle="Set location"
+          subtitle={homeAddress ?? 'Set location'}
           icon={require('../assets/images/search_house.png')}
           onPress={handleHomePress}
         />
         <QuickItem
           title="Work"
-          subtitle="Set location"
+          subtitle={workAddress ?? 'Set location'}
           icon={require('../assets/images/search_job.png')}
           style={styles.workItem}
           onPress={handleWorkPress}
@@ -347,7 +363,7 @@ function SearchBar({
           onChangeText={handleSearchChange}
           onFocus={onFocus}
           placeholder="Search Here"
-          placeholderTextColor={theme.colors.text.light} // theme usage
+          placeholderTextColor={theme.colors.text.light}
           style={styles.input}
           autoCapitalize="none"
           autoCorrect={false}
@@ -360,26 +376,23 @@ function SearchBar({
   );
 }
 
-export default memo(SearchBar);
+export default SearchBar;
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: theme.colors.background,
-    // Removed overflow: hidden to allow shadows to show if we add them to inner elements,
-    // but here the container itself is mainly a wrapper.
-    // If we want the search bar to look like the route card, we might style the inputRow mainly.
     padding: theme.spacing.l,
   },
   searchIcon: {
     width: 20,
     height: 20,
     marginRight: 12,
-    tintColor: '#000', // Sharp black for contrast
+    tintColor: '#000',
     opacity: 1,
   },
   placeholder: {
     color: theme.colors.text.secondary,
-    fontSize: 16, // Larger font for premium feel
+    fontSize: 16,
     fontWeight: '500',
     flex: 1,
   },
@@ -391,7 +404,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#F6F6F6',
     marginBottom: theme.spacing.l,
-    // Removed shadows and borders
   },
   input: {
     flex: 1,
@@ -492,7 +504,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rowText: {
-    fontSize: 16, // Larger title
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
     marginBottom: 4,
@@ -504,7 +516,7 @@ const styles = StyleSheet.create({
   starIcon: {
     width: 20,
     height: 20,
-    tintColor: '#C7C7CC', // Light gray for inactive star
+    tintColor: '#C7C7CC',
   },
   placeSub: {
     fontSize: 13,

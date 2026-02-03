@@ -120,6 +120,8 @@ function MainHomeScreen() {
               onCollapse={handleCollapse}
               onFocus={handleSearchFocus}
               onSelectDestination={handleSelectDestination}
+              onHomePress={() => navigation.navigate('Favorites')}
+              onWorkPress={() => navigation.navigate('Favorites')}
             />
           </View>
         </BottomSheetScrollView>

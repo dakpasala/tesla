@@ -33,9 +33,10 @@ export async function awardTransitIncentive(
 // --------------------
 
 // get home address
-export async function getUserHomeAddress(userId: number) {
+export async function getUserHomeAddress(userId: number): Promise<{ userId: number; home_address: string }> {
   return get(`users/${userId}/home_address`);
 }
+
 
 // set home address
 export async function setUserHomeAddress(userId: number, homeAddress: string) {
@@ -47,7 +48,7 @@ export async function setUserHomeAddress(userId: number, homeAddress: string) {
 // --------------------
 
 // get work address
-export async function getUserWorkAddress(userId: number) {
+export async function getUserWorkAddress(userId: number): Promise<{ userId: number; work_address: string }> {
   return get(`users/${userId}/work_address`);
 }
 

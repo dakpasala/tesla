@@ -254,6 +254,29 @@ export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
   return result.recordset[0] || null;
 }
 
+export async function findOfficeByAddress(address) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('address', sql.VarChar, address)
+    .query(`
+      SELECT
+        id,
+        name,
+        address,
+        city,
+        region,
+        lat,
+        lng,
+        is_active
+      FROM locations
+      WHERE address = @address
+        AND is_active = 1
+    `);
+
+  return result.recordset[0] || null;
+}
+
 
 // --------------------
 // users

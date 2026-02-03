@@ -86,12 +86,12 @@ router.get('/to-office-quick-start', async (req, res) => {
     const userLat = parseFloat(lat);
     const userLng = parseFloat(lng);
 
-    // Verify destination is near a valid office
-    const nearbyOffice = await findNearbyOffice(userLat, userLng);
+    // find office by the provided address
+    const office = await findOfficeByAddress(address);
 
-    if (!nearbyOffice) {
+    if (!office) {
       return res.status(403).json({
-        error: 'Invalid Office',
+        error: 'Invalid Office - address not found in locations table',
       });
     }
 
@@ -114,8 +114,8 @@ router.get('/to-office-quick-start', async (req, res) => {
 
     const response = {
       mode: 'TO_OFFICE_QUICK_START',
-      office: nearbyOffice.name,
-      office_address: nearbyOffice.address,
+      office: office.name,
+      office_address: office.address,
       destination,
       routes,
     };

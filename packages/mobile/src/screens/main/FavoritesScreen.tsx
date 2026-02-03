@@ -33,13 +33,6 @@ import {
   setUserWorkAddress,
 } from '../../services/users';
 
-// Import route API
-import { getRoutesGoHome } from '../../services/maps';
-import type { GoHomeResponse } from '../../services/maps';
-
-// Import location utility
-import { getUserLocation } from '../../services/location';
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface FavoriteLocation {
@@ -66,7 +59,6 @@ export default function FavoritesScreen() {
   const [editingType, setEditingType] = useState<'home' | 'work' | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
-  const [fetchingRoute, setFetchingRoute] = useState(false);
 
   // Fetch home, work, and favorites on mount
   useEffect(() => {
@@ -107,7 +99,7 @@ export default function FavoritesScreen() {
     setModalVisible(true);
   };
 
-  // Saves the address via API, then auto-navigates to Routes
+  // Saves the address via API
   const saveAddress = async () => {
     if (!editingType) return;
     setSaving(true);
@@ -115,65 +107,16 @@ export default function FavoritesScreen() {
       if (editingType === 'home') {
         await setUserHomeAddress(USER_ID, inputValue);
         setHomeAddress(inputValue);
-        setModalVisible(false);
-
-        // Auto-navigate: get location → fetch routes → go
-        setFetchingRoute(true);
-        const origin = await getUserLocation();
-        //const origin = { lat: 37.3935, lng: -122.15 };
-
-        const routeData = await getRoutesGoHome({
-          origin,
-          destination: inputValue,
-        });
-        navigation.navigate('Routes', { routeData });
       } else {
         await setUserWorkAddress(USER_ID, inputValue);
         setWorkAddress(inputValue);
-        setModalVisible(false);
-
-        // Work — just navigate for now
-        navigation.navigate('Routes', { destination: inputValue });
       }
+      setModalVisible(false);
     } catch (err) {
       console.error('SAVE ADDRESS ERROR:', err);
       Alert.alert('Error', 'Something went wrong. Try again.');
     } finally {
       setSaving(false);
-      setFetchingRoute(false);
-    }
-  };
-
-  // Tapping Home/Work — fetches user location then routes, then navigates
-  const handleQuickTap = async (type: 'home' | 'work') => {
-    const address = type === 'home' ? homeAddress : workAddress;
-
-    if (!address || address.trim() === '') {
-      openEditor(type);
-      return;
-    }
-
-    if (type === 'home') {
-      setFetchingRoute(true);
-      try {
-        // const origin = await getUserLocation();
-        const origin = { lat: 37.3935, lng: -122.15 };
-
-        const routeData = await getRoutesGoHome({
-          origin,
-          destination: address,
-        });
-
-        navigation.navigate('Routes', { routeData });
-      } catch (err) {
-        console.error('Failed to fetch routes', err);
-        Alert.alert('Error', 'Could not fetch routes. Try again.');
-      } finally {
-        setFetchingRoute(false);
-      }
-    } else {
-      // Work — just navigate for now (can wire up getRoutesToOffice later)
-      navigation.navigate('Routes', { destination: address });
     }
   };
 
@@ -231,19 +174,14 @@ export default function FavoritesScreen() {
           {/* Home */}
           <TouchableOpacity
             style={styles.quickItem}
-            onPress={() => handleQuickTap('home')}
-            disabled={fetchingRoute}
+            onPress={() => openEditor('home')}
           >
             <View style={styles.quickCircle}>
-              {fetchingRoute ? (
-                <ActivityIndicator size="small" color="#4285F4" />
-              ) : (
-                <Image
-                  source={require('../../assets/images/search_house.png')}
-                  style={styles.quickIcon}
-                  resizeMode="contain"
-                />
-              )}
+              <Image
+                source={require('../../assets/images/search_house.png')}
+                style={styles.quickIcon}
+                resizeMode="contain"
+              />
             </View>
             <View>
               <Text style={styles.quickTitle}>Home</Text>
@@ -255,18 +193,12 @@ export default function FavoritesScreen() {
                 </Text>
               )}
             </View>
-            {/* Edit pencil if already set */}
-            {homeAddress && (
-              <TouchableOpacity onPress={() => openEditor('home')} style={styles.editButton}>
-                <Text style={styles.editText}>✎</Text>
-              </TouchableOpacity>
-            )}
           </TouchableOpacity>
 
           {/* Work */}
           <TouchableOpacity
             style={styles.quickItem}
-            onPress={() => handleQuickTap('work')}
+            onPress={() => openEditor('work')}
           >
             <View style={styles.quickCircle}>
               <Image
@@ -285,11 +217,6 @@ export default function FavoritesScreen() {
                 </Text>
               )}
             </View>
-            {workAddress && (
-              <TouchableOpacity onPress={() => openEditor('work')} style={styles.editButton}>
-                <Text style={styles.editText}>✎</Text>
-              </TouchableOpacity>
-            )}
           </TouchableOpacity>
         </View>
 
@@ -431,14 +358,6 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#878585',
     marginTop: 1,
-  },
-  editButton: {
-    marginLeft: 'auto',
-    padding: 4,
-  },
-  editText: {
-    fontSize: 16,
-    color: '#4285F4',
   },
   sectionTitle: {
     fontSize: 14,

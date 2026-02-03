@@ -124,6 +124,13 @@ function MainHomeScreen() {
     }
   }, [navigation]);
 
+  const handleHomeLongPress = useCallback(() => {
+    navigation.navigate('Favorites');
+  }, [navigation]);
+
+  const handleWorkLongPress = useCallback(() => {
+    navigation.navigate('Favorites');
+  }, [navigation]);
 
   const handleExpand = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(1);
@@ -197,6 +204,8 @@ function MainHomeScreen() {
               onSelectDestination={handleSelectDestination}
               onHomePress={handleHomePress}
               onWorkPress={handleWorkPress}
+              onHomeLongPress={handleHomeLongPress}
+              onWorkLongPress={handleWorkLongPress}
             />
           </View>
         </BottomSheetScrollView>

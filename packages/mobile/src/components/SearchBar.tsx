@@ -81,6 +81,7 @@ type QuickItemProps = {
   subtitle: string;
   icon: any;
   onPress?: () => void;
+  onLongPress?: () => void;
   style?: ViewStyle;
 };
 
@@ -90,6 +91,7 @@ const QuickItem = memo(function QuickItem({
   subtitle,
   icon,
   onPress,
+  onLongPress,
   style,
 }: QuickItemProps) {
   return (
@@ -97,6 +99,8 @@ const QuickItem = memo(function QuickItem({
       style={[styles.quickItem, style]}
       activeOpacity={0.85}
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={500}
     >
       <View style={styles.quickCircle}>
         <Image source={icon} style={styles.quickCircleIcon} />
@@ -122,6 +126,8 @@ type Props = {
   }) => void;
   onHomePress?: (address: string | null) => void;
   onWorkPress?: (address: string | null) => void;
+  onHomeLongPress?: () => void;
+  onWorkLongPress?: () => void;
 };
 
 function SearchBar({
@@ -132,6 +138,8 @@ function SearchBar({
   onSelectDestination,
   onHomePress,
   onWorkPress,
+  onHomeLongPress,
+  onWorkLongPress,
 }: Props) {
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
   const [searchText, setSearchText] = useState('');
@@ -277,6 +285,7 @@ function SearchBar({
           subtitle={homeAddress ?? 'Set location'}
           icon={require('../assets/images/search_house.png')}
           onPress={handleHomePress}
+          onLongPress={onHomeLongPress}
         />
         <QuickItem
           title="Work"
@@ -284,6 +293,7 @@ function SearchBar({
           icon={require('../assets/images/search_job.png')}
           style={styles.workItem}
           onPress={handleWorkPress}
+          onLongPress={onWorkLongPress}
         />
       </View>
 

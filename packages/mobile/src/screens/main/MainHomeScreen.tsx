@@ -26,6 +26,8 @@ import { theme } from '../../theme/theme';
 import { getRoutesGoHome } from '../../services/maps';
 import type { GoHomeResponse } from '../../services/maps';
 
+import { getUserLocation } from '../../services/location';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function MainHomeScreen() {
@@ -64,7 +66,8 @@ function MainHomeScreen() {
 
     try {
       // TODO: replace with actual geolocation
-      const origin = { lat: 37.3935, lng: -122.15 };
+      // const origin = { lat: 37.3935, lng: -122.15 };
+      const origin = await getUserLocation();
 
       const routeData = await getRoutesGoHome({
         origin,

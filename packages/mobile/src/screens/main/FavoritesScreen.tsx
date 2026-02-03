@@ -119,8 +119,8 @@ export default function FavoritesScreen() {
 
         // Auto-navigate: get location → fetch routes → go
         setFetchingRoute(true);
-        // const origin = await getUserLocation();
-        const origin = { lat: 37.3935, lng: -122.15 };
+        const origin = await getUserLocation();
+        //const origin = { lat: 37.3935, lng: -122.15 };
 
         const routeData = await getRoutesGoHome({
           origin,

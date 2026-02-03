@@ -22,6 +22,10 @@ import SearchBar from '../../components/SearchBar';
 import { useRideContext } from '../../context/RideContext';
 import { theme } from '../../theme/theme';
 
+// Import route APIs
+import { getRoutesGoHome } from '../../services/maps';
+import type { GoHomeResponse } from '../../services/maps';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function MainHomeScreen() {
@@ -49,6 +53,34 @@ function MainHomeScreen() {
     },
     [navigation, setDestination]
   );
+
+  // Home press — SearchBar passes the address up, we fetch routes here
+  const handleHomePress = useCallback(async (homeAddress: string | null) => {
+    if (!homeAddress) {
+      // Not set yet — go to Favorites to set it
+      navigation.navigate('Favorites');
+      return;
+    }
+
+    try {
+      // TODO: replace with actual geolocation
+      const origin = { lat: 37.3935, lng: -122.15 };
+
+      const routeData = await getRoutesGoHome({
+        origin,
+        destination: homeAddress,
+      });
+
+      navigation.navigate('Routes', { routeData });
+    } catch (err) {
+      console.error('Failed to fetch home routes', err);
+    }
+  }, [navigation]);
+
+  // Work press — go to Favorites for now (needs parking lot selection)
+  const handleWorkPress = useCallback((workAddress: string | null) => {
+    navigation.navigate('Favorites');
+  }, [navigation]);
 
   const handleExpand = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(1);
@@ -120,8 +152,8 @@ function MainHomeScreen() {
               onCollapse={handleCollapse}
               onFocus={handleSearchFocus}
               onSelectDestination={handleSelectDestination}
-              onHomePress={() => navigation.navigate('Favorites')}
-              onWorkPress={() => navigation.navigate('Favorites')}
+              onHomePress={handleHomePress}
+              onWorkPress={handleWorkPress}
             />
           </View>
         </BottomSheetScrollView>

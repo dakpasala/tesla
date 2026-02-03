@@ -120,8 +120,8 @@ type Props = {
     subtitle: string;
     coordinate?: { latitude: number; longitude: number };
   }) => void;
-  onHomePress?: () => void;
-  onWorkPress?: () => void;
+  onHomePress?: (address: string | null) => void;
+  onWorkPress?: (address: string | null) => void;
 };
 
 function SearchBar({
@@ -139,7 +139,7 @@ function SearchBar({
   const [homeAddress, setHomeAddress] = useState<string | null>(null);
   const [workAddress, setWorkAddress] = useState<string | null>(null);
 
-   useEffect(() => {
+  useEffect(() => {
     async function fetchAll() {
       try {
         const [homeRes, workRes, favRes] = await Promise.all([
@@ -187,10 +187,8 @@ function SearchBar({
 
     try {
       if (item.isFavorite) {
-        // Unstar — remove from favorites
         await removeUserFavorite(1, item.title);
       } else {
-        // Star — add to favorites
         await addUserFavorite(1, {
           label: item.title,
           name: item.title,
@@ -198,7 +196,6 @@ function SearchBar({
         });
       }
 
-      // Update local state after successful API call
       setLocations(prev =>
         prev.map(loc =>
           loc.id === id ? { ...loc, isFavorite: !loc.isFavorite } : loc
@@ -224,13 +221,14 @@ function SearchBar({
     [locations, onSelectDestination]
   );
 
+  // Pass the address up to parent — parent decides what to do
   const handleHomePress = useCallback(() => {
-    onHomePress?.();
-  }, [onHomePress]);
+    onHomePress?.(homeAddress);
+  }, [onHomePress, homeAddress]);
 
   const handleWorkPress = useCallback(() => {
-    onWorkPress?.();
-  }, [onWorkPress]);
+    onWorkPress?.(workAddress);
+  }, [onWorkPress, workAddress]);
 
   const handleSortToggle = useCallback(() => {
     setSort(s => (s === 'A-Z' ? 'Z-A' : 'A-Z'));

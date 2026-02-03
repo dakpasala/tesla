@@ -62,14 +62,21 @@ export async function setUserWorkAddress(userId: number, workAddress: string) {
 // --------------------
 
 // get favorites
-export async function getUserFavorites(userId: number): Promise<Favorite[]> {
+export async function getUserFavorites(
+  userId: number
+): Promise<Favorite[]> {
   return get(`users/${userId}/favorites`);
 }
 
+
 // add favorite
-export async function addUserFavorite(userId: number, favorite: Favorite) {
+export async function addUserFavorite(
+  userId: number,
+  favorite: Favorite
+) {
   return post(`users/${userId}/favorites`, favorite);
 }
+
 
 // remove favorite by name
 export async function removeUserFavorite(userId: number, name: string) {

@@ -1,8 +1,10 @@
+// packages/mobile/src/components/SearchBar.tsx
+
 import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
 
-import { getUserHomeAddress, getUserWorkAddress } from '../services/users';
+import { getUserHomeAddress, getUserWorkAddress, getUserFavorites, addUserFavorite, removeUserFavorite } from '../services/users';
 
 import {
   View,
@@ -107,50 +109,6 @@ const QuickItem = memo(function QuickItem({
   );
 });
 
-// Initial data
-const INITIAL_LOCATIONS: RowData[] = [
-  {
-    id: 'loc-1',
-    title: 'Tesla Deer Creek',
-    subtitle: '3500 Deer Creek Rd, Palo Alto',
-    miles: '2.5 miles',
-    isFavorite: true,
-    coordinate: { latitude: 37.3935, longitude: -122.15 },
-  },
-  {
-    id: 'loc-2',
-    title: 'Tesla Page Mill',
-    subtitle: '1501 Page Mill Rd, Palo Alto',
-    miles: '2.8 miles',
-    isFavorite: true,
-    coordinate: { latitude: 37.4124, longitude: -122.1468 },
-  },
-  {
-    id: 'loc-3',
-    title: 'Tesla Fremont Factory',
-    subtitle: '45500 Fremont Blvd, Fremont',
-    miles: '12.3 miles',
-    isFavorite: true,
-    coordinate: { latitude: 37.4925, longitude: -121.9446 },
-  },
-  {
-    id: 'loc-4',
-    title: 'Tesla Palo Alto HQ',
-    subtitle: '3500 Deer Creek Rd, Palo Alto',
-    miles: '2.5 miles',
-    isFavorite: false,
-    coordinate: { latitude: 37.3935, longitude: -122.15 },
-  },
-  {
-    id: 'loc-5',
-    title: 'Tesla Sunnyvale',
-    subtitle: '1100 W Maude Ave, Sunnyvale',
-    miles: '5.2 miles',
-    isFavorite: false,
-    coordinate: { latitude: 37.3879, longitude: -122.0305 },
-  },
-];
-
 type Props = {
   expanded?: boolean;
   onExpand?: () => void;
@@ -177,24 +135,36 @@ function SearchBar({
 }: Props) {
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
   const [searchText, setSearchText] = useState('');
-  const [locations, setLocations] = useState<RowData[]>(INITIAL_LOCATIONS);
+  const [locations, setLocations] = useState<RowData[]>([]);
   const [homeAddress, setHomeAddress] = useState<string | null>(null);
   const [workAddress, setWorkAddress] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchAddresses() {
+   useEffect(() => {
+    async function fetchAll() {
       try {
-        const [homeRes, workRes] = await Promise.all([
+        const [homeRes, workRes, favRes] = await Promise.all([
           getUserHomeAddress(1),
           getUserWorkAddress(1),
+          getUserFavorites(1),
         ]);
+
         setHomeAddress(homeRes?.home_address?.trim() || null);
         setWorkAddress(workRes?.work_address?.trim() || null);
+
+        const mapped: RowData[] = favRes.map((fav: any) => ({
+          id: String(fav.location_id),
+          title: fav.name,
+          subtitle: fav.address,
+          miles: '',
+          isFavorite: true,
+        }));
+
+        setLocations(mapped);
       } catch (err) {
-        console.error('Failed to fetch addresses in SearchBar', err);
+        console.error('Failed to fetch SearchBar data', err);
       }
     }
-    fetchAddresses();
+    fetchAll();
   }, []);
 
   const handleSearchChange = useCallback((text: string) => {
@@ -210,13 +180,34 @@ function SearchBar({
     onCollapse?.();
   }, [onCollapse]);
 
-  const toggleFavorite = useCallback((id: string) => {
-    setLocations(prev =>
-      prev.map(loc =>
-        loc.id === id ? { ...loc, isFavorite: !loc.isFavorite } : loc
-      )
-    );
-  }, []);
+  // Toggle favorite — calls API then updates local state
+  const toggleFavorite = useCallback(async (id: string) => {
+    const item = locations.find(loc => loc.id === id);
+    if (!item) return;
+
+    try {
+      if (item.isFavorite) {
+        // Unstar — remove from favorites
+        await removeUserFavorite(1, item.title);
+      } else {
+        // Star — add to favorites
+        await addUserFavorite(1, {
+          label: item.title,
+          name: item.title,
+          address: item.subtitle,
+        });
+      }
+
+      // Update local state after successful API call
+      setLocations(prev =>
+        prev.map(loc =>
+          loc.id === id ? { ...loc, isFavorite: !loc.isFavorite } : loc
+        )
+      );
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
+  }, [locations]);
 
   const handleSelectDestination = useCallback(
     (id: string) => {
@@ -280,7 +271,6 @@ function SearchBar({
     );
   }, [offices, searchText]);
 
-  // Refactored to keep a stable component tree and avoid flashing during expansion
   const renderContent = () => (
     <>
       <View style={styles.quickRow}>

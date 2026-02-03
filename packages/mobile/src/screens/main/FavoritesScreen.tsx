@@ -66,6 +66,7 @@ export default function FavoritesScreen() {
   const [editingType, setEditingType] = useState<'home' | 'work' | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
+  const [fetchingRoute, setFetchingRoute] = useState(false);
 
   // Fetch home, work, and favorites on mount
   useEffect(() => {
@@ -77,8 +78,8 @@ export default function FavoritesScreen() {
           getUserFavorites(USER_ID),
         ]);
 
-        setHomeAddress(homeRes?.home_address ?? null);
-        setWorkAddress(workRes?.work_address ?? null);
+        setHomeAddress(homeRes?.home_address?.trim() || null);
+        setWorkAddress(workRes?.work_address?.trim() || null);
 
         setFavorites(
           favRes.map((fav, index) => ({
@@ -99,8 +100,6 @@ export default function FavoritesScreen() {
     loadAll();
   }, []);
 
-  const [fetchingRoute, setFetchingRoute] = useState(false);
-
   // Opens the edit modal for home or work
   const openEditor = (type: 'home' | 'work') => {
     setEditingType(type);
@@ -110,43 +109,46 @@ export default function FavoritesScreen() {
 
   // Saves the address via API, then auto-navigates to Routes
   const saveAddress = async () => {
-  if (!editingType) return;
-  setSaving(true);
-  try {
-    if (editingType === 'home') {
-      console.log('Saving home address:', inputValue);
-      const res = await setUserHomeAddress(USER_ID, inputValue);
-      console.log('Save home response:', JSON.stringify(res));
-      setHomeAddress(inputValue);
-      setModalVisible(false);
+    if (!editingType) return;
+    setSaving(true);
+    try {
+      if (editingType === 'home') {
+        await setUserHomeAddress(USER_ID, inputValue);
+        setHomeAddress(inputValue);
+        setModalVisible(false);
 
-      console.log('Getting user location...');
-      setFetchingRoute(true);
-     // const origin = await getUserLocation();
-      const origin = { lat: 37.3935, lng: -122.15 };
-      console.log('Got location:', JSON.stringify(origin));
+        // Auto-navigate: get location → fetch routes → go
+        setFetchingRoute(true);
+        // const origin = await getUserLocation();
+        const origin = { lat: 37.3935, lng: -122.15 };
 
-      const routeData = await getRoutesGoHome({
-        origin,
-        destination: inputValue,
-      });
-      console.log('Got routes:', JSON.stringify(routeData));
-      navigation.navigate('Routes', { routeData });
-    } else {
-      // ...work stuff
+        const routeData = await getRoutesGoHome({
+          origin,
+          destination: inputValue,
+        });
+        navigation.navigate('Routes', { routeData });
+      } else {
+        await setUserWorkAddress(USER_ID, inputValue);
+        setWorkAddress(inputValue);
+        setModalVisible(false);
+
+        // Work — just navigate for now
+        navigation.navigate('Routes', { destination: inputValue });
+      }
+    } catch (err) {
+      console.error('SAVE ADDRESS ERROR:', err);
+      Alert.alert('Error', 'Something went wrong. Try again.');
+    } finally {
+      setSaving(false);
+      setFetchingRoute(false);
     }
-  } catch (err) {
-    console.error('SAVE ADDRESS ERROR:', err); // <-- check which log is the last one before this
-    Alert.alert('Error', 'Something went wrong. Try again.');
-  }
   };
 
-  // Loading state for route fetching
   // Tapping Home/Work — fetches user location then routes, then navigates
   const handleQuickTap = async (type: 'home' | 'work') => {
     const address = type === 'home' ? homeAddress : workAddress;
 
-    if (!address) {
+    if (!address || address.trim() === '') {
       openEditor(type);
       return;
     }
@@ -154,17 +156,14 @@ export default function FavoritesScreen() {
     if (type === 'home') {
       setFetchingRoute(true);
       try {
-        // 1. Get user's current location
-        //const origin = await getUserLocation();
+        // const origin = await getUserLocation();
         const origin = { lat: 37.3935, lng: -122.15 };
 
-        // 2. Fetch routes from current location to home
         const routeData = await getRoutesGoHome({
           origin,
           destination: address,
         });
 
-        // 3. Navigate with the route data
         navigation.navigate('Routes', { routeData });
       } catch (err) {
         console.error('Failed to fetch routes', err);
@@ -316,53 +315,53 @@ export default function FavoritesScreen() {
 
       {/* Edit Address Modal */}
       <Modal
-          visible={modalVisible}
-          transparent
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <KeyboardAvoidingView
-            style={styles.modalOverlay}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          >
-            <View style={styles.modalCard}>
-              <Text style={styles.modalTitle}>
-                Set {editingType === 'home' ? 'Home' : 'Work'} Address
-              </Text>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              Set {editingType === 'home' ? 'Home' : 'Work'} Address
+            </Text>
 
-              <TextInput
-                style={styles.modalInput}
-                value={inputValue}
-                onChangeText={setInputValue}
-                placeholder="Enter address..."
-                autoFocus
-                clearButtonMode="while-editing"
-                onSubmitEditing={saveAddress}
-                returnKeyType="done"
-              />
+            <TextInput
+              style={styles.modalInput}
+              value={inputValue}
+              onChangeText={setInputValue}
+              placeholder="Enter address..."
+              autoFocus
+              clearButtonMode="while-editing"
+              onSubmitEditing={saveAddress}
+              returnKeyType="done"
+            />
 
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.modalCancel}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalSave}
-                  onPress={saveAddress}
-                  disabled={saving || inputValue.trim() === ''}
-                >
-                  {saving ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.modalSaveText}>Save</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSave}
+                onPress={saveAddress}
+                disabled={saving || inputValue.trim() === ''}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalSaveText}>Save</Text>
+                )}
+              </TouchableOpacity>
             </View>
-          </KeyboardAvoidingView>
-        </Modal>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -502,18 +501,18 @@ const styles = StyleSheet.create({
   },
   // Modal
   modalOverlay: {
-  flex: 1,
-  backgroundColor: 'rgba(0,0,0,0.4)',
-  justifyContent: 'flex-end',
-  paddingBottom: 34, // safe area for iPhone home indicator
-},
-modalCard: {
-  backgroundColor: '#fff',
-  borderTopLeftRadius: 20,
-  borderTopRightRadius: 20,
-  padding: 24,
-  paddingBottom: 50, // extra space so buttons aren't cut off
-},
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+    paddingBottom: 34,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 50,
+  },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',

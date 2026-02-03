@@ -25,6 +25,8 @@ import { theme } from '../../theme/theme';
 
 // Import route APIs
 import { getRoutesGoHome } from '../../services/maps';
+import { getRoutesToOffice } from '../../services/maps';
+
 import type { GoHomeResponse } from '../../services/maps';
 
 import { getUserLocation } from '../../services/location';
@@ -91,8 +93,34 @@ function MainHomeScreen() {
   }, [navigation]);
 
   // Work press — go to Favorites for now (needs parking lot selection)
-  const handleWorkPress = useCallback((workAddress: string | null) => {
-    navigation.navigate('Favorites');
+  const handleWorkPress = useCallback(async (workAddress: string | null) => {
+    if (!workAddress) {
+      navigation.navigate('Favorites');
+      return;
+    }
+
+    try {
+      const origin = await getUserLocation();
+
+      const routeData = await getRoutesToOffice({
+        origin,
+        officeName: 'Palo Alto Office',
+        parkingLotName: 'SAP Lot',
+      });
+
+      navigation.navigate('Routes', { routeData });
+
+    } catch (err: any) {
+      if (err?.status === 403) {
+        Alert.alert(
+          'Dumb',
+          'At an office'
+        );
+        return;
+      }
+
+      console.error('Failed to fetch work routes', err);
+    }
   }, [navigation]);
 
   const handleExpand = useCallback(() => {

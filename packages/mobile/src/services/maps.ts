@@ -72,6 +72,8 @@ export async function checkPresence(origin: LatLng): Promise<PresenceResponse> {
   return get<PresenceResponse>(endpoint);
 }
 
+export type RouteResponse = GoHomeResponse | ToOfficeResponse;
+
 // The previous compatibility helper `getRoutesToTeslaHQ` was removed to avoid hardcoded
 // destinations. Now, build destinations in the UI or use office config instead.
 

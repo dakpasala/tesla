@@ -73,6 +73,62 @@ router.get('/to-office', async (req, res) => {
   }
 });
 
+router.get('/to-office-quick-start', async (req, res) => {
+  try {
+    const { lat, lng, address } = req.query;
+
+    if (!lat || !lng || !address) {
+      return res.status(400).json({
+        error: 'lat, lng, and address are required',
+      });
+    }
+
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+
+    // Verify destination is near a valid office
+    const nearbyOffice = await findNearbyOffice(userLat, userLng);
+
+    if (!nearbyOffice) {
+      return res.status(403).json({
+        error: 'Invalid Office',
+      });
+    }
+
+    const origin = `${userLat},${userLng}`;
+    const destination = address;
+
+    const cacheKey = `maps:to_office_quick_start:${normalize(
+      destination
+    )}:${normalize(origin)}`;
+
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      console.log('Redis cache hit');
+      return res.json(cached);
+    }
+
+    console.log('Redis cache miss → calling Google Maps');
+
+    const routes = await getAllTransportOptions(origin, destination);
+
+    const response = {
+      mode: 'TO_OFFICE_QUICK_START',
+      office: nearbyOffice.name,
+      office_address: nearbyOffice.address,
+      destination,
+      routes,
+    };
+
+    await setCache(cacheKey, response, 60);
+
+    res.json(response);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 router.get('/go-home', async (req, res) => {
   try {

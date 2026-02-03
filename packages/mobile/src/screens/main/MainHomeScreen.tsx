@@ -24,8 +24,10 @@ import { useRideContext } from '../../context/RideContext';
 import { theme } from '../../theme/theme';
 
 // Import route APIs
-import { getRoutesGoHome } from '../../services/maps';
-import { getRoutesToOffice } from '../../services/maps';
+import {
+  getRoutesGoHome,
+  getRoutesToOfficeQuickStart,
+} from '../../services/maps';
 
 import type { GoHomeResponse } from '../../services/maps';
 
@@ -102,19 +104,18 @@ function MainHomeScreen() {
     try {
       const origin = await getUserLocation();
 
-      const routeData = await getRoutesToOffice({
+      const routeData = await getRoutesToOfficeQuickStart({
         origin,
-        officeName: 'Palo Alto Office',
-        parkingLotName: 'SAP Lot',
+        destinationAddress: workAddress,
       });
 
       navigation.navigate('Routes', { routeData });
 
     } catch (err: any) {
-      if (err?.status === 403) {
+      if (err?.status === 403 || err?.response?.status === 403) {
         Alert.alert(
-          'Dumb',
-          'At an office'
+          'You are at Tesla Office',
+          'Routing is not needed here'
         );
         return;
       }
@@ -122,6 +123,7 @@ function MainHomeScreen() {
       console.error('Failed to fetch work routes', err);
     }
   }, [navigation]);
+
 
   const handleExpand = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(1);

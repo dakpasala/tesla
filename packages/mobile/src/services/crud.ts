@@ -6,12 +6,24 @@ const { API_BASE_URL } = CONFIG;
 export async function get<T>(endpoint: string): Promise<T> {
   const url = `${API_BASE_URL}/${endpoint}`;
   console.log('FETCHING:', url);
+
   const response = await fetch(url);
+
   if (!response.ok) {
     const errorBody = await response.text();
     console.error('GET failed:', response.status, url, errorBody);
-    throw new Error(`GET failed: ${response.status} ${url} ${errorBody}`);
+
+    const error: any = new Error(
+      `GET failed: ${response.status} ${url} ${errorBody}`
+    );
+
+    error.status = response.status;
+    error.body = errorBody;
+    error.url = url;
+
+    throw error;
   }
+
   return response.json();
 }
 

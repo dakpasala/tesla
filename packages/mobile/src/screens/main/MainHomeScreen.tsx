@@ -1,6 +1,7 @@
 // packages/mobile/src/screens/main/MainHomeScreen.tsx
 
 import React, { useRef, useState, useCallback, useMemo, memo } from 'react';
+import { Alert } from 'react-native';
 import {
   View,
   StyleSheet,
@@ -38,6 +39,8 @@ function MainHomeScreen() {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { setDestination } = useRideContext();
 
+  const warnedNotNearOfficeRef = useRef(false);
+
   // Snap points for the bottom sheet
   // Added 80% snap point for typing
   const snapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
@@ -58,24 +61,31 @@ function MainHomeScreen() {
 
   // Home press — SearchBar passes the address up, we fetch routes here
   const handleHomePress = useCallback(async (homeAddress: string | null) => {
-    if (!homeAddress) {
-      // Not set yet — go to Favorites to set it
-      navigation.navigate('Favorites');
-      return;
-    }
+  if (!homeAddress) {
+    navigation.navigate('Favorites');
+    return;
+  }
 
-    try {
-      // TODO: replace with actual geolocation
-      // const origin = { lat: 37.3935, lng: -122.15 };
-      const origin = await getUserLocation();
+  try {
+    const origin = await getUserLocation();
 
-      const routeData = await getRoutesGoHome({
-        origin,
-        destination: homeAddress,
-      });
+    const routeData = await getRoutesGoHome({
+      origin,
+      destination: homeAddress,
+    });
 
-      navigation.navigate('Routes', { routeData });
-    } catch (err) {
+    navigation.navigate('Routes', { routeData });
+
+  } catch (err: any) {
+      if (err?.status === 403 || err?.response?.status === 403) {
+        Alert.alert(
+          'Outside Supported Area',
+          'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
+        );
+        return;
+      }
+
+      // fallback: real errors
       console.error('Failed to fetch home routes', err);
     }
   }, [navigation]);

@@ -5,6 +5,7 @@ import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
 
 import { getUserHomeAddress, getUserWorkAddress, getUserFavorites, addUserFavorite, removeUserFavorite } from '../services/users';
+import { useAuth } from '../context/AuthContext';
 
 import {
   View,
@@ -141,6 +142,7 @@ function SearchBar({
   onHomeLongPress,
   onWorkLongPress,
 }: Props) {
+  const { userId } = useAuth();
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
   const [searchText, setSearchText] = useState('');
   const [locations, setLocations] = useState<RowData[]>([]);
@@ -149,11 +151,13 @@ function SearchBar({
 
   useEffect(() => {
     async function fetchAll() {
+      if (!userId) return;
+      
       try {
         const [homeRes, workRes, favRes] = await Promise.all([
-          getUserHomeAddress(1),
-          getUserWorkAddress(1),
-          getUserFavorites(1),
+          getUserHomeAddress(userId),
+          getUserWorkAddress(userId),
+          getUserFavorites(userId),
         ]);
 
         setHomeAddress(homeRes?.home_address?.trim() || null);
@@ -173,7 +177,7 @@ function SearchBar({
       }
     }
     fetchAll();
-  }, []);
+  }, [userId]);
 
   const handleSearchChange = useCallback((text: string) => {
     setSearchText(text);
@@ -190,14 +194,16 @@ function SearchBar({
 
   // Toggle favorite — calls API then updates local state
   const toggleFavorite = useCallback(async (id: string) => {
+    if (!userId) return;
+    
     const item = locations.find(loc => loc.id === id);
     if (!item) return;
 
     try {
       if (item.isFavorite) {
-        await removeUserFavorite(1, item.title);
+        await removeUserFavorite(userId, item.title);
       } else {
-        await addUserFavorite(1, {
+        await addUserFavorite(userId, {
           label: item.title,
           name: item.title,
           address: item.subtitle,
@@ -212,7 +218,7 @@ function SearchBar({
     } catch (err) {
       console.error('Failed to toggle favorite:', err);
     }
-  }, [locations]);
+  }, [locations, userId]);
 
   const handleSelectDestination = useCallback(
     (id: string) => {

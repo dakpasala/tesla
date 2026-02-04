@@ -1,5 +1,23 @@
 Paste the file onto root node_modules/@gorhom/bottom-sheet/src/hooks/useBoundingClientRect.ts
 
+NOTE: after upgrading to 5.2.8 gorhom and reanimted 4 and fixing worklets issue, I no longer needed this
+- definitely double check that things still build well on ios and if use bounding breaks this patch should fix it
+
+INSTRUCTIONS TO MAKE PERSISTENT:
+yarn add -D patch-package (at root)
+edit the file as discussed
+npx patch-package @gorhom/bottom-sheet
+
+add patch package to post install scripts
+
+"scripts": {
+  "postinstall": "patch-package",
+  ...
+}
+
+commit the patches folder
+Now patch will be applied after each yarn install
+
 import { type RefObject, useLayoutEffect } from 'react';
 import type { View } from 'react-native';
 import { isFabricInstalled } from '../utilities/isFabricInstalled';
@@ -57,19 +75,42 @@ export function useBoundingClientRect(
       return;
     }
 
-    // @ts-ignore 👉 https://github.com/facebook/react/commit/53b1f69ba
-    if (typeof ref.current.unstable_getBoundingClientRect === 'function') {
-      // @ts-ignore https://github.com/facebook/react/commit/53b1f69ba
+    // Try unstable_getBoundingClientRect first
+    if (
+      // @ts-expect-error
+      typeof ref.current.unstable_getBoundingClientRect === 'function'
+    ) {
+      // @ts-expect-error
       const layout = ref.current.unstable_getBoundingClientRect();
       handler(layout);
       return;
     }
 
-    // @ts-ignore once it `unstable_getBoundingClientRect` gets stable 🤞.
+    // Try getBoundingClientRect
+    // @ts-expect-error
     if (typeof ref.current.getBoundingClientRect === 'function') {
-      // @ts-ignore once it `unstable_getBoundingClientRect` gets stable.
+      // @ts-expect-error
       const layout = ref.current.getBoundingClientRect();
       handler(layout);
+      return;
+    }
+
+    // Fallback to measure() for RN 0.82+ compatibility
+    // @ts-expect-error
+    if (typeof ref.current.measure === 'function') {
+      // @ts-expect-error
+      ref.current.measure((x, y, width, height, pageX, pageY) => {
+        handler({
+          x: pageX,
+          y: pageY,
+          width,
+          height,
+          left: pageX,
+          right: pageX + width,
+          top: pageY,
+          bottom: pageY + height,
+        });
+      });
     }
   });
 }

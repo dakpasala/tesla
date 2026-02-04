@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 const CREDENTIALS = {
   'dpasala@calpoly.edu': { password: 'test123', userId: 1 },
   'kbeltr03@calpoly.edu': { password: 'test123', userId: 2 },
+  'navyaa.vemuri@gmail.com': { password: 'test123', userId: 1 },
 };
 
 export default function LoginScreen() {

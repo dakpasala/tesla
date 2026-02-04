@@ -33,6 +33,8 @@ import {
   setUserWorkAddress,
 } from '../../services/users';
 
+import { useAuth } from '../../context/AuthContext';
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface FavoriteLocation {
@@ -42,9 +44,6 @@ interface FavoriteLocation {
   miles: string;
   starred: boolean;
 }
-
-const USER_ID = 1; // TODO: replace with auth context
-
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
@@ -60,14 +59,17 @@ export default function FavoritesScreen() {
   const [inputValue, setInputValue] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const { userId } = useAuth();
+
   // Fetch home, work, and favorites on mount
   useEffect(() => {
     async function loadAll() {
+      if (!userId) return;
       try {
         const [homeRes, workRes, favRes] = await Promise.all([
-          getUserHomeAddress(USER_ID),
-          getUserWorkAddress(USER_ID),
-          getUserFavorites(USER_ID),
+          getUserHomeAddress(userId),
+          getUserWorkAddress(userId),
+          getUserFavorites(userId),
         ]);
 
         setHomeAddress(homeRes?.home_address?.trim() || null);
@@ -101,14 +103,15 @@ export default function FavoritesScreen() {
 
   // Saves the address via API
   const saveAddress = async () => {
+    if (!userId) return;
     if (!editingType) return;
     setSaving(true);
     try {
       if (editingType === 'home') {
-        await setUserHomeAddress(USER_ID, inputValue);
+        await setUserHomeAddress(userId, inputValue);
         setHomeAddress(inputValue);
       } else {
-        await setUserWorkAddress(USER_ID, inputValue);
+        await setUserWorkAddress(userId, inputValue);
         setWorkAddress(inputValue);
       }
       setModalVisible(false);

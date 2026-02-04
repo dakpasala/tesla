@@ -5,8 +5,7 @@ import AppNavigator from './src/navigation/AppNavigator';
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RideProvider } from './src/context/RideContext';
-import { runLocationTest } from './scripts/testLocation';
-
+import { AuthProvider } from './src/context/AuthContext';
 
 export default function App() {
   // useEffect(() => {
@@ -16,11 +15,13 @@ export default function App() {
   // }, []);
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <RideProvider>
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </RideProvider>
+      <AuthProvider>
+        <RideProvider>
+          <NavigationContainer>
+            <AppNavigator />
+          </NavigationContainer>
+        </RideProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 }

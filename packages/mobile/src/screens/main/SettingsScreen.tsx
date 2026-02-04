@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Switch,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -16,14 +17,34 @@ import type { RootStackParamList } from '../../navigation/types';
 import LinearGradient from 'react-native-linear-gradient';
 import { theme } from '../../theme/theme';
 import { BackButton } from '../../components/BackButton';
+import { useAuth } from '../../context/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { logout } = useAuth();
 
   const [liveActivity, setLiveActivity] = useState(true);
   const [notifications, setNotifications] = useState(true);
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            // AppNavigator will automatically show LoginScreen
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -38,7 +59,7 @@ export default function SettingsScreen() {
         {/* Rewards Card */}
         <TouchableOpacity
           activeOpacity={0.9}
-          onPress={() => navigation.navigate('Rewards' as any)} // Temporary cast until types updated
+          onPress={() => navigation.navigate('Rewards' as any)}
         >
           <LinearGradient
             colors={theme.gradients.darkCard}
@@ -97,6 +118,17 @@ export default function SettingsScreen() {
           <Text style={styles.settingText}>Admin Home</Text>
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
+
+        {/* Account Section */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>ACCOUNT</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.logoutRow}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -111,11 +143,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.xl, // 20 -> xl is 24, l is 16. Let's use 20 if we want consistency or stick to theme. User had 20. Closest is xl (24) or l+s (20). Let's use 20 hardcoded for now or define a new spacing?
-    // Actually, theme.spacing.xl is 24 on line 52 of theme.ts. theme.spacing.l is 16.
-    // Let's just use 20 explicitly or update theme? I'll use 20 for now to match exactly, or use theme.spacing.xl (24) for better alignment.
-    // I'll stick to user's 20 for safety, but maybe update theme later.
-    paddingVertical: theme.spacing.m, // 12
+    paddingHorizontal: 20,
+    paddingVertical: theme.spacing.m,
   },
   backButton: {
     fontSize: 24,
@@ -135,9 +164,9 @@ const styles = StyleSheet.create({
   },
   rewardsCard: {
     marginTop: 20,
-    marginBottom: theme.spacing.xxl, // 32
+    marginBottom: theme.spacing.xxl,
     borderRadius: 20,
-    padding: theme.spacing.xl, // 24
+    padding: theme.spacing.xl,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -149,7 +178,7 @@ const styles = StyleSheet.create({
     color: theme.colors.status.error,
     fontSize: 12,
     fontWeight: '700',
-    marginBottom: theme.spacing.xs, // 4
+    marginBottom: theme.spacing.xs,
     letterSpacing: 1,
   },
   rewardsValue: {
@@ -161,7 +190,7 @@ const styles = StyleSheet.create({
   rewardsSub: {
     ...theme.typography.sub,
     color: theme.colors.text.secondary,
-    fontSize: 14, // Override theme 13
+    fontSize: 14,
   },
   rewardsIconContainer: {
     width: 48,
@@ -185,7 +214,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: theme.spacing.l, // 16
+    paddingVertical: theme.spacing.l,
   },
   settingText: {
     ...theme.typography.listItem,
@@ -193,10 +222,18 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: theme.colors.border,
-    marginLeft: theme.spacing.l, // 16
+    marginLeft: theme.spacing.l,
   },
   arrow: {
     fontSize: 20,
     color: theme.components.icon,
+  },
+  logoutRow: {
+    paddingVertical: theme.spacing.l,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FF3B30',
   },
 });

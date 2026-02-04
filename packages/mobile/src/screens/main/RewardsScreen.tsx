@@ -13,11 +13,12 @@ import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 
 import { getUserIncentives, getUserBalance } from '../../services/users';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RewardsScreen() {
   const navigation = useNavigation();
 
-  const USER_ID = 1; // TODO: replace with auth context
+  const { userId } = useAuth();
 
   const [balance, setBalance] = React.useState<number>(0);
   const [incentives, setIncentives] = React.useState<Array<{
@@ -30,10 +31,11 @@ export default function RewardsScreen() {
 
   React.useEffect(() => {
     async function loadRewards() {
+      if (!userId) return;
       try {
         const [balanceRes, incentivesRes] = await Promise.all([
-          getUserBalance(USER_ID),
-          getUserIncentives(USER_ID),
+          getUserBalance(userId),
+          getUserIncentives(userId),
         ]);
 
         setBalance(balanceRes.balance);

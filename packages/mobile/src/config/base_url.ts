@@ -9,7 +9,7 @@ import { Platform } from 'react-native';
 
 // If testing on a PHYSICAL device (not simulator),
 // replace 'null' with your computer's LAN IP (e.g., '192.168.1.5')
-const LAN_IP = null;
+const LAN_IP = '192.168.1.70';
 
 const SERVER_HOST =
   LAN_IP ||

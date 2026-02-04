@@ -5,6 +5,7 @@ import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
 
 import { getUserHomeAddress, getUserWorkAddress, getUserFavorites, addUserFavorite, removeUserFavorite } from '../services/users';
+import { getAllLocations } from '../services/parkings';
 import { useAuth } from '../context/AuthContext';
 
 import {
@@ -154,33 +155,38 @@ function SearchBar({
       if (!userId) return;
       
       try {
-        const [homeRes, workRes, favRes] = await Promise.all([
+        const [homeRes, workRes, favRes, locationsRes] = await Promise.all([
           getUserHomeAddress(userId),
           getUserWorkAddress(userId),
           getUserFavorites(userId),
+          getAllLocations(), // Add this
         ]);
 
         setHomeAddress(homeRes?.home_address?.trim() || null);
         setWorkAddress(workRes?.work_address?.trim() || null);
 
-        const mapped: RowData[] = favRes.map((fav: any) => ({
-          id: String(fav.location_id),
-          title: fav.name,
-          subtitle: fav.address,
-          miles: '',
-          isFavorite: true,
+        // Build a Set of favorited location IDs
+        const favIds = new Set(favRes.map((f: any) => f.location_id));
+
+        // Map all locations and mark favorites
+        const allMapped: RowData[] = locationsRes.map((loc: any) => ({
+          id: String(loc.id),
+          title: loc.name,
+          subtitle: loc.address,
+          miles: '', // Could calculate distance if we had user location
+          isFavorite: favIds.has(loc.id),
         }));
 
-        setLocations(mapped);
+        setLocations(allMapped);
       } catch (err) {
         console.error('Failed to fetch SearchBar data', err);
       }
     }
-    fetchAll();
-  }, [userId]);
+      fetchAll();
+    }, [userId]);
 
-  const handleSearchChange = useCallback((text: string) => {
-    setSearchText(text);
+    const handleSearchChange = useCallback((text: string) => {
+      setSearchText(text);
   }, []);
 
   const handleClearSearch = useCallback(() => {

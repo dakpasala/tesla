@@ -17,8 +17,8 @@ import { useAuth } from '../../context/AuthContext';
 
 // Hardcoded credentials
 const CREDENTIALS = {
-  'dpasala@calpoly.edu': { password: 'password123', userId: 1 },
-  'kbeltr03@calpoly.edu': { password: 'password456', userId: 2 },
+  'dpasala@calpoly.edu': { password: 'test123', userId: 1 },
+  'kbeltr03@calpoly.edu': { password: 'test123', userId: 2 },
 };
 
 export default function LoginScreen() {

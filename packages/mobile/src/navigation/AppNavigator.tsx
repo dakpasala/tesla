@@ -3,8 +3,8 @@ import 'react-native-gesture-handler';
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
+import SplashScreen from '../components/SplashScreen';
 
 // Auth Screen
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -30,16 +30,7 @@ import ParkingManagementScreen from '../screens/admin/ParkingManagementScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { userId, isLoading } = useAuth();
-
-  // Show loading spinner while checking auth
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
+  const { userId } = useAuth();
 
   // Show login screen if not authenticated
   if (!userId) {
@@ -79,12 +70,3 @@ export default function AppNavigator() {
     </Stack.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FCFCFC',
-  },
-});

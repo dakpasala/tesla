@@ -1,3 +1,5 @@
+// packages/server/src/services/notifications/notificationRouter.js
+
 import {
   getCache,
   setCache,
@@ -54,6 +56,21 @@ export async function routeParkingNotification({
             ? `below ${threshold} (${available})`
             : `recovered above ${threshold} (${available})`)
         );
+        
+        // Store alert in Redis for mobile app to poll
+        await addSetMembers(`user:${userId}:pending_alerts`, [
+          JSON.stringify({
+            type: 'parking',
+            locationId,
+            locationName,
+            lot,
+            available,
+            threshold,
+            alertType: type,
+            timestamp: Date.now(),
+          })
+        ]);
+
         if (type === 'BELOW') {
             await setCache(dedupeKey, '1', 86400);
         }
@@ -80,6 +97,17 @@ export async function notifyShuttleEvent({
     console.log(
       `[SHUTTLE NOTIFY] user:${userId} → shuttle ${shuttleId} ${event} (${etaMinutes} min)`
     );
+
+    // Store alert in Redis for mobile app to poll
+    await addSetMembers(`user:${userId}:pending_alerts`, [
+      JSON.stringify({
+        type: 'shuttle',
+        shuttleId,
+        event,
+        etaMinutes,
+        timestamp: Date.now(),
+      })
+    ]);
 
     // APNs 
     await setCache(dedupeKey, '1', 900);

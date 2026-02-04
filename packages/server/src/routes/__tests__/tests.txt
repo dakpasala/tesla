@@ -11,8 +11,8 @@ Test the DB:
         -H "Content-Type: application/json" \
         -d '{
             "loc_name": "Fremont Factory",
-            "lot_name": "Parking Lot A",
-            "availability": 75
+            "lot_name": "North Lot",
+            "availability": 10
         }'
 
     Get admins: curl http://localhost:3000/api/admins/

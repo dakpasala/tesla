@@ -12,6 +12,7 @@
   "dependencies": {
     "@gorhom/bottom-sheet": "^5.2.6",
     "@mapbox/polyline": "^1.2.1",
+    "@notifee/react-native": "^9.1.8",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.6.0",
     "@react-native-community/geolocation": "^3.4.0",

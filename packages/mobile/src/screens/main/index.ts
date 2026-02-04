@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/index.ts
+
 // Main app screens - export barrel file
 export { default as MainHomeScreen } from './MainHomeScreen';
 export { default as RoutesScreen } from './RoutesScreen';

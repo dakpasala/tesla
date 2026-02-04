@@ -1,5 +1,7 @@
 PODS:
   - boost (1.84.0)
+  - BVLinearGradient (2.8.3):
+    - React-Core
   - CocoaLumberjack (3.8.5):
     - CocoaLumberjack/Core (= 3.8.5)
   - CocoaLumberjack/Core (3.8.5)
@@ -1818,6 +1820,34 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - react-native-geolocation (3.4.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - react-native-geolocation-service (5.3.1):
     - React
   - react-native-maps (1.26.20):
@@ -2567,6 +2597,34 @@ PODS:
     - SocketRocket
     - TSLocationManager (~> 4.0.0)
     - Yoga
+  - RNCAsyncStorage (2.2.0):
+    - boost
+    - DoubleConversion
+    - fast_float
+    - fmt
+    - glog
+    - hermes-engine
+    - RCT-Folly
+    - RCT-Folly/Fabric
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - SocketRocket
+    - Yoga
   - RNDateTimePicker (8.6.0):
     - boost
     - DoubleConversion
@@ -2624,6 +2682,11 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
+  - RNNotifee (9.1.8):
+    - React-Core
+    - RNNotifee/NotifeeCore (= 9.1.8)
+  - RNNotifee/NotifeeCore (9.1.8):
+    - React-Core
   - RNReanimated (3.19.5):
     - boost
     - DoubleConversion
@@ -2897,6 +2960,7 @@ PODS:
 
 DEPENDENCIES:
   - boost (from `../../../node_modules/react-native/third-party-podspecs/boost.podspec`)
+  - BVLinearGradient (from `../../../node_modules/react-native-linear-gradient`)
   - DoubleConversion (from `../../../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - fast_float (from `../../../node_modules/react-native/third-party-podspecs/fast_float.podspec`)
   - FBLazyVector (from `../../../node_modules/react-native/Libraries/FBLazyVector`)
@@ -2940,6 +3004,7 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../../../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../../../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-date-picker (from `../../../node_modules/react-native-date-picker`)
+  - "react-native-geolocation (from `../../../node_modules/@react-native-community/geolocation`)"
   - react-native-geolocation-service (from `../../../node_modules/react-native-geolocation-service`)
   - react-native-maps (from `../../../node_modules/react-native-maps`)
   - react-native-maps/Google (from `../../../node_modules/react-native-maps`)
@@ -2977,8 +3042,10 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../../../node_modules/react-native/ReactCommon`)
   - RNBackgroundGeolocation (from `../../../node_modules/react-native-background-geolocation`)
+  - "RNCAsyncStorage (from `../../../node_modules/@react-native-async-storage/async-storage`)"
   - "RNDateTimePicker (from `../../../node_modules/@react-native-community/datetimepicker`)"
   - RNGestureHandler (from `../../../node_modules/react-native-gesture-handler`)
+  - "RNNotifee (from `../../../node_modules/@notifee/react-native`)"
   - RNReanimated (from `../../../node_modules/react-native-reanimated`)
   - RNScreens (from `../../../node_modules/react-native-screens`)
   - RNSVG (from `../../../node_modules/react-native-svg`)
@@ -2997,6 +3064,8 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   boost:
     :podspec: "../../../node_modules/react-native/third-party-podspecs/boost.podspec"
+  BVLinearGradient:
+    :path: "../../../node_modules/react-native-linear-gradient"
   DoubleConversion:
     :podspec: "../../../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
   fast_float:
@@ -3078,6 +3147,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
   react-native-date-picker:
     :path: "../../../node_modules/react-native-date-picker"
+  react-native-geolocation:
+    :path: "../../../node_modules/@react-native-community/geolocation"
   react-native-geolocation-service:
     :path: "../../../node_modules/react-native-geolocation-service"
   react-native-maps:
@@ -3150,10 +3221,14 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native/ReactCommon"
   RNBackgroundGeolocation:
     :path: "../../../node_modules/react-native-background-geolocation"
+  RNCAsyncStorage:
+    :path: "../../../node_modules/@react-native-async-storage/async-storage"
   RNDateTimePicker:
     :path: "../../../node_modules/@react-native-community/datetimepicker"
   RNGestureHandler:
     :path: "../../../node_modules/react-native-gesture-handler"
+  RNNotifee:
+    :path: "../../../node_modules/@notifee/react-native"
   RNReanimated:
     :path: "../../../node_modules/react-native-reanimated"
   RNScreens:
@@ -3165,6 +3240,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   boost: 7e761d76ca2ce687f7cc98e698152abd03a18f90
+  BVLinearGradient: cb006ba232a1f3e4f341bb62c42d1098c284da70
   CocoaLumberjack: 6a459bc897d6d80bd1b8c78482ec7ad05dffc3f0
   DoubleConversion: cb417026b2400c8f53ae97020b2be961b59470cb
   fast_float: b32c788ed9c6a8c584d114d0047beda9664e7cc6
@@ -3208,6 +3284,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 2a5edca6905cb1b3a40fb7ed3f4496df4f1bc60e
   React-microtasksnativemodule: 6d775fdf71445f58dbedbd66ed9cb08b48ae2797
   react-native-date-picker: 64ccae6c3a8104a168cef950fea8e1fe616cda82
+  react-native-geolocation: 49d39b53dfeb6c22ff1ad69e71ac9c7981affdaa
   react-native-geolocation-service: 32b2c2a3b91e70ce2a8d0c684801aaeb0a07e0ec
   react-native-maps: 3bd3b12ba0a2849faeaff8098be43e3d91d92040
   react-native-safe-area-context: 0a3b034bb63a5b684dd2f5fffd3c90ef6ed41ee8
@@ -3244,8 +3321,10 @@ SPEC CHECKSUMS:
   ReactCodegen: daaa36736de5c1e2e76ba2af9b1572e193015a71
   ReactCommon: f5527f5d97a9957ab46eb5db78875d3579e03b97
   RNBackgroundGeolocation: c7d53a8014f3b4d35f5d2db33be053a200103494
+  RNCAsyncStorage: fd44f4b03e007e642e98df6726737bc66e9ba609
   RNDateTimePicker: bfb315bc0439c9aeb649fbf7944475a7f268f9f6
   RNGestureHandler: 67501c6d447027581aa1d8e5a7a3ea5a7f0a89ff
+  RNNotifee: 5e3b271e8ea7456a36eec994085543c9adca9168
   RNReanimated: 0478c0d586ff89f4d9a2fce7df0ebc8b59340e07
   RNScreens: 98771ad898d1c0528fc8139606bbacf5a2e9d237
   RNSVG: 122ad5db3ef9be375bbf7f371e37306eeed7e4fa
@@ -3254,6 +3333,6 @@ SPEC CHECKSUMS:
   TSLocationManager: a5d0a9b4049471db59a667f2c855ba9ad45066e4
   Yoga: ce55ebb197c21e22b6700cd36e3f36b7ec26e6f8
 
-PODFILE CHECKSUM: 2bc2f85efddc3df65eb2efbef5e1c14da384f5fb
+PODFILE CHECKSUM: 236516c37af12cdfbf7324b460be41f27fa9a9ba
 
 COCOAPODS: 1.16.2

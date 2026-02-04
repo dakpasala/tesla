@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/RewardsScreen.tsx
+
 import React from 'react';
 import {
   View,
@@ -11,26 +13,33 @@ import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 
 import { getUserIncentives, getUserBalance } from '../../services/users';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RewardsScreen() {
   const navigation = useNavigation();
 
-  const USER_ID = 1; // TODO: replace with auth context
+  const { userId } = useAuth();
 
   const [balance, setBalance] = React.useState<number>(0);
-  const [incentives, setIncentives] = React.useState<any[]>([]);
+  const [incentives, setIncentives] = React.useState<Array<{
+    id: number;
+    transit_type: string;
+    amount: number;
+    created_at: string;
+  }>>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function loadRewards() {
+      if (!userId) return;
       try {
         const [balanceRes, incentivesRes] = await Promise.all([
-          getUserBalance(USER_ID),
-          getUserIncentives(USER_ID),
+          getUserBalance(userId),
+          getUserIncentives(userId),
         ]);
 
         setBalance(balanceRes.balance);
-        setIncentives(incentivesRes);
+        setIncentives(incentivesRes as typeof incentives);
       } catch (err) {
         console.error('Failed to load rewards', err);
       } finally {

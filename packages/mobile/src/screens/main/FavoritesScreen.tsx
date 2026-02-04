@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useEffect } from 'react';
-import { getUserFavorites } from '../../services/users';
+// packages/mobile/src/screens/main/FavoritesScreen.tsx
+
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,14 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,6 +23,17 @@ import type { RootStackParamList } from '../../navigation/types';
 
 // Import existing component
 import { FavoriteIcon } from '../../components/FavoriteIcon';
+
+// Import address APIs
+import {
+  getUserFavorites,
+  getUserHomeAddress,
+  setUserHomeAddress,
+  getUserWorkAddress,
+  setUserWorkAddress,
+} from '../../services/users';
+
+import { useAuth } from '../../context/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -26,35 +44,84 @@ interface FavoriteLocation {
   miles: string;
   starred: boolean;
 }
-
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
 
-  useEffect(() => {
-    async function loadFavorites() {
-      try {
-        const USER_ID = 1; 
+  // Home / Work state
+  const [homeAddress, setHomeAddress] = useState<string | null>(null);
+  const [workAddress, setWorkAddress] = useState<string | null>(null);
+  const [addressLoading, setAddressLoading] = useState(true);
 
-        const apiFavorites = await getUserFavorites(USER_ID);
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editingType, setEditingType] = useState<'home' | 'work' | null>(null);
+  const [inputValue, setInputValue] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const { userId } = useAuth();
+
+  // Fetch home, work, and favorites on mount
+  useEffect(() => {
+    async function loadAll() {
+      if (!userId) return;
+      try {
+        const [homeRes, workRes, favRes] = await Promise.all([
+          getUserHomeAddress(userId),
+          getUserWorkAddress(userId),
+          getUserFavorites(userId),
+        ]);
+
+        setHomeAddress(homeRes?.home_address?.trim() || null);
+        setWorkAddress(workRes?.work_address?.trim() || null);
 
         setFavorites(
-          apiFavorites.map((fav, index) => ({
+          favRes.map((fav, index) => ({
             id: String(index),
             name: fav.name,
             address: fav.address,
-            miles: '',        
-            starred: true,    
+            miles: '',
+            starred: true,
           }))
         );
       } catch (err) {
-        console.error('Failed to load favorites', err);
+        console.error('Failed to load favorites screen data', err);
+      } finally {
+        setAddressLoading(false);
       }
     }
 
-    loadFavorites();
+    loadAll();
   }, []);
 
+  // Opens the edit modal for home or work
+  const openEditor = (type: 'home' | 'work') => {
+    setEditingType(type);
+    setInputValue(type === 'home' ? homeAddress ?? '' : workAddress ?? '');
+    setModalVisible(true);
+  };
+
+  // Saves the address via API
+  const saveAddress = async () => {
+    if (!userId) return;
+    if (!editingType) return;
+    setSaving(true);
+    try {
+      if (editingType === 'home') {
+        await setUserHomeAddress(userId, inputValue);
+        setHomeAddress(inputValue);
+      } else {
+        await setUserWorkAddress(userId, inputValue);
+        setWorkAddress(inputValue);
+      }
+      setModalVisible(false);
+    } catch (err) {
+      console.error('SAVE ADDRESS ERROR:', err);
+      Alert.alert('Error', 'Something went wrong. Try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const toggleFavorite = (id: string) => {
     setFavorites(prev =>
@@ -104,57 +171,134 @@ export default function FavoritesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Quick Access */}
-      <View style={styles.quickAccess}>
-        <TouchableOpacity style={styles.quickItem}>
-          <View style={styles.quickCircle}>
-            <Image
-              source={require('../../assets/images/search_house.png')}
-              style={styles.quickIcon}
-              resizeMode="contain"
-            />
-          </View>
-          <View>
-            <Text style={styles.quickTitle}>Home</Text>
-            <Text style={styles.quickSubtitle}>Set location</Text>
-          </View>
-        </TouchableOpacity>
+      <ScrollViewWrapper>
+        {/* Quick Access — Home & Work */}
+        <View style={styles.quickAccess}>
+          {/* Home */}
+          <TouchableOpacity
+            style={styles.quickItem}
+            onPress={() => openEditor('home')}
+          >
+            <View style={styles.quickCircle}>
+              <Image
+                source={require('../../assets/images/search_house.png')}
+                style={styles.quickIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <View>
+              <Text style={styles.quickTitle}>Home</Text>
+              {addressLoading ? (
+                <ActivityIndicator size="small" color="#878585" />
+              ) : (
+                <Text style={styles.quickSubtitle}>
+                  {homeAddress ?? 'Set location'}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.quickItem}>
-          <View style={styles.quickCircle}>
-            <Image
-              source={require('../../assets/images/search_job.png')}
-              style={styles.quickIcon}
-              resizeMode="contain"
-            />
-          </View>
-          <View>
-            <Text style={styles.quickTitle}>Work</Text>
-            <Text style={styles.quickSubtitle}>Set location</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+          {/* Work */}
+          <TouchableOpacity
+            style={styles.quickItem}
+            onPress={() => openEditor('work')}
+          >
+            <View style={styles.quickCircle}>
+              <Image
+                source={require('../../assets/images/search_job.png')}
+                style={styles.quickIcon}
+                resizeMode="contain"
+              />
+            </View>
+            <View>
+              <Text style={styles.quickTitle}>Work</Text>
+              {addressLoading ? (
+                <ActivityIndicator size="small" color="#878585" />
+              ) : (
+                <Text style={styles.quickSubtitle}>
+                  {workAddress ?? 'Set location'}
+                </Text>
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
 
-      {/* Section Title */}
-      <Text style={styles.sectionTitle}>My Favorites</Text>
+        {/* Section Title */}
+        <Text style={styles.sectionTitle}>My Favorites</Text>
 
-      {/* Favorites List */}
-      <FlatList
-        data={favorites}
-        renderItem={renderFavorite}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No favorites yet</Text>
-            <Text style={styles.emptySubtext}>
-              Save your frequent destinations for quick access
+        {/* Favorites List */}
+        <FlatList
+          data={favorites}
+          renderItem={renderFavorite}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No favorites yet</Text>
+              <Text style={styles.emptySubtext}>
+                Save your frequent destinations for quick access
+              </Text>
+            </View>
+          }
+        />
+      </ScrollViewWrapper>
+
+      {/* Edit Address Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>
+              Set {editingType === 'home' ? 'Home' : 'Work'} Address
             </Text>
+
+            <TextInput
+              style={styles.modalInput}
+              value={inputValue}
+              onChangeText={setInputValue}
+              placeholder="Enter address..."
+              autoFocus
+              clearButtonMode="while-editing"
+              onSubmitEditing={saveAddress}
+              returnKeyType="done"
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSave}
+                onPress={saveAddress}
+                disabled={saving || inputValue.trim() === ''}
+              >
+                {saving ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalSaveText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
-        }
-      />
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
+}
+
+// Thin wrapper so FlatList doesn't conflict with outer scroll
+function ScrollViewWrapper({ children }: { children: React.ReactNode }) {
+  return <View style={{ flex: 1 }}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
@@ -191,6 +335,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   quickItem: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -275,5 +420,65 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 8,
     textAlign: 'center',
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+    paddingBottom: 34,
+  },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    paddingBottom: 50,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 16,
+  },
+  modalInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E3E3E3',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: '#000',
+    backgroundColor: '#FAFAFA',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 12,
+  },
+  modalCancel: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E3E3E3',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#000',
+  },
+  modalSave: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#4285F4',
+    alignItems: 'center',
+  },
+  modalSaveText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
   },
 });

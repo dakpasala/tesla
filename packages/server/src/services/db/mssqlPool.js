@@ -20,8 +20,13 @@ const config = {
   },
 };
 
+let poolPromise = null;
+
 export async function getPool() {
-  return sql.connect(config);
+  if (!poolPromise) {
+    poolPromise = sql.connect(config);
+  }
+  return poolPromise;
 }
 
 // --------------------
@@ -31,7 +36,6 @@ export async function getPool() {
 export async function testConnection() {
   const pool = await getPool();
   const result = await pool.request().query('SELECT 1 AS ok');
-  await sql.close();
   return result.recordset;
 }
 
@@ -97,8 +101,6 @@ export async function getLocationIdByName(name) {
         AND is_active = 1
     `);
 
-  await sql.close();
-
   return result.recordset[0]?.id ?? null;
 }
 
@@ -130,7 +132,6 @@ export async function getParkingAvailabilityByLocationName(locationName) {
       ORDER BY p.name;
     `);
 
-  await sql.close();
   return result.recordset;
 }
 
@@ -153,7 +154,6 @@ export async function updateParkingAvailability(locationName, lotName, availabil
       SELECT @@ROWCOUNT AS rowsAffected;
     `);
 
-  await sql.close();
   return result.recordset[0].rowsAffected;
 }
 
@@ -168,7 +168,6 @@ export async function getAllAdmins() {
     FROM admins
     ORDER BY username
   `);
-  await sql.close();
   return result.recordset;
 }
 
@@ -185,7 +184,6 @@ export async function addAdmin(username, email) {
       SELECT SCOPE_IDENTITY() AS id;
     `);
 
-  await sql.close();
   return result.recordset[0].id;
 }
 
@@ -256,6 +254,29 @@ export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
   return result.recordset[0] || null;
 }
 
+export async function findOfficeByAddress(address) {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input('address', sql.VarChar, address)
+    .query(`
+      SELECT
+        id,
+        name,
+        address,
+        city,
+        region,
+        lat,
+        lng,
+        is_active
+      FROM locations
+      WHERE address = @address
+        AND is_active = 1
+    `);
+
+  return result.recordset[0] || null;
+}
+
 
 // --------------------
 // users
@@ -264,7 +285,6 @@ export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
 export async function getUsers() {
   const pool = await getPool();
   const result = await pool.request().query('SELECT * FROM users');
-  await sql.close();
   return result.recordset;
 }
 
@@ -280,7 +300,6 @@ export async function getUserBalance(userId) {
       WHERE id = @userId
     `);
 
-  await sql.close();
 
   if (result.recordset.length === 0) {
     return null;
@@ -306,7 +325,6 @@ export async function getUserIncentives(userId) {
       ORDER BY created_at DESC
     `);
 
-  await sql.close();
   return result.recordset;
 }
 
@@ -372,7 +390,6 @@ export async function awardTransitIncentive(userId, transitType) {
         WHERE id = @userId
       `);
 
-    await sql.close();
 
     return {
       userId: updated.recordset[0].id,
@@ -383,7 +400,6 @@ export async function awardTransitIncentive(userId, transitType) {
     };
   } catch (err) {
     await transaction.rollback();
-    await sql.close();
     throw err;
   }
 }
@@ -400,7 +416,6 @@ export async function getUserHomeAddress(userId) {
       WHERE id = @userId
     `);
 
-  await sql.close();
   return result.recordset[0]?.home_address ?? null;
 }
 
@@ -419,7 +434,6 @@ export async function setUserHomeAddress(userId, homeAddress) {
       SELECT @@ROWCOUNT AS rowsAffected;
     `);
 
-  await sql.close();
   return result.recordset[0].rowsAffected === 1;
 }
 
@@ -435,7 +449,6 @@ export async function getUserWorkAddress(userId) {
       WHERE id = @userId
     `);
 
-  await sql.close();
   return result.recordset[0]?.work_address ?? null;
 }
 
@@ -453,7 +466,6 @@ export async function setUserWorkAddress(userId, workAddress) {
       SELECT @@ROWCOUNT AS rowsAffected;
     `);
 
-  await sql.close();
   return result.recordset[0].rowsAffected === 1;
 }
 
@@ -490,7 +502,6 @@ export async function addUserFavoriteRow(userId, locationId, name, address) {
       INSERT INTO user_favorites (user_id, location_id, name, address)
       VALUES (@userId, @locationId, @name, @address);
     `);
-
   return true;
 }
 
@@ -507,7 +518,6 @@ export async function removeUserFavoriteRow(userId, locationId) {
         AND location_id = @locationId;
     `);
 
-  await sql.close();
   return true;
 }
 
@@ -522,6 +532,6 @@ export async function getUsersFavoritingLocationId(locationId) {
   JOIN users u ON u.id = uf.user_id
   WHERE uf.location_id = @locationId
   `);
-
+ 
   return result.recordset;
 }

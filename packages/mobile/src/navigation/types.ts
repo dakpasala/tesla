@@ -1,8 +1,15 @@
 // Navigation type definitions
+import type { RouteResponse } from '../services/maps';
+
 export type RootStackParamList = {
   // Main App Screens
   MainHome: undefined;
-  Routes: { destinationId?: string; destinationName?: string } | undefined;
+    Routes: {
+    destinationId?: string;
+    destinationName?: string;
+    destination?: string;
+    routeData?: RouteResponse;
+  } | undefined;
   Directions: { routeId: string };
   Favorites: undefined;
   Profile: undefined;

@@ -1,6 +1,12 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+// packages/mobile/src/components/SearchBar.tsx
+
+import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
 import type { ViewStyle } from 'react-native';
 import { FavoriteIcon } from './FavoriteIcon';
+
+import { getUserHomeAddress, getUserWorkAddress, getUserFavorites, addUserFavorite, removeUserFavorite } from '../services/users';
+import { getAllLocations } from '../services/parkings';
+import { useAuth } from '../context/AuthContext';
 
 import {
   View,
@@ -77,6 +83,7 @@ type QuickItemProps = {
   subtitle: string;
   icon: any;
   onPress?: () => void;
+  onLongPress?: () => void;
   style?: ViewStyle;
 };
 
@@ -86,6 +93,7 @@ const QuickItem = memo(function QuickItem({
   subtitle,
   icon,
   onPress,
+  onLongPress,
   style,
 }: QuickItemProps) {
   return (
@@ -93,6 +101,8 @@ const QuickItem = memo(function QuickItem({
       style={[styles.quickItem, style]}
       activeOpacity={0.85}
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={500}
     >
       <View style={styles.quickCircle}>
         <Image source={icon} style={styles.quickCircleIcon} />
@@ -105,50 +115,6 @@ const QuickItem = memo(function QuickItem({
   );
 });
 
-// Initial data
-const INITIAL_LOCATIONS: RowData[] = [
-  {
-    id: 'loc-1',
-    title: 'Tesla Deer Creek',
-    subtitle: '3500 Deer Creek Rd, Palo Alto',
-    miles: '2.5 miles',
-    isFavorite: true,
-    coordinate: { latitude: 37.3935, longitude: -122.15 },
-  },
-  {
-    id: 'loc-2',
-    title: 'Tesla Page Mill',
-    subtitle: '1501 Page Mill Rd, Palo Alto',
-    miles: '2.8 miles',
-    isFavorite: true,
-    coordinate: { latitude: 37.4124, longitude: -122.1468 },
-  },
-  {
-    id: 'loc-3',
-    title: 'Tesla Fremont Factory',
-    subtitle: '45500 Fremont Blvd, Fremont',
-    miles: '12.3 miles',
-    isFavorite: true,
-    coordinate: { latitude: 37.4925, longitude: -121.9446 },
-  },
-  {
-    id: 'loc-4',
-    title: 'Tesla Palo Alto HQ',
-    subtitle: '3500 Deer Creek Rd, Palo Alto',
-    miles: '2.5 miles',
-    isFavorite: false,
-    coordinate: { latitude: 37.3935, longitude: -122.15 },
-  },
-  {
-    id: 'loc-5',
-    title: 'Tesla Sunnyvale',
-    subtitle: '1100 W Maude Ave, Sunnyvale',
-    miles: '5.2 miles',
-    isFavorite: false,
-    coordinate: { latitude: 37.3879, longitude: -122.0305 },
-  },
-];
-
 type Props = {
   expanded?: boolean;
   onExpand?: () => void;
@@ -160,6 +126,10 @@ type Props = {
     subtitle: string;
     coordinate?: { latitude: number; longitude: number };
   }) => void;
+  onHomePress?: (address: string | null) => void;
+  onWorkPress?: (address: string | null) => void;
+  onHomeLongPress?: () => void;
+  onWorkLongPress?: () => void;
 };
 
 function SearchBar({
@@ -168,13 +138,55 @@ function SearchBar({
   onCollapse,
   onFocus,
   onSelectDestination,
+  onHomePress,
+  onWorkPress,
+  onHomeLongPress,
+  onWorkLongPress,
 }: Props) {
+  const { userId } = useAuth();
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
   const [searchText, setSearchText] = useState('');
-  const [locations, setLocations] = useState<RowData[]>(INITIAL_LOCATIONS);
+  const [locations, setLocations] = useState<RowData[]>([]);
+  const [homeAddress, setHomeAddress] = useState<string | null>(null);
+  const [workAddress, setWorkAddress] = useState<string | null>(null);
 
-  const handleSearchChange = useCallback((text: string) => {
-    setSearchText(text);
+  useEffect(() => {
+    async function fetchAll() {
+      if (!userId) return;
+      
+      try {
+        const [homeRes, workRes, favRes, locationsRes] = await Promise.all([
+          getUserHomeAddress(userId),
+          getUserWorkAddress(userId),
+          getUserFavorites(userId),
+          getAllLocations(), // Add this
+        ]);
+
+        setHomeAddress(homeRes?.home_address?.trim() || null);
+        setWorkAddress(workRes?.work_address?.trim() || null);
+
+        // Build a Set of favorited location IDs
+        const favIds = new Set(favRes.map((f: any) => f.location_id));
+
+        // Map all locations and mark favorites
+        const allMapped: RowData[] = locationsRes.map((loc: any) => ({
+          id: String(loc.id),
+          title: loc.name,
+          subtitle: loc.address,
+          miles: '', // Could calculate distance if we had user location
+          isFavorite: favIds.has(loc.id),
+        }));
+
+        setLocations(allMapped);
+      } catch (err) {
+        console.error('Failed to fetch SearchBar data', err);
+      }
+    }
+      fetchAll();
+    }, [userId]);
+
+    const handleSearchChange = useCallback((text: string) => {
+      setSearchText(text);
   }, []);
 
   const handleClearSearch = useCallback(() => {
@@ -186,13 +198,33 @@ function SearchBar({
     onCollapse?.();
   }, [onCollapse]);
 
-  const toggleFavorite = useCallback((id: string) => {
-    setLocations(prev =>
-      prev.map(loc =>
-        loc.id === id ? { ...loc, isFavorite: !loc.isFavorite } : loc
-      )
-    );
-  }, []);
+  // Toggle favorite — calls API then updates local state
+  const toggleFavorite = useCallback(async (id: string) => {
+    if (!userId) return;
+    
+    const item = locations.find(loc => loc.id === id);
+    if (!item) return;
+
+    try {
+      if (item.isFavorite) {
+        await removeUserFavorite(userId, item.title);
+      } else {
+        await addUserFavorite(userId, {
+          label: item.title,
+          name: item.title,
+          address: item.subtitle,
+        });
+      }
+
+      setLocations(prev =>
+        prev.map(loc =>
+          loc.id === id ? { ...loc, isFavorite: !loc.isFavorite } : loc
+        )
+      );
+    } catch (err) {
+      console.error('Failed to toggle favorite:', err);
+    }
+  }, [locations, userId]);
 
   const handleSelectDestination = useCallback(
     (id: string) => {
@@ -209,21 +241,14 @@ function SearchBar({
     [locations, onSelectDestination]
   );
 
+  // Pass the address up to parent — parent decides what to do
   const handleHomePress = useCallback(() => {
-    onSelectDestination?.({
-      id: 'home',
-      title: 'Home',
-      subtitle: 'Set location',
-    });
-  }, [onSelectDestination]);
+    onHomePress?.(homeAddress);
+  }, [onHomePress, homeAddress]);
 
   const handleWorkPress = useCallback(() => {
-    onSelectDestination?.({
-      id: 'work',
-      title: 'Work',
-      subtitle: 'Set location',
-    });
-  }, [onSelectDestination]);
+    onWorkPress?.(workAddress);
+  }, [onWorkPress, workAddress]);
 
   const handleSortToggle = useCallback(() => {
     setSort(s => (s === 'A-Z' ? 'Z-A' : 'A-Z'));
@@ -264,22 +289,23 @@ function SearchBar({
     );
   }, [offices, searchText]);
 
-  // Refactored to keep a stable component tree and avoid flashing during expansion
   const renderContent = () => (
     <>
       <View style={styles.quickRow}>
         <QuickItem
           title="Home"
-          subtitle="Set location"
+          subtitle={homeAddress ?? 'Set location'}
           icon={require('../assets/images/search_house.png')}
           onPress={handleHomePress}
+          onLongPress={onHomeLongPress}
         />
         <QuickItem
           title="Work"
-          subtitle="Set location"
+          subtitle={workAddress ?? 'Set location'}
           icon={require('../assets/images/search_job.png')}
           style={styles.workItem}
           onPress={handleWorkPress}
+          onLongPress={onWorkLongPress}
         />
       </View>
 
@@ -347,7 +373,7 @@ function SearchBar({
           onChangeText={handleSearchChange}
           onFocus={onFocus}
           placeholder="Search Here"
-          placeholderTextColor={theme.colors.text.light} // theme usage
+          placeholderTextColor={theme.colors.text.light}
           style={styles.input}
           autoCapitalize="none"
           autoCorrect={false}
@@ -360,26 +386,23 @@ function SearchBar({
   );
 }
 
-export default memo(SearchBar);
+export default SearchBar;
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: theme.colors.background,
-    // Removed overflow: hidden to allow shadows to show if we add them to inner elements,
-    // but here the container itself is mainly a wrapper.
-    // If we want the search bar to look like the route card, we might style the inputRow mainly.
     padding: theme.spacing.l,
   },
   searchIcon: {
     width: 20,
     height: 20,
     marginRight: 12,
-    tintColor: '#000', // Sharp black for contrast
+    tintColor: '#000',
     opacity: 1,
   },
   placeholder: {
     color: theme.colors.text.secondary,
-    fontSize: 16, // Larger font for premium feel
+    fontSize: 16,
     fontWeight: '500',
     flex: 1,
   },
@@ -391,7 +414,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     backgroundColor: '#F6F6F6',
     marginBottom: theme.spacing.l,
-    // Removed shadows and borders
   },
   input: {
     flex: 1,
@@ -492,7 +514,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rowText: {
-    fontSize: 16, // Larger title
+    fontSize: 16,
     fontWeight: '600',
     color: '#000000',
     marginBottom: 4,
@@ -504,7 +526,7 @@ const styles = StyleSheet.create({
   starIcon: {
     width: 20,
     height: 20,
-    tintColor: '#C7C7CC', // Light gray for inactive star
+    tintColor: '#C7C7CC',
   },
   placeSub: {
     fontSize: 13,

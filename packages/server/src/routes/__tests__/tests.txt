@@ -10,9 +10,9 @@ Test the DB:
     Update parking availability: curl -X PATCH http://localhost:3000/api/parkings/ \
         -H "Content-Type: application/json" \
         -d '{
-            "loc_name": "Palo Alto Office",
-            "lot_name": "SAP Lot",
-            "availability": 75
+            "loc_name": "Fremont Factory",
+            "lot_name": "North Lot",
+            "availability": 10
         }'
 
     Get admins: curl http://localhost:3000/api/admins/

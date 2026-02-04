@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/main/ParkingScreen.tsx
+
 import React, { useRef, useState } from 'react';
 import {
   View,

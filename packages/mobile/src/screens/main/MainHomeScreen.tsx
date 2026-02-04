@@ -1,4 +1,7 @@
-import React, { useRef, useState, useCallback, useMemo, memo } from 'react';
+// packages/mobile/src/screens/main/MainHomeScreen.tsx
+
+import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react';
+import { Alert } from 'react-native';
 import {
   View,
   StyleSheet,
@@ -18,21 +21,91 @@ import BottomSheet, {
 // Import existing components
 import SearchBar from '../../components/SearchBar';
 import { useRideContext } from '../../context/RideContext';
+import { useAuth } from '../../context/AuthContext';
 import { theme } from '../../theme/theme';
+
+// Import route APIs
+import {
+  getRoutesGoHome,
+  getRoutesToOfficeQuickStart,
+} from '../../services/maps';
+
+import type { GoHomeResponse } from '../../services/maps';
+
+import { getUserLocation } from '../../services/location';
+
+// Import alert and notification services
+import { getUserAlerts, clearUserAlerts } from '../../services/alerts';
+import { 
+  showParkingNotification, 
+  showShuttleNotification,
+  requestNotificationPermission 
+} from '../../services/notifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function MainHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
+  const { userId } = useAuth();
 
   // Search expanded state only - SearchBar manages its own search text
   const [searchExpanded, setSearchExpanded] = useState(false);
   const { setDestination } = useRideContext();
 
+  const warnedNotNearOfficeRef = useRef(false);
+
   // Snap points for the bottom sheet
-  // Added 80% snap point for typing
   const snapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (userId) {
+      requestNotificationPermission();
+    }
+  }, [userId]);
+
+  // Poll for alerts every 30 seconds
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkAlerts = async () => {
+      try {
+        const alerts = await getUserAlerts(userId);
+        
+        for (const alert of alerts) {
+          if (alert.type === 'parking') {
+            await showParkingNotification({
+              locationName: alert.locationName,
+              lot: alert.lot,
+              available: alert.available,
+              type: alert.alertType,
+            });
+          } else if (alert.type === 'shuttle') {
+            await showShuttleNotification({
+              shuttleId: alert.shuttleId,
+              event: alert.event,
+              etaMinutes: alert.etaMinutes,
+            });
+          }
+        }
+
+        // Clear alerts after showing them
+        if (alerts.length > 0) {
+          await clearUserAlerts(userId);
+        }
+      } catch (err) {
+        console.error('Failed to check alerts:', err);
+      }
+    };
+
+    // Check immediately on mount
+    checkAlerts();
+
+    // Then poll every 30 seconds
+    const interval = setInterval(checkAlerts, 30000);
+    return () => clearInterval(interval);
+  }, [userId]);
 
   // Stable callbacks
   const handleSelectDestination = useCallback(
@@ -47,6 +120,75 @@ function MainHomeScreen() {
     },
     [navigation, setDestination]
   );
+
+  // Home press — SearchBar passes the address up, we fetch routes here
+  const handleHomePress = useCallback(async (homeAddress: string | null) => {
+  if (!homeAddress) {
+    navigation.navigate('Favorites');
+    return;
+  }
+
+  try {
+    const origin = await getUserLocation();
+
+    const routeData = await getRoutesGoHome({
+      origin,
+      destination: homeAddress,
+    });
+
+    navigation.navigate('Routes', { routeData });
+
+  } catch (err: any) {
+      if (err?.status === 403 || err?.response?.status === 403) {
+        Alert.alert(
+          'Outside Supported Area',
+          'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
+        );
+        return;
+      }
+
+      // fallback: real errors
+      console.error('Failed to fetch home routes', err);
+    }
+  }, [navigation]);
+
+  // Work press — fetch routes to office
+  const handleWorkPress = useCallback(async (workAddress: string | null) => {
+    if (!workAddress) {
+      navigation.navigate('Favorites');
+      return;
+    }
+
+    try {
+      const origin = await getUserLocation();
+
+      const routeData = await getRoutesToOfficeQuickStart({
+        origin,
+        destinationAddress: workAddress,
+      });
+
+      navigation.navigate('Routes', { routeData });
+
+    } catch (err: any) {
+      if (err?.status === 403 || err?.response?.status === 403) {
+        Alert.alert(
+          'You are at Tesla Office',
+          'Routing is not needed here'
+        );
+        return;
+      }
+
+      console.error('Failed to fetch work routes', err);
+    }
+  }, [navigation]);
+
+  const handleHomeLongPress = useCallback(() => {
+    navigation.navigate('Favorites');
+  }, [navigation]);
+
+  const handleWorkLongPress = useCallback(() => {
+    navigation.navigate('Favorites');
+  }, [navigation]);
 
   const handleExpand = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(1);
@@ -81,7 +223,7 @@ function MainHomeScreen() {
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={{
-            latitude: 37.3935, // Tesla HQ area
+            latitude: 37.3935,
             longitude: -122.15,
             latitudeDelta: 0.05,
             longitudeDelta: 0.05,
@@ -118,6 +260,10 @@ function MainHomeScreen() {
               onCollapse={handleCollapse}
               onFocus={handleSearchFocus}
               onSelectDestination={handleSelectDestination}
+              onHomePress={handleHomePress}
+              onWorkPress={handleWorkPress}
+              onHomeLongPress={handleHomeLongPress}
+              onWorkLongPress={handleWorkLongPress}
             />
           </View>
         </BottomSheetScrollView>

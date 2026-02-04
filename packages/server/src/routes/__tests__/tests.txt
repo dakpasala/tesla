@@ -1,6 +1,7 @@
 Test the maps:
     Near an office: curl "http://localhost:3000/api/maps/presence?lat=37.3382&lng=-121.8863"
                     curl "http://localhost:3000/api/maps/presence?lat=37.3948&lng=-122.1501"
+                    For this it won't really matter because the OS will communicate.
     curl "http://localhost:3000/api/maps/to-office?lat=37.3382&lng=-121.8863&office_name=Palo%20Alto%20Office&parking_lot_name=SAP%20Lot"
     curl "http://localhost:3000/api/maps/go-home?lat=37.3948&lng=-122.1501&destination=San%20Jose%20International%20Airport"
     
@@ -9,9 +10,9 @@ Test the DB:
     Update parking availability: curl -X PATCH http://localhost:3000/api/parkings/ \
         -H "Content-Type: application/json" \
         -d '{
-            "loc_name": "Palo Alto Office",
-            "lot_name": "SAP Lot",
-            "availability": 75
+            "loc_name": "Fremont Factory",
+            "lot_name": "North Lot",
+            "availability": 10
         }'
 
     Get admins: curl http://localhost:3000/api/admins/
@@ -36,7 +37,6 @@ Test the DB:
     Add to favorites: curl -X POST http://localhost:3000/api/users/1/favorites \
         -H "Content-Type: application/json" \
         -d '{
-            "label": "office",
             "name": "Palo Alto Office",
             "address": "3500 Deer Creek Rd, Palo Alto, CA"
         }'

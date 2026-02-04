@@ -9,6 +9,7 @@ import usersRoutes from './routes/users.js';
 import parkingsRoutes from './routes/parkings.js';
 import dbRoutes from './routes/db.js';
 import alertsRoutes from './routes/shuttleAlertsRoutes.js';
+import alerts from './routes/alerts.js'
 
 export function createApp() {
   const app = express();
@@ -23,6 +24,7 @@ export function createApp() {
   app.use('/api/parkings', parkingsRoutes);
   app.use('/api/db', dbRoutes);
   app.use('/api/shuttles', alertsRoutes);
+  app.use('/api/alerts', alerts)
 
   app.use((err, req, res, next) => {
     console.error(err.stack);

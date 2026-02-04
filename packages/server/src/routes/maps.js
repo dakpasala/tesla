@@ -1,9 +1,10 @@
 import express from 'express';
 import { getAllTransportOptions } from '../services/maps/directionsService.js';
-import { getRedisClient } from '../services/redis/redisClient.js';
+import { getCache, setCache } from '../services/redis/cache.js';
 import {
   getParkingLotByOfficeAndName,
   findNearbyOffice,
+  findOfficeByAddress
 } from '../services/db/mssqlPool.js';
 
 const router = express.Router();
@@ -46,22 +47,20 @@ router.get('/to-office', async (req, res) => {
         ? `${parkingLot.lat},${parkingLot.lng}`
         : parkingLot.address;
 
-    const redis = await getRedisClient();
     const cacheKey = `maps:to_office:${normalize(
       office_name
     )}:${normalize(parking_lot_name)}:${normalize(origin)}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = await getCache(cacheKey);
     if (cached) {
       console.log('Redis cache hit');
-      return res.json(JSON.parse(cached));
+      return res.json(cached);
     }
 
     console.log('Redis cache miss → calling Google Maps');
 
     const routes = await getAllTransportOptions(origin, destination);
-
-    await redis.set(cacheKey, JSON.stringify(routes), { EX: 60 });
+    await setCache(cacheKey, routes, 60);
 
     res.json({
       mode: 'TO_OFFICE',
@@ -69,6 +68,62 @@ router.get('/to-office', async (req, res) => {
       parking_lot: parking_lot_name,
       routes,
     });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/to-office-quick-start', async (req, res) => {
+  try {
+    const { lat, lng, address } = req.query;
+
+    if (!lat || !lng || !address) {
+      return res.status(400).json({
+        error: 'lat, lng, and address are required',
+      });
+    }
+
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+
+    // find office by the provided address
+    const office = await findOfficeByAddress(address);
+
+    if (!office) {
+      return res.status(403).json({
+        error: 'Invalid Office - address not found in locations table',
+      });
+    }
+
+    const origin = `${userLat},${userLng}`;
+    const destination = address;
+
+    const cacheKey = `maps:to_office_quick_start:${normalize(
+      destination
+    )}:${normalize(origin)}`;
+
+    const cached = await getCache(cacheKey);
+    if (cached) {
+      console.log('Redis cache hit');
+      return res.json(cached);
+    }
+
+    console.log('Redis cache miss → calling Google Maps');
+
+    const routes = await getAllTransportOptions(origin, destination);
+
+    const response = {
+      mode: 'TO_OFFICE_QUICK_START',
+      office: office.name,
+      office_address: office.address,
+      destination,
+      routes,
+    };
+
+    await setCache(cacheKey, response, 60);
+
+    res.json(response);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error.message });
@@ -99,22 +154,20 @@ router.get('/go-home', async (req, res) => {
 
     const origin = `${office.lat},${office.lng}`;
 
-    const redis = await getRedisClient();
     const cacheKey = `maps:from_office:${normalize(
       office.name
     )}:${normalize(destination)}`;
 
-    const cached = await redis.get(cacheKey);
+    const cached = await getCache(cacheKey);
     if (cached) {
       console.log('Redis cache hit');
-      return res.json(JSON.parse(cached));
+      return res.json(cached);
     }
 
     console.log('Redis cache miss → calling Google Maps');
 
     const routes = await getAllTransportOptions(origin, destination);
-
-    await redis.set(cacheKey, JSON.stringify(routes), { EX: 60 });
+    await setCache(cacheKey, routes, 60);
 
     res.json({
       mode: 'FROM_OFFICE',

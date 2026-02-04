@@ -1,19 +1,72 @@
+import 'react-native-reanimated';
+import 'react-native-gesture-handler';
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '../screens/HomeScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import MapScreen from '../screens/MapScreen';
+import type { RootStackParamList } from './types';
+import { useAuth } from '../context/AuthContext';
+import SplashScreen from '../components/SplashScreen';
 
-const Stack = createNativeStackNavigator();
+// Auth Screen
+import LoginScreen from '../screens/auth/LoginScreen';
+
+// Main App Screens
+import {
+  MainHomeScreen,
+  RoutesScreen,
+  DirectionsScreen,
+  FavoritesScreen,
+  ProfileScreen,
+  SettingsScreen,
+  ParkingScreen,
+  RewardsScreen,
+} from '../screens/main';
+
+// Admin Screens
+import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
+import ShuttleDashboardScreen from '../screens/admin/ShuttleDashboardScreen';
+import LiveAlertsScreen from '../screens/admin/LiveAlertsScreen';
+import ParkingManagementScreen from '../screens/admin/ParkingManagementScreen';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  const { userId } = useAuth();
+
+  // Show login screen if not authenticated
+  if (!userId) {
+    return <LoginScreen />;
+  }
+
+  // Show main app if authenticated
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Home" component={HomeScreen} />
+    <Stack.Navigator
+      initialRouteName="MainHome"
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+      }}
+    >
+      {/* Main App Screens */}
+      <Stack.Screen name="MainHome" component={MainHomeScreen} />
+      <Stack.Screen name="Routes" component={RoutesScreen} />
+      <Stack.Screen name="Directions" component={DirectionsScreen} />
+      <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="Map" component={MapScreen} />
+      <Stack.Screen name="Parking" component={ParkingScreen} />
+      <Stack.Screen name="Rewards" component={RewardsScreen} />
+
+      {/* Admin Screens (Unprotected for now) */}
+      <Stack.Screen name="Admin" component={AdminHomeScreen} />
+      <Stack.Screen
+        name="ShuttleDashboard"
+        component={ShuttleDashboardScreen}
+      />
+      <Stack.Screen name="LiveAlerts" component={LiveAlertsScreen} />
+      <Stack.Screen
+        name="ParkingManagement"
+        component={ParkingManagementScreen}
+      />
     </Stack.Navigator>
   );
 }

@@ -1,26 +1,27 @@
 // packages/mobile/src/screens/main/RoutesScreen.tsx
 
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import React, { useState, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 // Import existing components
 import NavBox from '../../components/NavBox';
-import NavBar, { NavScreen } from '../../components/NavBar';
 import RouteCards, { RouteCardItem } from '../../components/RouteCards';
+import {
+  RouteHeader,
+  TransportMode,
+  ModeTimes,
+} from '../../components/RouteHeader';
 
 // Polyline decoding utility
-function decodePolyline(encoded: string): { latitude: number; longitude: number }[] {
+function decodePolyline(
+  encoded: string
+): { latitude: number; longitude: number }[] {
   const points: { latitude: number; longitude: number }[] = [];
   let index = 0;
   let lat = 0;
@@ -91,13 +92,18 @@ type RoutesRouteProp = RouteProp<RootStackParamList, 'Routes'>;
 export default function RoutesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RoutesRouteProp>();
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   const routeData = route.params?.routeData;
-  const destinationName = route.params?.destination || routeData?.office || 'Home';
+  const destinationName =
+    route.params?.destination || routeData?.office || 'Home';
 
   // Transport mode state
-  const [transportMode, setTransportMode] = useState<NavScreen>('car');
+  const [transportMode, setTransportMode] = useState<TransportMode>('car');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+
+  // Bottom sheet snap points matching DirectionsScreen
+  const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
 
   // Build RouteCardItems from the API response
   const { quickStart, otherRoutes } = useMemo(() => {
@@ -105,7 +111,9 @@ export default function RoutesScreen() {
       return { quickStart: [], otherRoutes: [] };
     }
 
-    const sorted = [...routeData.routes].sort((a, b) => a.duration_sec - b.duration_sec);
+    const sorted = [...routeData.routes].sort(
+      (a, b) => a.duration_sec - b.duration_sec
+    );
     const best = sorted[0];
     const rest = sorted.slice(1);
 
@@ -126,7 +134,9 @@ export default function RoutesScreen() {
   // Decode polyline for the selected or best route to draw on map
   const activePolyline = useMemo(() => {
     if (!routeData?.routes || routeData.routes.length === 0) return [];
-    const sorted = [...routeData.routes].sort((a, b) => a.duration_sec - b.duration_sec);
+    const sorted = [...routeData.routes].sort(
+      (a, b) => a.duration_sec - b.duration_sec
+    );
     const idx = selectedRouteId ? parseInt(selectedRouteId, 10) : 0;
     const active = sorted[idx] || sorted[0];
     return decodePolyline(active.polyline);
@@ -176,7 +186,34 @@ export default function RoutesScreen() {
 
   // Origin = first point, destination = last point of polyline
   const origin = activePolyline.length > 0 ? activePolyline[0] : null;
-  const dest = activePolyline.length > 0 ? activePolyline[activePolyline.length - 1] : null;
+  const dest =
+    activePolyline.length > 0
+      ? activePolyline[activePolyline.length - 1]
+      : null;
+
+  // Compute mode times from route data
+  const modeTimes: ModeTimes = useMemo(() => {
+    if (!routeData?.routes) {
+      return { car: '30m', shuttle: '50m', transit: '1hr5m', bike: '30m' };
+    }
+
+    const modeMap: Record<TransportMode, string> = {
+      car: 'driving',
+      shuttle: 'walking',
+      transit: 'transit',
+      bike: 'bicycling',
+    };
+
+    const times: ModeTimes = {};
+    (['car', 'shuttle', 'transit', 'bike'] as TransportMode[]).forEach(mode => {
+      const found = routeData.routes?.find(r => r.mode === modeMap[mode]);
+      if (found) {
+        times[mode] = formatDuration(found.duration_sec);
+      }
+    });
+
+    return times;
+  }, [routeData]);
 
   return (
     <View style={styles.container}>
@@ -208,22 +245,12 @@ export default function RoutesScreen() {
           )}
 
           {/* Destination marker */}
-          {dest && (
-            <Marker coordinate={dest} title={destinationName} />
-          )}
+          {dest && <Marker coordinate={dest} title={destinationName} />}
         </MapView>
       </View>
 
       {/* NavBox overlay at top */}
       <View style={styles.navBoxOverlay}>
-        {/* Back button */}
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-
         <View style={styles.navBoxWrapper}>
           <NavBox
             currentLocation="Current"
@@ -236,25 +263,26 @@ export default function RoutesScreen() {
         </View>
       </View>
 
-      {/* Bottom Sheet - simple positioned View instead of Modalize */}
-      <View style={styles.bottomSheet}>
-        <View style={styles.handleWrapper}>
-          <View style={styles.handleStyle} />
-        </View>
-        <ScrollView
-          style={styles.sheetContent}
+      {/* Bottom Sheet - using @gorhom/bottom-sheet */}
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={1}
+        snapPoints={snapPoints}
+        backgroundStyle={styles.bottomSheetBackground}
+        handleIndicatorStyle={styles.bottomSheetHandle}
+        style={{ zIndex: 100 }}
+      >
+        <BottomSheetScrollView
+          contentContainerStyle={styles.sheetContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Transport Mode Tabs */}
-          <NavBar
-            currentScreen={transportMode}
-            onScreenChange={setTransportMode}
+          {/* Shared RouteHeader: Back Button, Tabs, Time Selector */}
+          <RouteHeader
+            onBackPress={() => navigation.goBack()}
+            activeMode={transportMode}
+            onModeChange={setTransportMode}
+            modeTimes={modeTimes}
           />
-
-          {/* Time Selector */}
-          <View style={styles.section}>
-            <Text>Time Selector placeholder</Text>
-          </View>
 
           {/* Quick Start Routes */}
           {quickStart.length > 0 && (
@@ -287,8 +315,8 @@ export default function RoutesScreen() {
               🅿️ View Parking Availability
             </Text>
           </TouchableOpacity>
-        </ScrollView>
-      </View>
+        </BottomSheetScrollView>
+      </BottomSheet>
     </View>
   );
 }
@@ -320,70 +348,43 @@ const styles = StyleSheet.create({
   },
   navBoxOverlay: {
     position: 'absolute',
-    top: 50,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 10,
+    top: 60,
+    left: 35,
+    right: 35,
     zIndex: 10,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backButtonText: {
-    fontSize: 20,
-    color: '#111',
   },
   navBoxWrapper: {
     flex: 1,
   },
-  bottomSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '65%',
+  // Bottom Sheet styles matching DirectionsScreen
+  bottomSheetBackground: {
     backgroundColor: '#FCFCFC',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderRadius: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
+    shadowOffset: {
+      width: 0,
+      height: -4,
+    },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
   },
-  handleWrapper: {
-    alignItems: 'center',
-    paddingTop: 10,
-  },
-  handleStyle: {
+  bottomSheetHandle: {
+    backgroundColor: '#E0E0E0',
     width: 40,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#DEDEDE',
+    marginTop: 8,
   },
   sheetContent: {
-    flex: 1,
-    paddingTop: 5,
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 40,
   },
   section: {
-    paddingHorizontal: 16,
     marginBottom: 12,
   },
   parkingButton: {
-    marginHorizontal: 16,
     marginBottom: 20,
     padding: 14,
     backgroundColor: '#f0f0f0',

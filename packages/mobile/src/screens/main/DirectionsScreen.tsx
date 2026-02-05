@@ -31,9 +31,14 @@ import Svg, {
   LinearGradient,
   Stop,
 } from 'react-native-svg';
-import { BackButton } from '../../components/BackButton';
-import { getAllLocations, getAllParkingAvailability } from '../../services/parkings';
-
+import {
+  RouteHeader,
+  TransportMode as HeaderTransportMode,
+} from '../../components/RouteHeader';
+import {
+  getAllLocations,
+  getAllParkingAvailability,
+} from '../../services/parkings';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
@@ -67,8 +72,9 @@ function DirectionsScreen() {
   const { destination, setDestination, travelMode, setTravelMode } =
     useRideContext();
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
-  const [selectedParkingId, setSelectedParkingId] =
-    useState<string | null>(null);
+  const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
+    null
+  );
   const [selectedSublot, setSelectedSublot] = useState<string>('Sublot B');
 
   // --- API state ---
@@ -146,7 +152,7 @@ function DirectionsScreen() {
   const destinationName = destination?.title ?? 'Tesla Deer Creek';
 
   // Matches Figma: 20% peek, 50% half, 80% full (to avoid covering header)
-  const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
+  const snapPoints = useMemo(() => ['20%', '50%', '65%', '80%'], []);
 
   const handleParkingSelect = (id: string) => {
     const lot = parkingLots.find(p => p.id === id);
@@ -278,7 +284,9 @@ function DirectionsScreen() {
                 >
                   {lot.fullness}% → {Math.min(lot.fullness + 5, 100)}%
                 </Text>
-                <View style={lot.fullness >= 80 ? styles.dotRed : styles.dotYellow} />
+                <View
+                  style={lot.fullness >= 80 ? styles.dotRed : styles.dotYellow}
+                />
               </TouchableOpacity>
               {/* Sublot B */}
               <TouchableOpacity
@@ -307,7 +315,11 @@ function DirectionsScreen() {
                 >
                   {Math.max(lot.fullness - 20, 0)}% → {lot.fullness}%
                 </Text>
-                <View style={lot.fullness >= 60 ? styles.dotYellow : styles.dotGreen} />
+                <View
+                  style={
+                    lot.fullness >= 60 ? styles.dotYellow : styles.dotGreen
+                  }
+                />
               </TouchableOpacity>
               {/* Sublot C */}
               <TouchableOpacity
@@ -334,7 +346,8 @@ function DirectionsScreen() {
                       : styles.sublotStats
                   }
                 >
-                  {Math.min(lot.fullness + 10, 100)}% → {Math.min(lot.fullness + 20, 100)}%
+                  {Math.min(lot.fullness + 10, 100)}% →{' '}
+                  {Math.min(lot.fullness + 20, 100)}%
                 </Text>
                 <View style={styles.dotRed} />
               </TouchableOpacity>
@@ -455,7 +468,8 @@ function DirectionsScreen() {
       <View style={styles.actionRow}>
         <TouchableOpacity style={styles.startButton} onPress={handleRoutePress}>
           <Text style={styles.startButtonText}>
-            Route to {parkingLots.find(p => p.id === selectedParkingId)?.name ?? '...'}
+            Route to{' '}
+            {parkingLots.find(p => p.id === selectedParkingId)?.name ?? '...'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -605,52 +619,6 @@ function DirectionsScreen() {
     </View>
   );
 
-  const renderTabs = () => (
-    <View style={styles.tabContainer}>
-      {(['car', 'shuttle', 'transit', 'bike'] as TravelMode[]).map(mode => {
-        const isActive = travelMode === mode;
-        let iconSource;
-        switch (mode) {
-          case 'car':
-            iconSource = require('../../assets/icons/new/newCar.png');
-            break;
-          case 'shuttle':
-            iconSource = require('../../assets/icons/new/newShuttle.png');
-            break;
-          case 'transit':
-            iconSource = require('../../assets/icons/new/newBus.png');
-            break;
-          case 'bike':
-            iconSource = require('../../assets/icons/new/newBike.png');
-            break;
-        }
-
-        return (
-          <TouchableOpacity
-            key={mode}
-            style={[styles.tab, isActive && styles.activeTabBorder]}
-            onPress={() => setTravelMode(mode)}
-          >
-            <Image
-              source={iconSource}
-              style={[
-                styles.tabIconImage,
-                { tintColor: isActive ? '#007AFF' : '#8E8E93' },
-              ]}
-              resizeMode="contain"
-            />
-            <Text style={[styles.tabTime, isActive && styles.activeTabTime]}>
-              {mode === 'car' && '30m'}
-              {mode === 'shuttle' && '50m'}
-              {mode === 'transit' && '1hr5m'}
-              {mode === 'bike' && '30m'}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
-
   // --- Loading / Error states ---
   const renderLoading = () => (
     <View style={styles.centeredState}>
@@ -663,7 +631,10 @@ function DirectionsScreen() {
     <View style={styles.centeredState}>
       <Text style={styles.stateText}>{error}</Text>
       <TouchableOpacity
-        style={[styles.startButton, { marginTop: 12, flex: 0, paddingHorizontal: 24 }]}
+        style={[
+          styles.startButton,
+          { marginTop: 12, flex: 0, paddingHorizontal: 24 },
+        ]}
         onPress={() => {
           // Re-trigger the effect by toggling loading
           setLoading(true);
@@ -692,14 +663,16 @@ function DirectionsScreen() {
         >
           {/* Pin for each fetched lot */}
           {parkingLots.map(lot => (
-              <Marker
-                key={lot.id}
-                coordinate={lot.coordinate}
-                title={`Tesla ${lot.name}`}
-                description={`${lot.fullness}% Full`}
-              >
-                <View style={{
-                  backgroundColor: lot.id === selectedParkingId ? '#007AFF' : '#FF3B30',
+            <Marker
+              key={lot.id}
+              coordinate={lot.coordinate}
+              title={`Tesla ${lot.name}`}
+              description={`${lot.fullness}% Full`}
+            >
+              <View
+                style={{
+                  backgroundColor:
+                    lot.id === selectedParkingId ? '#007AFF' : '#FF3B30',
                   borderRadius: 12,
                   paddingHorizontal: 8,
                   paddingVertical: 4,
@@ -710,8 +683,11 @@ function DirectionsScreen() {
                   shadowOpacity: 0.3,
                   shadowRadius: 2,
                   elevation: 3,
-                }}>
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
+                }}
+              >
+                <Text
+                  style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}
+                >
                   {lot.fullness}%
                 </Text>
               </View>
@@ -736,37 +712,29 @@ function DirectionsScreen() {
           contentContainerStyle={styles.sheetContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Back Button Row */}
-          <View style={{ marginBottom: 16 }}>
-            <BackButton
-              onPress={() => navigation.goBack()}
-              style={{ alignSelf: 'flex-start' }}
-            />
-          </View>
-
-          {/* Mode Tabs */}
-          {renderTabs()}
-
-          {/* Time Selector */}
-          <View style={styles.timeSelector}>
-            <TouchableOpacity style={styles.timeButton}>
-              <Text style={styles.timeButtonText}>Now ▼</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.timeButton, { marginLeft: 10 }]}>
-              <Text style={styles.timeButtonText}>Leave at...</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Shared RouteHeader: Back Button, Tabs, Time Selector */}
+          <RouteHeader
+            onBackPress={() => navigation.goBack()}
+            activeMode={travelMode as HeaderTransportMode}
+            onModeChange={mode => setTravelMode(mode as TravelMode)}
+            modeTimes={{
+              car: '30m',
+              shuttle: '50m',
+              transit: '1hr5m',
+              bike: '30m',
+            }}
+          />
 
           {/* Conditional Content */}
-          {loading ? (
-            renderLoading()
-          ) : error ? (
-            renderError()
-          ) : travelMode === 'car' ? (
-            viewMode === 'list' ? renderParkingList() : renderParkingDetail()
-          ) : (
-            renderRouteContent()
-          )}
+          {loading
+            ? renderLoading()
+            : error
+              ? renderError()
+              : travelMode === 'car'
+                ? viewMode === 'list'
+                  ? renderParkingList()
+                  : renderParkingDetail()
+                : renderRouteContent()}
         </BottomSheetScrollView>
       </BottomSheet>
     </View>
@@ -853,55 +821,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 4,
     paddingBottom: 40,
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    paddingBottom: 0,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTabBorder: {
-    borderBottomColor: '#007AFF',
-  },
-  tabIconImage: {
-    width: 36,
-    height: 36,
-    marginRight: 8,
-  },
-  tabTime: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#8E8E93',
-  },
-  activeTabTime: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  timeSelector: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  timeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
-  },
-  timeButtonText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#000',
   },
   routeCard: {
     backgroundColor: '#fff',

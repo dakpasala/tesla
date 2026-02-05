@@ -107,6 +107,16 @@ function getStatus(availability: number): string {
   return 'Available';
 }
 
+function getForecastText(currentFullness: number): string {
+  const hour = new Date().getHours();
+  const targetTime = hour < 9 ? '9:30 AM' : hour < 12 ? '12:00 PM' : '5:00 PM';
+  
+  // Simple heuristic: parking fills up 10-20% more by peak hours
+  const forecastFullness = Math.min(currentFullness + 15, 95);
+  
+  return `About ${forecastFullness}% full by ${targetTime}`;
+}
+
 const MODE_ICONS: Record<string, any> = {
   driving: require('../../assets/icons/new/newCar.png'),
   transit: require('../../assets/icons/new/newBus.png'),
@@ -228,17 +238,30 @@ export default function QuickstartScreen() {
         ]);
         if (cancelled) return;
 
+        // Match by location name instead of ID
         const merged: ParkingLot[] = locations.map((loc: any) => {
-          const avail = availability.find((a: any) => a.loc_id === loc.id);
-          const fullness = avail?.availability ?? 0;
+          // Find all parking lots for this location
+          const lotsForLocation = availability.filter(
+            (a: any) => a.loc_name === loc.name
+          );
+          
+          // Calculate average fullness across all lots
+          const totalFullness = lotsForLocation.reduce(
+            (sum, lot) => sum + (lot.availability ?? 0),
+            0
+          );
+          const avgFullness = lotsForLocation.length > 0 
+            ? Math.round(totalFullness / lotsForLocation.length)
+            : 0;
+
           return {
             id: String(loc.id),
             name: loc.name,
-            status: getStatus(fullness),
-            fullness,
+            status: getStatus(avgFullness),
+            fullness: avgFullness,
             coordinate: {
-              latitude: loc.latitude ?? 37.4419,
-              longitude: loc.longitude ?? -122.143,
+              latitude: loc.lat ?? 37.4419,
+              longitude: loc.lng ?? -122.143,
             },
           };
         });
@@ -703,7 +726,7 @@ export default function QuickstartScreen() {
           <View style={styles.statusRow}>
             <Text style={styles.statusLabel}>FORECAST</Text>
             <View style={styles.dotRed} />
-            <Text style={styles.statusValue}>About 20% full by 9:30 AM</Text>
+            <Text style={styles.statusValue}>{getForecastText(lot?.fullness ?? 0)}</Text>
           </View>
         </View>
 

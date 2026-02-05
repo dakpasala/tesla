@@ -21,6 +21,7 @@ export type RootStackParamList = {
         travelMode?: 'car' | 'shuttle' | 'transit' | 'bike';
         startInDetailView?: boolean;
         destinationName?: string;
+        routePolyline?: { latitude: number; longitude: number }[]; // For animated transition
       }
     | undefined;
   Favorites: undefined;

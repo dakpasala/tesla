@@ -291,12 +291,14 @@ export default function QuickstartScreen() {
     }
 
     // Navigate to Availability with params to start in detail view (sublots)
+    // Pass the route polyline for smooth animated transition
     navigation.navigate('Availability', {
       routeId: item.id,
       parkingLotName: destinationName,
       travelMode,
       startInDetailView: true,
       destinationName,
+      routePolyline: activePolyline,
     });
   };
 

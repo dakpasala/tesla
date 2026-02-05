@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import { useRideContext, TravelMode } from '../../context/RideContext';
@@ -68,11 +68,17 @@ function AvailabilityScreen() {
   const paramTravelMode = route.params?.travelMode;
   const paramStartInDetailView = route.params?.startInDetailView;
   const paramDestinationName = route.params?.destinationName;
+  const paramRoutePolyline = route.params?.routePolyline;
 
   // Start in detail view if param says so, otherwise list
   const [viewMode, setViewMode] = useState<'list' | 'detail'>(
     paramStartInDetailView ? 'detail' : 'list'
   );
+
+  // For animated map transition - show route initially, then zoom to parking
+  const [showRoutePolyline, setShowRoutePolyline] =
+    useState(!!paramRoutePolyline);
+  const [hasAnimatedToParking, setHasAnimatedToParking] = useState(false);
   const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
     null
   );
@@ -241,6 +247,67 @@ function AvailabilityScreen() {
 
   // Matches Figma: 20% peek, 50% half, 80% full (to avoid covering header)
   const snapPoints = useMemo(() => ['20%', '50%', '65%', '80%'], []);
+
+  // Calculate initial region - if we have a route polyline, start zoomed out to show it
+  const initialMapRegion = useMemo(() => {
+    if (paramRoutePolyline && paramRoutePolyline.length > 0) {
+      // Calculate bounds that include the entire route
+      const lats = paramRoutePolyline.map(p => p.latitude);
+      const lngs = paramRoutePolyline.map(p => p.longitude);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+
+      const padLat = (maxLat - minLat) * 0.15;
+      const padLng = (maxLng - minLng) * 0.15;
+
+      return {
+        latitude: (minLat + maxLat) / 2,
+        longitude: (minLng + maxLng) / 2,
+        latitudeDelta: maxLat - minLat + padLat * 2,
+        longitudeDelta: maxLng - minLng + padLng * 2,
+      };
+    }
+    // Default to destination-centered view
+    return {
+      latitude: destinationLat,
+      longitude: destinationLng,
+      latitudeDelta: 0.05,
+      longitudeDelta: 0.05,
+    };
+  }, [paramRoutePolyline, destinationLat, destinationLng]);
+
+  // Animate camera to parking lot after showing the route
+  useEffect(() => {
+    if (!paramRoutePolyline || hasAnimatedToParking) return;
+
+    // Wait a moment to show the route, then animate to parking
+    const timer = setTimeout(() => {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: destinationLat,
+          longitude: destinationLng,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        },
+        800 // Animation duration in ms
+      );
+      setHasAnimatedToParking(true);
+
+      // Fade out the polyline after animation completes
+      setTimeout(() => {
+        setShowRoutePolyline(false);
+      }, 800);
+    }, 600); // Delay before starting animation
+
+    return () => clearTimeout(timer);
+  }, [
+    paramRoutePolyline,
+    hasAnimatedToParking,
+    destinationLat,
+    destinationLng,
+  ]);
 
   const handleParkingSelect = (id: string) => {
     const lot = parkingLots.find(p => p.id === id);
@@ -656,13 +723,21 @@ function AvailabilityScreen() {
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          region={{
-            latitude: destinationLat,
-            longitude: destinationLng,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
+          initialRegion={initialMapRegion}
         >
+          {/* Show route polyline during transition */}
+          {showRoutePolyline &&
+            paramRoutePolyline &&
+            paramRoutePolyline.length > 0 && (
+              <Polyline
+                coordinates={paramRoutePolyline}
+                strokeColor="#007AFF"
+                strokeWidth={4}
+                lineCap="round"
+                lineJoin="round"
+              />
+            )}
+
           {/* Pin for each fetched lot */}
           {parkingLots.map(lot => (
             <Marker

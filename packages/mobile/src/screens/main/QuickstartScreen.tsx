@@ -41,6 +41,7 @@ import OptionsCard from '../../components/OptionsCard';
 // API services
 import {
   getRoutesGoHome,
+  getRoutesToOffice,
   getRoutesToOfficeQuickStart,
   RouteResponse,
 } from '../../services/maps';
@@ -110,10 +111,10 @@ function getStatus(availability: number): string {
 function getForecastText(currentFullness: number): string {
   const hour = new Date().getHours();
   const targetTime = hour < 9 ? '9:30 AM' : hour < 12 ? '12:00 PM' : '5:00 PM';
-  
+
   // Simple heuristic: parking fills up 10-20% more by peak hours
   const forecastFullness = Math.min(currentFullness + 15, 95);
-  
+
   return `About ${forecastFullness}% full by ${targetTime}`;
 }
 
@@ -244,15 +245,16 @@ export default function QuickstartScreen() {
           const lotsForLocation = availability.filter(
             (a: any) => a.loc_name === loc.name
           );
-          
+
           // Calculate average fullness across all lots
           const totalFullness = lotsForLocation.reduce(
             (sum, lot) => sum + (lot.availability ?? 0),
             0
           );
-          const avgFullness = lotsForLocation.length > 0 
-            ? Math.round(totalFullness / lotsForLocation.length)
-            : 0;
+          const avgFullness =
+            lotsForLocation.length > 0
+              ? Math.round(totalFullness / lotsForLocation.length)
+              : 0;
 
           return {
             id: String(loc.id),
@@ -506,9 +508,9 @@ export default function QuickstartScreen() {
 
     try {
       const origin = await getUserLocation();
-      const data = await getRoutesToOfficeQuickStart({
+      const data = await getRoutesToOffice({
         origin,
-        destinationAddress: selectedLot.name,
+        officeName: selectedLot.name,
       });
       setOfficeRouteData(data);
     } catch (err: any) {
@@ -726,7 +728,9 @@ export default function QuickstartScreen() {
           <View style={styles.statusRow}>
             <Text style={styles.statusLabel}>FORECAST</Text>
             <View style={styles.dotRed} />
-            <Text style={styles.statusValue}>{getForecastText(lot?.fullness ?? 0)}</Text>
+            <Text style={styles.statusValue}>
+              {getForecastText(lot?.fullness ?? 0)}
+            </Text>
           </View>
         </View>
 

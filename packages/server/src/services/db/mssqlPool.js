@@ -189,13 +189,11 @@ export async function addAdmin(username, email) {
 
 export async function getParkingLotByOfficeAndName(
   officeName,
-  parkingLotName
 ) {
   const pool = await getPool();
 
   const result = await pool.request()
     .input('officeName', sql.VarChar, officeName)
-    .input('parkingLotName', sql.VarChar, parkingLotName)
     .query(`
       SELECT
         p.id,
@@ -208,7 +206,6 @@ export async function getParkingLotByOfficeAndName(
       FROM parking_lots p
       JOIN locations l ON l.id = p.location_id
       WHERE l.name = @officeName
-        AND p.name = @parkingLotName
         AND l.is_active = 1
         AND p.is_active = 1
     `);

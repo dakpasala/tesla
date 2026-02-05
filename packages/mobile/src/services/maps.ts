@@ -17,7 +17,6 @@ export type RouteOption = {
 export type ToOfficeResponse = {
   mode: 'TO_OFFICE';
   office: string;
-  parking_lot: string;
   routes: RouteOption[];
 };
 
@@ -47,16 +46,14 @@ export type PresenceResponse =
 export async function getRoutesToOffice(params: {
   origin: LatLng;
   officeName: string;
-  parkingLotName: string;
 }): Promise<ToOfficeResponse> {
-  const { origin, officeName, parkingLotName } = params;
+  const { origin, officeName } = params;
 
   const endpoint =
     `maps/to-office` +
     `?lat=${origin.lat}` +
     `&lng=${origin.lng}` +
-    `&office_name=${encodeURIComponent(officeName)}` +
-    `&parking_lot_name=${encodeURIComponent(parkingLotName)}`;
+    `&office_name=${encodeURIComponent(officeName)}`
 
   return get<ToOfficeResponse>(endpoint);
 }

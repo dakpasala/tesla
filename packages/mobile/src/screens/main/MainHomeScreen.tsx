@@ -8,7 +8,6 @@ import React, {
   memo,
   useEffect,
 } from 'react';
-import { Alert } from 'react-native';
 import {
   View,
   StyleSheet,
@@ -27,16 +26,6 @@ import SearchBar from '../../components/SearchBar';
 import { useRideContext } from '../../context/RideContext';
 import { useAuth } from '../../context/AuthContext';
 import { theme } from '../../theme/theme';
-
-// Import route APIs
-import {
-  getRoutesGoHome,
-  getRoutesToOfficeQuickStart,
-} from '../../services/maps';
-
-import type { GoHomeResponse } from '../../services/maps';
-
-import { getUserLocation } from '../../services/location';
 
 // Import alert and notification services
 import { getUserAlerts, clearUserAlerts } from '../../services/alerts';
@@ -111,9 +100,10 @@ function MainHomeScreen() {
     return () => clearInterval(interval);
   }, [userId]);
 
-  // Stable callbacks - selecting any office/favorite goes to Quickstart with routes
+  // Stable callbacks - selecting any office/favorite goes to Quickstart immediately
+  // QuickstartScreen will fetch the routes in the background for faster perceived performance
   const handleSelectDestination = useCallback(
-    async (dest: {
+    (dest: {
       id: string;
       title: string;
       subtitle: string;
@@ -121,89 +111,46 @@ function MainHomeScreen() {
     }) => {
       setDestination(dest);
 
-      try {
-        const origin = await getUserLocation();
-
-        // Use the office address (subtitle) to fetch routes
-        const routeData = await getRoutesToOfficeQuickStart({
-          origin,
-          destinationAddress: dest.subtitle, // subtitle contains the address
-        });
-
-        navigation.navigate('Quickstart', { routeData });
-      } catch (err: any) {
-        if (err?.status === 403 || err?.response?.status === 403) {
-          Alert.alert(
-            'Outside Supported Area',
-            'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
-          );
-          return;
-        }
-
-        console.error('Failed to fetch routes for destination', err);
-      }
+      // Navigate immediately - QuickstartScreen will fetch routes
+      navigation.navigate('Quickstart', {
+        destinationName: dest.title,
+        destinationAddress: dest.subtitle, // subtitle contains the address
+      });
     },
     [navigation, setDestination]
   );
 
-  // Home press — SearchBar passes the address up, we fetch routes here
+  // Home press — navigate immediately, QuickstartScreen fetches routes
   const handleHomePress = useCallback(
-    async (homeAddress: string | null) => {
+    (homeAddress: string | null) => {
       if (!homeAddress) {
         navigation.navigate('Favorites');
         return;
       }
 
-      try {
-        const origin = await getUserLocation();
-
-        const routeData = await getRoutesGoHome({
-          origin,
-          destination: homeAddress,
-        });
-
-        navigation.navigate('Quickstart', { routeData });
-      } catch (err: any) {
-        if (err?.status === 403 || err?.response?.status === 403) {
-          Alert.alert(
-            'Outside Supported Area',
-            'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
-          );
-          return;
-        }
-
-        // fallback: real errors
-        console.error('Failed to fetch home routes', err);
-      }
+      // Navigate immediately - QuickstartScreen will fetch routes
+      navigation.navigate('Quickstart', {
+        destinationName: 'Home',
+        destinationAddress: homeAddress,
+        isHomeRoute: true, // Use go-home API
+      });
     },
     [navigation]
   );
 
-  // Work press — fetch routes to office
+  // Work press — navigate immediately, QuickstartScreen fetches routes
   const handleWorkPress = useCallback(
-    async (workAddress: string | null) => {
+    (workAddress: string | null) => {
       if (!workAddress) {
         navigation.navigate('Favorites');
         return;
       }
 
-      try {
-        const origin = await getUserLocation();
-
-        const routeData = await getRoutesToOfficeQuickStart({
-          origin,
-          destinationAddress: workAddress,
-        });
-
-        navigation.navigate('Quickstart', { routeData });
-      } catch (err: any) {
-        if (err?.status === 403 || err?.response?.status === 403) {
-          Alert.alert('You are at Tesla Office', 'Routing is not needed here');
-          return;
-        }
-
-        console.error('Failed to fetch work routes', err);
-      }
+      // Navigate immediately - QuickstartScreen will fetch routes
+      navigation.navigate('Quickstart', {
+        destinationName: 'Work',
+        destinationAddress: workAddress,
+      });
     },
     [navigation]
   );

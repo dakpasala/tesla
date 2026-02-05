@@ -1,7 +1,7 @@
 // packages/mobile/src/screens/main/QuickstartScreen.tsx
 
-import React, { useState, useMemo, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator, Text, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -17,6 +17,14 @@ import {
   ModeTimes,
 } from '../../components/RouteHeader';
 import { LocationBox } from '../../components/LocationBox';
+
+// Import API services
+import {
+  getRoutesGoHome,
+  getRoutesToOfficeQuickStart,
+  RouteResponse,
+} from '../../services/maps';
+import { getUserLocation } from '../../services/location';
 
 // Polyline decoding utility
 function decodePolyline(
@@ -94,9 +102,20 @@ export default function QuickstartScreen() {
   const route = useRoute<QuickstartRouteProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  const routeData = route.params?.routeData;
+  // Route data can come from params (pre-fetched) or be fetched here
+  const [fetchedRouteData, setFetchedRouteData] =
+    useState<RouteResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const routeData = route.params?.routeData ?? fetchedRouteData;
   const destinationName =
-    route.params?.destination || routeData?.office || 'Home';
+    route.params?.destinationName ||
+    route.params?.destination ||
+    routeData?.office ||
+    'Destination';
+  const destinationAddress = route.params?.destinationAddress;
+  const isHomeRoute = route.params?.isHomeRoute;
 
   // Transport mode state
   const [transportMode, setTransportMode] = useState<TransportMode>('car');
@@ -104,6 +123,72 @@ export default function QuickstartScreen() {
 
   // Bottom sheet snap points matching DirectionsScreen
   const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
+
+  // Fetch routes if not provided via params
+  useEffect(() => {
+    // If we already have route data from params, skip fetching
+    if (route.params?.routeData) {
+      return;
+    }
+
+    // If no address to fetch for, skip
+    if (!destinationAddress) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchRoutes = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const origin = await getUserLocation();
+
+        let data: RouteResponse;
+        if (isHomeRoute) {
+          data = await getRoutesGoHome({
+            origin,
+            destination: destinationAddress,
+          });
+        } else {
+          data = await getRoutesToOfficeQuickStart({
+            origin,
+            destinationAddress,
+          });
+        }
+
+        if (!cancelled) {
+          setFetchedRouteData(data);
+        }
+      } catch (err: any) {
+        if (cancelled) return;
+
+        if (err?.status === 403 || err?.response?.status === 403) {
+          const message = isHomeRoute
+            ? 'Routing is only available when you are near a Tesla office.'
+            : 'You are at Tesla Office. Routing is not needed here.';
+          Alert.alert('Routing Unavailable', message, [
+            { text: 'OK', onPress: () => navigation.goBack() },
+          ]);
+          return;
+        }
+
+        setError('Failed to load routes. Please try again.');
+        console.error('Failed to fetch routes:', err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchRoutes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [destinationAddress, isHomeRoute, navigation, route.params?.routeData]);
 
   // Build RouteCardItems from the API response
   const { quickStart, otherRoutes } = useMemo(() => {
@@ -304,26 +389,46 @@ export default function QuickstartScreen() {
             modeTimes={modeTimes}
           />
 
-          {/* Quick Start Routes */}
-          {quickStart.length > 0 && (
-            <View style={styles.section}>
-              <RouteCards
-                title="QUICK START"
-                items={quickStart}
-                onPressItem={handleRoutePress}
-              />
+          {/* Loading State */}
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.loadingText}>Finding best routes...</Text>
             </View>
           )}
 
-          {/* Other Routes */}
-          {otherRoutes.length > 0 && (
-            <View style={styles.section}>
-              <RouteCards
-                title="OTHER MODES"
-                items={otherRoutes}
-                onPressItem={handleRoutePress}
-              />
+          {/* Error State */}
+          {error && !loading && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
             </View>
+          )}
+
+          {/* Routes Content - only show when not loading and no error */}
+          {!loading && !error && (
+            <>
+              {/* Quick Start Routes */}
+              {quickStart.length > 0 && (
+                <View style={styles.section}>
+                  <RouteCards
+                    title="QUICK START"
+                    items={quickStart}
+                    onPressItem={handleRoutePress}
+                  />
+                </View>
+              )}
+
+              {/* Other Routes */}
+              {otherRoutes.length > 0 && (
+                <View style={styles.section}>
+                  <RouteCards
+                    title="OTHER MODES"
+                    items={otherRoutes}
+                    onPressItem={handleRoutePress}
+                  />
+                </View>
+              )}
+            </>
           )}
         </BottomSheetScrollView>
       </BottomSheet>
@@ -395,5 +500,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     color: '#111',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
   },
 });

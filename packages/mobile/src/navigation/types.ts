@@ -8,8 +8,10 @@ export type RootStackParamList = {
     | {
         destinationId?: string;
         destinationName?: string;
+        destinationAddress?: string; // Address for fetching routes (navigate-first pattern)
         destination?: string;
         routeData?: RouteResponse;
+        isHomeRoute?: boolean; // True if going home (uses different API)
       }
     | undefined;
   Availability:

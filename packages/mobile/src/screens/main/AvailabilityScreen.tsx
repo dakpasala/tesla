@@ -213,6 +213,7 @@ function AvailabilityScreen() {
     let cancelled = false;
 
     async function fetchSublots() {
+      if (!lot) return; 
       setSublotsLoading(true);
       try {
         const data = await getParkingForLocation(lot.name);

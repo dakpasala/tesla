@@ -173,11 +173,46 @@ export default function QuickstartScreen() {
 
   const handleRoutePress = (item: RouteCardItem) => {
     setSelectedRouteId(item.id);
+
     if (item.showParkingWarning) {
       navigation.navigate('Parking', { fromRoutes: true });
-    } else {
-      navigation.navigate('Availability', { routeId: item.id });
+      return;
     }
+
+    // Determine the travel mode from the route item
+    const modeFromSubtitle = item.subtitle?.toLowerCase() || '';
+    let travelMode: 'car' | 'shuttle' | 'transit' | 'bike' = 'car';
+
+    if (
+      modeFromSubtitle.includes('driving') ||
+      modeFromSubtitle.includes('car')
+    ) {
+      travelMode = 'car';
+    } else if (
+      modeFromSubtitle.includes('walking') ||
+      modeFromSubtitle.includes('shuttle')
+    ) {
+      travelMode = 'shuttle';
+    } else if (
+      modeFromSubtitle.includes('transit') ||
+      modeFromSubtitle.includes('bus')
+    ) {
+      travelMode = 'transit';
+    } else if (
+      modeFromSubtitle.includes('bicycling') ||
+      modeFromSubtitle.includes('bike')
+    ) {
+      travelMode = 'bike';
+    }
+
+    // Navigate to Availability with params to start in detail view (sublots)
+    navigation.navigate('Availability', {
+      routeId: item.id,
+      parkingLotName: destinationName,
+      travelMode,
+      startInDetailView: true,
+      destinationName,
+    });
   };
 
   const handleViewParking = () => {

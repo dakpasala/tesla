@@ -10,7 +10,6 @@ import {
   Platform,
   Alert,
   Image,
-  Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -30,6 +29,8 @@ import { LocationBox } from '../../components/LocationBox';
 import {
   getAllLocations,
   getAllParkingAvailability,
+  getParkingForLocation,
+  ParkingRow,
 } from '../../services/parkings';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -61,16 +62,46 @@ function AvailabilityScreen() {
   const mapRef = useRef<MapView>(null);
   const { destination, setDestination, travelMode, setTravelMode } =
     useRideContext();
-  const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
+
+  // Read navigation params
+  const paramParkingLotName = route.params?.parkingLotName;
+  const paramTravelMode = route.params?.travelMode;
+  const paramStartInDetailView = route.params?.startInDetailView;
+  const paramDestinationName = route.params?.destinationName;
+
+  // Start in detail view if param says so, otherwise list
+  const [viewMode, setViewMode] = useState<'list' | 'detail'>(
+    paramStartInDetailView ? 'detail' : 'list'
+  );
   const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
     null
   );
   const [selectedSublot, setSelectedSublot] = useState<string>('Sublot B');
+  const [initialSelectionDone, setInitialSelectionDone] = useState(false);
 
   // --- API state ---
   const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Sublots state for the selected parking lot
+  const [sublots, setSublots] = useState<ParkingRow[]>([]);
+  const [sublotsLoading, setSublotsLoading] = useState(false);
+
+  // Set initial travel mode from params
+  useEffect(() => {
+    if (paramTravelMode) {
+      const modeMap: Record<string, TravelMode> = {
+        car: 'car',
+        shuttle: 'shuttle',
+        transit: 'transit',
+        bike: 'bike',
+      };
+      if (modeMap[paramTravelMode]) {
+        setTravelMode(modeMap[paramTravelMode]);
+      }
+    }
+  }, [paramTravelMode, setTravelMode]);
 
   // Fetch locations + availability, then merge
   useEffect(() => {
@@ -116,9 +147,39 @@ function AvailabilityScreen() {
 
         setParkingLots(merged);
 
-        // Auto-select the first lot if none selected yet
-        if (merged.length > 0) {
-          setSelectedParkingId(merged[0].id);
+        // Auto-select based on param or first lot
+        if (merged.length > 0 && !initialSelectionDone) {
+          let lotToSelect = merged[0];
+
+          // If a specific parking lot name was passed, try to find it
+          if (paramParkingLotName || paramDestinationName) {
+            const searchName = (
+              paramParkingLotName ||
+              paramDestinationName ||
+              ''
+            ).toLowerCase();
+            const matchedLot = merged.find(
+              lot =>
+                lot.name.toLowerCase().includes(searchName) ||
+                searchName.includes(lot.name.toLowerCase())
+            );
+            if (matchedLot) {
+              lotToSelect = matchedLot;
+            }
+          }
+
+          setSelectedParkingId(lotToSelect.id);
+          setInitialSelectionDone(true);
+
+          // If starting in detail view, also set destination context
+          if (paramStartInDetailView) {
+            setDestination({
+              id: lotToSelect.id,
+              title: `Tesla ${lotToSelect.name}`,
+              subtitle: `${lotToSelect.fullness}% Full`,
+              coordinate: lotToSelect.coordinate,
+            });
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -134,7 +195,44 @@ function AvailabilityScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, []); // Fetch once on mount - re-fetches when user navigates back (re-mount)
+
+  // Fetch sublots when a parking lot is selected
+  useEffect(() => {
+    if (!selectedParkingId) return;
+
+    const lot = parkingLots.find(p => p.id === selectedParkingId);
+    if (!lot) return;
+
+    let cancelled = false;
+
+    async function fetchSublots() {
+      setSublotsLoading(true);
+      try {
+        const data = await getParkingForLocation(lot.name);
+        if (!cancelled) {
+          setSublots(data);
+          // Auto-select first sublot if available
+          if (data.length > 0) {
+            setSelectedSublot(data[0].lot_name);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch sublots:', err);
+        if (!cancelled) {
+          setSublots([]);
+        }
+      } finally {
+        if (!cancelled) setSublotsLoading(false);
+      }
+    }
+
+    fetchSublots();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedParkingId, parkingLots]);
 
   // Fallback if no destination in context
   const destinationLat = destination?.coordinate?.latitude ?? 37.4419;
@@ -245,124 +343,72 @@ function AvailabilityScreen() {
 
         {/* Sublot List */}
         <View style={styles.sublotList}>
-          {lot.id === selectedParkingId && parkingLots.length > 0 ? (
-            <>
-              {/* Sublot A */}
-              <TouchableOpacity
-                style={
-                  selectedSublot === 'Sublot A'
-                    ? styles.sublotRowSelected
-                    : styles.sublotRow
-                }
-                onPress={() => setSelectedSublot('Sublot A')}
-              >
-                <Text
+          {sublotsLoading ? (
+            <ActivityIndicator
+              size="small"
+              color="#007AFF"
+              style={{ marginVertical: 20 }}
+            />
+          ) : sublots.length > 0 ? (
+            // Render actual sublots from API
+            sublots.map((sublot, index) => {
+              const isSelected = selectedSublot === sublot.lot_name;
+              const availability = sublot.availability;
+              const dotStyle =
+                availability >= 80
+                  ? styles.dotRed
+                  : availability >= 50
+                    ? styles.dotYellow
+                    : styles.dotGreen;
+
+              return (
+                <TouchableOpacity
+                  key={`${sublot.loc_name}-${sublot.lot_name}-${index}`}
                   style={
-                    selectedSublot === 'Sublot A'
-                      ? styles.sublotNameSelected
-                      : styles.sublotName
+                    isSelected ? styles.sublotRowSelected : styles.sublotRow
                   }
+                  onPress={() => setSelectedSublot(sublot.lot_name)}
                 >
-                  SUBLOT A
-                </Text>
-                <Text
-                  style={
-                    selectedSublot === 'Sublot A'
-                      ? styles.sublotStatsSelected
-                      : styles.sublotStats
-                  }
-                >
-                  {lot.fullness}% → {Math.min(lot.fullness + 5, 100)}%
-                </Text>
-                <View
-                  style={lot.fullness >= 80 ? styles.dotRed : styles.dotYellow}
-                />
-              </TouchableOpacity>
-              {/* Sublot B */}
-              <TouchableOpacity
-                style={
-                  selectedSublot === 'Sublot B'
-                    ? styles.sublotRowSelected
-                    : styles.sublotRow
-                }
-                onPress={() => setSelectedSublot('Sublot B')}
-              >
-                <Text
-                  style={
-                    selectedSublot === 'Sublot B'
-                      ? styles.sublotNameSelected
-                      : styles.sublotName
-                  }
-                >
-                  SUBLOT B
-                </Text>
-                <Text
-                  style={
-                    selectedSublot === 'Sublot B'
-                      ? styles.sublotStatsSelected
-                      : styles.sublotStats
-                  }
-                >
-                  {Math.max(lot.fullness - 20, 0)}% → {lot.fullness}%
-                </Text>
-                <View
-                  style={
-                    lot.fullness >= 60 ? styles.dotYellow : styles.dotGreen
-                  }
-                />
-              </TouchableOpacity>
-              {/* Sublot C */}
-              <TouchableOpacity
-                style={
-                  selectedSublot === 'Sublot C'
-                    ? styles.sublotRowSelected
-                    : styles.sublotRow
-                }
-                onPress={() => setSelectedSublot('Sublot C')}
-              >
-                <Text
-                  style={
-                    selectedSublot === 'Sublot C'
-                      ? styles.sublotNameSelected
-                      : styles.sublotName
-                  }
-                >
-                  SUBLOT C
-                </Text>
-                <Text
-                  style={
-                    selectedSublot === 'Sublot C'
-                      ? styles.sublotStatsSelected
-                      : styles.sublotStats
-                  }
-                >
-                  {Math.min(lot.fullness + 10, 100)}% →{' '}
-                  {Math.min(lot.fullness + 20, 100)}%
-                </Text>
-                <View style={styles.dotRed} />
-              </TouchableOpacity>
-            </>
+                  <Text
+                    style={
+                      isSelected ? styles.sublotNameSelected : styles.sublotName
+                    }
+                  >
+                    {sublot.lot_name.toUpperCase()}
+                  </Text>
+                  <Text
+                    style={
+                      isSelected
+                        ? styles.sublotStatsSelected
+                        : styles.sublotStats
+                    }
+                  >
+                    {availability}% full
+                  </Text>
+                  <View style={dotStyle} />
+                </TouchableOpacity>
+              );
+            })
           ) : (
-            <>
-              <TouchableOpacity
-                style={styles.sublotRowSelected}
-                onPress={() => setSelectedSublot('Main Lot')}
-              >
-                <Text style={styles.sublotNameSelected}>MAIN LOT</Text>
-                <Text style={styles.sublotStatsSelected}>
-                  {lot.status === 'Available' ? 'Verified Space' : 'Limited'}
-                </Text>
-                <View style={styles.dotGreen} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.sublotRow}
-                onPress={() => setSelectedSublot('Overflow')}
-              >
-                <Text style={styles.sublotName}>OVERFLOW</Text>
-                <Text style={styles.sublotStats}>Empty</Text>
-                <View style={styles.dotGreen} />
-              </TouchableOpacity>
-            </>
+            // Fallback: show main lot if no sublots
+            <TouchableOpacity
+              style={styles.sublotRowSelected}
+              onPress={() => setSelectedSublot('Main Lot')}
+            >
+              <Text style={styles.sublotNameSelected}>MAIN LOT</Text>
+              <Text style={styles.sublotStatsSelected}>
+                {lot.fullness}% full
+              </Text>
+              <View
+                style={
+                  lot.fullness >= 80
+                    ? styles.dotRed
+                    : lot.fullness >= 50
+                      ? styles.dotYellow
+                      : styles.dotGreen
+                }
+              />
+            </TouchableOpacity>
           )}
         </View>
 

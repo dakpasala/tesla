@@ -12,7 +12,15 @@ export type RootStackParamList = {
         routeData?: RouteResponse;
       }
     | undefined;
-  Availability: { routeId: string };
+  Availability:
+    | {
+        routeId?: string;
+        parkingLotName?: string;
+        travelMode?: 'car' | 'shuttle' | 'transit' | 'bike';
+        startInDetailView?: boolean;
+        destinationName?: string;
+      }
+    | undefined;
   Favorites: undefined;
   Profile: undefined;
   Settings: undefined;

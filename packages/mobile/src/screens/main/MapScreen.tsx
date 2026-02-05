@@ -42,6 +42,8 @@ import {
   ModeTimes,
 } from '../../components/RouteHeader';
 import { LocationBox } from '../../components/LocationBox';
+import { ParkingDetailView } from '../../components/ParkingDetailView';
+import { RouteDetailView } from '../../components/RouteDetailView';
 
 // Import alert and notification services
 import { getUserAlerts, clearUserAlerts } from '../../services/alerts';
@@ -64,75 +66,17 @@ import {
   getAllParkingAvailability,
   getParkingForLocation,
   ParkingRow,
+  ParkingLot,
 } from '../../services/parkings';
 
-// ============ UTILITIES (Copied from QuickstartScreen) ============
-function decodePolyline(
-  encoded: string
-): { latitude: number; longitude: number }[] {
-  const points: { latitude: number; longitude: number }[] = [];
-  let index = 0,
-    lat = 0,
-    lng = 0;
+import {
+  decodePolyline,
+  formatDuration,
+  getStatus,
+  getForecastText,
+} from '../../helpers/mapUtils';
 
-  while (index < encoded.length) {
-    let shift = 0,
-      result = 0,
-      b: number;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    lat += result & 1 ? ~(result >> 1) : result >> 1;
-
-    shift = 0;
-    result = 0;
-    do {
-      b = encoded.charCodeAt(index++) - 63;
-      result |= (b & 0x1f) << shift;
-      shift += 5;
-    } while (b >= 0x20);
-    lng += result & 1 ? ~(result >> 1) : result >> 1;
-
-    points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
-  }
-  return points;
-}
-
-function formatDuration(sec: number): string {
-  const mins = Math.round(sec / 60);
-  if (mins >= 60) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  }
-  return `${mins}m`;
-}
-
-function getStatus(availability: number): string {
-  if (availability >= 80) return 'Almost Full';
-  if (availability >= 50) return 'Filling Up';
-  return 'Available';
-}
-
-function getForecastText(currentFullness: number): string {
-  const hour = new Date().getHours();
-  const targetTime = hour < 9 ? '9:30 AM' : hour < 12 ? '12:00 PM' : '5:00 PM';
-
-  // Simple heuristic: parking fills up 10-20% more by peak hours
-  const forecastFullness = Math.min(currentFullness + 15, 95);
-
-  return `About ${forecastFullness}% full by ${targetTime}`;
-}
-
-interface ParkingLot {
-  id: string;
-  name: string;
-  status: string;
-  fullness: number;
-  coordinate: { latitude: number; longitude: number };
-}
+// Interface removed, imported from services/parkings
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type MapScreenRouteProp = RouteProp<RootStackParamList, 'Map'>;
@@ -643,285 +587,7 @@ function MapScreen() {
 
   const selectedLot = parkingLots.find(p => p.id === selectedParkingId);
 
-  // ============ RENDER: PARKING DETAIL ============
-  const renderParkingDetail = () => {
-    const lot = selectedLot;
-
-    // Helper to get dot style
-    const getDotStyle = (percent: number) => {
-      if (percent >= 80) return styles.dotRed;
-      if (percent >= 50) return styles.dotYellow;
-      return styles.dotGreen;
-    };
-
-    const currentFullness = lot?.fullness ?? 0;
-    const forecastFullness = Math.min(currentFullness + 15, 95);
-
-    return (
-      <View style={styles.detailContainer}>
-        {/* Route calculation loading state */}
-        {routesLoading && (
-          <View style={styles.routeLoadingBanner}>
-            <ActivityIndicator size="small" color="#007AFF" />
-            <Text style={styles.routeLoadingText}>Calculating route...</Text>
-          </View>
-        )}
-
-        {/* Route time display when loaded */}
-        {!routesLoading && routeDuration && (
-          <View style={styles.routeTimeBanner}>
-            <Image
-              source={require('../../assets/icons/new/newCar.png')}
-              style={{ width: 20, height: 20, marginRight: 8 }}
-            />
-            <Text style={styles.routeTimeText}>{routeDuration} drive</Text>
-          </View>
-        )}
-
-        <View style={styles.detailHeaderRow}>
-          <Image
-            source={require('../../assets/icons/new/newCar.png')}
-            style={{ width: 28, height: 28, marginRight: 12 }}
-          />
-          <Text style={styles.detailTitle}>{lot?.name || 'Loading...'}</Text>
-          <Text style={styles.detailUpdateText}>Updated recently</Text>
-        </View>
-
-        <View style={styles.statusSection}>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>CURRENTLY</Text>
-            <View style={getDotStyle(currentFullness)} />
-            <Text style={styles.statusValue}>{currentFullness}% full</Text>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>FORECAST</Text>
-            <View style={getDotStyle(forecastFullness)} />
-            <Text style={styles.statusValue}>
-              {getForecastText(currentFullness)}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionHeader}>SELECT SUBLOT</Text>
-        {sublotsLoading ? (
-          <ActivityIndicator
-            size="small"
-            color="#007AFF"
-            style={{ marginVertical: 20 }}
-          />
-        ) : (
-          <View style={styles.sublotList}>
-            {sublots.length > 0 ? (
-              sublots.map((sublot, index) => {
-                const isSelected = selectedSublot === sublot.lot_name;
-                const availability = sublot.availability ?? 0;
-                const dotStyle =
-                  availability >= 80
-                    ? styles.dotRed
-                    : availability >= 50
-                      ? styles.dotYellow
-                      : styles.dotGreen;
-                return (
-                  <GHTouchableOpacity
-                    key={`${sublot.loc_name}-${sublot.lot_name}-${index}`}
-                    style={
-                      isSelected ? styles.sublotRowSelected : styles.sublotRow
-                    }
-                    onPress={() => setSelectedSublot(sublot.lot_name)}
-                  >
-                    <Text
-                      style={
-                        isSelected
-                          ? styles.sublotNameSelected
-                          : styles.sublotName
-                      }
-                    >
-                      {sublot.lot_name}
-                    </Text>
-                    <Text
-                      style={
-                        isSelected
-                          ? styles.sublotStatsSelected
-                          : styles.sublotStats
-                      }
-                    >
-                      {availability}% full
-                    </Text>
-                    <View style={dotStyle} />
-                  </GHTouchableOpacity>
-                );
-              })
-            ) : (
-              <GHTouchableOpacity
-                style={styles.sublotRowSelected}
-                onPress={() => setSelectedSublot('Main Lot')}
-              >
-                <Text style={styles.sublotNameSelected}>MAIN LOT</Text>
-                <Text style={styles.sublotStatsSelected}>
-                  {lot?.fullness ?? 0}% full
-                </Text>
-                <View
-                  style={
-                    (lot?.fullness ?? 0) >= 80
-                      ? styles.dotRed
-                      : (lot?.fullness ?? 0) >= 50
-                        ? styles.dotYellow
-                        : styles.dotGreen
-                  }
-                />
-              </GHTouchableOpacity>
-            )}
-          </View>
-        )}
-
-        <Text style={styles.sectionHeader}>ALSO CONSIDER SHUTTLE</Text>
-        <GHTouchableOpacity
-          style={styles.shuttleSuggestionCard}
-          onPress={() => setTravelMode('shuttle')}
-        >
-          <Image
-            source={require('../../assets/icons/new/newShuttle.png')}
-            style={{ width: 24, height: 24, marginRight: 12 }}
-          />
-          <Text style={styles.shuttleSuggestionText}>
-            {modeTimes.shuttle || '50 min'}
-          </Text>
-          <View style={{ flex: 1 }} />
-          {/* Shuttle availability not available in API yet */}
-        </GHTouchableOpacity>
-
-        <View style={styles.detailFooter}>
-          <GHTouchableOpacity
-            style={styles.startButton}
-            onPress={openInGoogleMaps}
-          >
-            <Text style={styles.startButtonText}>
-              Route to {selectedSublot || 'Lot'}
-            </Text>
-          </GHTouchableOpacity>
-        </View>
-      </View>
-    );
-  };
-
-  // ============ RENDER: ROUTE CONTENT (shuttle/transit/bike) ============
-  const renderRouteContent = () => (
-    <>
-      <GHTouchableOpacity
-        style={styles.routeCard}
-        activeOpacity={0.9}
-        onPress={openInGoogleMaps}
-      >
-        <View style={styles.routeHeader}>
-          <View>
-            <Text style={styles.routeTitle}>
-              {travelMode === 'shuttle'
-                ? 'Tesla Shuttle A'
-                : travelMode === 'transit'
-                  ? 'Public Transit'
-                  : 'Bike Route'}
-            </Text>
-            <Text style={styles.routeSub}>On Time · 10 min away</Text>
-          </View>
-          <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>50 Min</Text>
-            <Text style={styles.etaSub}>9:30 AM ETA</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.routeDetails}>
-          <View style={styles.stepRow}>
-            <Svg width={12} height={40}>
-              <Circle cx={6} cy={6} r={3} fill="#007AFF" />
-              <Line
-                x1={6}
-                y1={6}
-                x2={6}
-                y2={40}
-                stroke="#E5E5E5"
-                strokeWidth={2}
-              />
-            </Svg>
-            <Text style={styles.stepText}>Your Location</Text>
-            <Text style={styles.stepTime}>8:40 AM</Text>
-          </View>
-          <View style={styles.stepRow}>
-            <Svg width={12} height={40}>
-              <Line
-                x1={6}
-                y1={0}
-                x2={6}
-                y2={40}
-                stroke="#E5E5E5"
-                strokeWidth={2}
-              />
-              <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
-            </Svg>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepText}>
-                {travelMode === 'shuttle'
-                  ? '10 min walk to shuttle stop'
-                  : travelMode === 'bike'
-                    ? '25 min bike ride'
-                    : '15 min bus ride'}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.stepRow}>
-            <Svg width={12} height={12}>
-              <Circle cx={6} cy={6} r={3} fill="#000" />
-            </Svg>
-            <Text style={styles.stepText}>{destinationName}</Text>
-            <Text style={styles.stepTime}>9:30 AM</Text>
-          </View>
-        </View>
-
-        <View style={styles.actionRow}>
-          <GHTouchableOpacity
-            style={styles.startButton}
-            onPress={openInGoogleMaps}
-          >
-            <Text style={styles.startButtonText}>Start</Text>
-          </GHTouchableOpacity>
-        </View>
-      </GHTouchableOpacity>
-
-      <View style={styles.footerLinks}>
-        <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
-        <GHTouchableOpacity
-          style={styles.altRow}
-          onPress={() => setTravelMode('shuttle')}
-        >
-          <Text style={styles.altText}>Tesla Shuttle B</Text>
-          <Text style={styles.altTime}>55 min</Text>
-        </GHTouchableOpacity>
-        <GHTouchableOpacity
-          style={styles.altRow}
-          onPress={() => setTravelMode('transit')}
-        >
-          <Text style={styles.altText}>Public Transit</Text>
-          <Text style={styles.altTime}>1h 10m</Text>
-        </GHTouchableOpacity>
-        <GHTouchableOpacity
-          style={styles.altRow}
-          onPress={() => setTravelMode('car')}
-        >
-          <Text style={styles.altText}>Drive (view parking)</Text>
-          <Text style={styles.altTime}>{modeTimes.car || '30m'}</Text>
-        </GHTouchableOpacity>
-      </View>
-
-      <GHTouchableOpacity style={styles.reportLink} onPress={handleReport}>
-        <Text style={styles.reportText}>
-          See something off?{' '}
-          <Text style={styles.reportLinkText}>Report it</Text>
-        </Text>
-      </GHTouchableOpacity>
-    </>
-  );
-
+  // ============ RENDER: AVAILABILITY CONTENT ============
   const renderAvailabilityContent = () => {
     if (parkingLoading) {
       return (
@@ -940,9 +606,32 @@ function MapScreen() {
     }
 
     if (travelMode === 'car') {
-      return renderParkingDetail();
+      return (
+        <ParkingDetailView
+          selectedLot={selectedLot}
+          routesLoading={routesLoading}
+          routeDuration={routeDuration}
+          sublotsLoading={sublotsLoading}
+          sublots={sublots}
+          selectedSublot={selectedSublot}
+          onSelectSublot={setSelectedSublot}
+          onSetTravelMode={setTravelMode}
+          modeTimes={modeTimes}
+          onOpenInGoogleMaps={openInGoogleMaps}
+        />
+      );
     }
-    return renderRouteContent();
+
+    return (
+      <RouteDetailView
+        travelMode={travelMode}
+        destinationName={destinationName}
+        onOpenInGoogleMaps={openInGoogleMaps}
+        onSetTravelMode={setTravelMode}
+        modeTimes={modeTimes}
+        onReportIssue={handleReport}
+      />
+    );
   };
 
   return (
@@ -1195,183 +884,4 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginBottom: 12,
-    marginTop: 12,
-    textTransform: 'uppercase',
-  },
-  actionRow: { padding: 16, paddingTop: 0 },
-  startButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 16,
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  startButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  // Detail styles
-  detailContainer: { paddingBottom: 20 },
-  routeLoadingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F8FF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  routeLoadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  routeTimeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  routeTimeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2E7D32',
-  },
-  detailHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  detailTitle: { fontSize: 20, fontWeight: '700', color: '#000', flex: 1 },
-  detailUpdateText: { fontSize: 12, color: '#8E8E93' },
-  statusSection: { marginBottom: 16 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  statusLabel: { fontSize: 11, fontWeight: '600', color: '#8E8E93', width: 80 },
-  statusValue: { fontSize: 13, color: '#000' },
-  dotYellow: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFCC00',
-    marginRight: 8,
-  },
-  dotRed: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FF3B30',
-    marginRight: 8,
-  },
-  dotGreen: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#34C759',
-    marginRight: 8,
-  },
-  sublotList: { marginBottom: 20 },
-  sublotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    marginBottom: 8,
-  },
-  sublotRowSelected: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F8FF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    marginBottom: 8,
-  },
-  sublotName: { flex: 1, fontSize: 15, fontWeight: '600', color: '#000' },
-  sublotNameSelected: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  sublotStats: { fontSize: 13, color: '#8E8E93', marginRight: 8 },
-  sublotStatsSelected: { fontSize: 13, color: '#007AFF', marginRight: 8 },
-  shuttleSuggestionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    marginBottom: 20,
-  },
-  shuttleSuggestionText: { fontSize: 15, fontWeight: '600', color: '#000' },
-  detailFooter: { marginTop: 8 },
-  // Route content styles
-  routeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  routeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: 16,
-    paddingBottom: 12,
-  },
-  routeTitle: { fontSize: 17, fontWeight: '600', color: '#000' },
-  routeSub: { fontSize: 13, color: '#34C759', marginTop: 2 },
-  etaBadge: { alignItems: 'flex-end' },
-  etaText: { fontSize: 20, fontWeight: '700', color: '#000' },
-  etaSub: { fontSize: 12, color: '#8E8E93' },
-  divider: { height: 1, backgroundColor: '#F2F2F7', marginHorizontal: 16 },
-  routeDetails: { padding: 16, paddingVertical: 12 },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  stepText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#000',
-    marginLeft: 8,
-    flex: 1,
-  },
-  stepContent: { flex: 1, marginLeft: 8, paddingBottom: 4 },
-  stepTime: { fontSize: 12, color: '#8E8E93' },
-  footerLinks: { marginBottom: 24 },
-  footerTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginBottom: 12,
-  },
-  altRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
-  },
-  altText: { fontSize: 15, color: '#000' },
-  altTime: { fontSize: 15, color: '#8E8E93' },
-  reportLink: { alignSelf: 'center', paddingBottom: 20 },
-  reportText: { fontSize: 13, color: '#8E8E93' },
-  reportLinkText: { color: '#007AFF', fontWeight: '500' },
 });

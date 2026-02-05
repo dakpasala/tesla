@@ -20,6 +20,13 @@ export type Location = {
   lng: number;
 };
 
+export interface ParkingLot {
+  id: string;
+  name: string;
+  status: string;
+  fullness: number;
+  coordinate: { latitude: number; longitude: number };
+}
 
 export async function getParkingForLocation(
   locName: string

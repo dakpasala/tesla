@@ -109,12 +109,7 @@ export function ParkingDetailView({
             sublots.map((sublot, index) => {
               const isSelected = selectedSublot === sublot.lot_name;
               const availability = sublot.availability ?? 0;
-              const dotStyle =
-                availability >= 80
-                  ? styles.dotRed
-                  : availability >= 50
-                    ? styles.dotYellow
-                    : styles.dotGreen;
+              const dotStyle = getDotStyle(availability);
               return (
                 <GHTouchableOpacity
                   key={`${sublot.loc_name}-${sublot.lot_name}-${index}`}
@@ -152,15 +147,7 @@ export function ParkingDetailView({
               <Text style={styles.sublotStatsSelected}>
                 {lot?.fullness ?? 0}% full
               </Text>
-              <View
-                style={
-                  (lot?.fullness ?? 0) >= 80
-                    ? styles.dotRed
-                    : (lot?.fullness ?? 0) >= 50
-                      ? styles.dotYellow
-                      : styles.dotGreen
-                }
-              />
+              <View style={getDotStyle(lot?.fullness ?? 0)} />
             </GHTouchableOpacity>
           )}
         </View>

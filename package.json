@@ -19,7 +19,8 @@
     "mobile:android": "yarn workspace mobile android",
     "mobile:ios": "yarn workspace mobile ios",
     "server:dev": "yarn workspace server dev",
-    "server:start": "yarn workspace server start"
+    "server:start": "yarn workspace server start",
+    "tunnel": "adb reverse tcp:3000 tcp:3000"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

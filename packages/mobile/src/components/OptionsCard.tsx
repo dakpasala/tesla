@@ -121,7 +121,8 @@ const styles = StyleSheet.create({
   },
 
   optionRowSelected: {
-    borderColor: '#000',
+    borderColor: '#007AFF',
+    backgroundColor: '#F2F8FF',
   },
 
   optionRowDisabled: {

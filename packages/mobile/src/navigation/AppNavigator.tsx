@@ -4,21 +4,16 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
 import { useAuth } from '../context/AuthContext';
-import SplashScreen from '../components/SplashScreen';
 
 // Auth Screen
 import LoginScreen from '../screens/auth/LoginScreen';
 
 // Main App Screens
 import {
-  MainHomeScreen,
-  RoutesScreen,
-  DirectionsScreen,
+  MapScreen,
   FavoritesScreen,
-  ProfileScreen,
-  SettingsScreen,
-  ParkingScreen,
   RewardsScreen,
+  SettingsScreen,
 } from '../screens/main';
 
 // Admin Screens
@@ -40,20 +35,16 @@ export default function AppNavigator() {
   // Show main app if authenticated
   return (
     <Stack.Navigator
-      initialRouteName="MainHome"
+      initialRouteName="Map"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
       {/* Main App Screens */}
-      <Stack.Screen name="MainHome" component={MainHomeScreen} />
-      <Stack.Screen name="Routes" component={RoutesScreen} />
-      <Stack.Screen name="Directions" component={DirectionsScreen} />
+      <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="Parking" component={ParkingScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />
 
       {/* Admin Screens (Unprotected for now) */}

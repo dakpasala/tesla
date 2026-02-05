@@ -18,11 +18,11 @@ function normalize(str) {
 
 router.get('/to-office', async (req, res) => {
   try {
-    const { lat, lng, office_name, parking_lot_name } = req.query;
+    const { lat, lng, office_name } = req.query;
 
-    if (!lat || !lng || !office_name || !parking_lot_name) {
+    if (!lat || !lng || !office_name) {
       return res.status(400).json({
-        error: 'lat, lng, office_name, and parking_lot_name are required',
+        error: 'lat, lng, office_name are required',
       });
     }
 
@@ -31,12 +31,11 @@ router.get('/to-office', async (req, res) => {
 
     const parkingLot = await getParkingLotByOfficeAndName(
       office_name,
-      parking_lot_name
     );
 
     if (!parkingLot) {
       return res.status(404).json({
-        error: 'Invalid office or parking lot',
+        error: 'Invalid office',
       });
     }
 
@@ -47,9 +46,7 @@ router.get('/to-office', async (req, res) => {
         ? `${parkingLot.lat},${parkingLot.lng}`
         : parkingLot.address;
 
-    const cacheKey = `maps:to_office:${normalize(
-      office_name
-    )}:${normalize(parking_lot_name)}:${normalize(origin)}`;
+    const cacheKey = `maps:to_office:${normalize(office_name)}:${normalize(origin)}`;
 
     const cached = await getCache(cacheKey);
     if (cached) {
@@ -65,7 +62,6 @@ router.get('/to-office', async (req, res) => {
     res.json({
       mode: 'TO_OFFICE',
       office: office_name,
-      parking_lot: parking_lot_name,
       routes,
     });
   } catch (error) {

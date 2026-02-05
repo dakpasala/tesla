@@ -57,11 +57,6 @@ export function RouteHeader({
 
   return (
     <View style={[styles.container, style]}>
-      {/* Back Button */}
-      <View style={styles.backButtonRow}>
-        <BackButton onPress={onBackPress} style={{ alignSelf: 'flex-start' }} />
-      </View>
-
       {/* Transport Mode Tabs */}
       <View style={styles.tabContainer}>
         {modes.map(mode => {
@@ -90,8 +85,9 @@ export function RouteHeader({
         })}
       </View>
 
-      {/* Time Selector */}
+      {/* Time Selector Row with Back Button */}
       <View style={styles.timeSelector}>
+        <BackButton onPress={onBackPress} style={styles.backButton} />
         <TouchableOpacity style={styles.timeButton}>
           <Text style={styles.timeButtonText}>Now ▼</Text>
         </TouchableOpacity>
@@ -105,9 +101,6 @@ export function RouteHeader({
 
 const styles = StyleSheet.create({
   container: {},
-  backButtonRow: {
-    marginBottom: 16,
-  },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -124,17 +117,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
+    // Push content slightly to ensure margin on small screens
+    paddingHorizontal: 2,
   },
   activeTabBorder: {
     borderBottomColor: '#007AFF',
   },
   tabIconImage: {
-    width: 36,
-    height: 36,
-    marginRight: 8,
+    width: 32,
+    height: 32,
+    marginRight: 6,
   },
   tabTime: {
-    fontSize: 13,
+    fontSize: 12, // Slightly smaller font to fit
     fontWeight: '500',
     color: '#8E8E93',
   },
@@ -144,7 +139,11 @@ const styles = StyleSheet.create({
   },
   timeSelector: {
     flexDirection: 'row',
+    alignItems: 'center', // Align back button and time buttons vertically
     marginBottom: 20,
+  },
+  backButton: {
+    marginRight: 12, // Space between back button and "Now"
   },
   timeButton: {
     paddingHorizontal: 12,

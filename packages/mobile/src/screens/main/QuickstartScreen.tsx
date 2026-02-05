@@ -29,14 +29,13 @@ import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-han
 import Svg, { Circle, Line } from 'react-native-svg';
 
 // Components
-import RouteCards, { RouteCardItem } from '../../components/RouteCards';
+
 import {
   RouteHeader,
   TransportMode,
   ModeTimes,
 } from '../../components/RouteHeader';
 import { LocationBox } from '../../components/LocationBox';
-import OptionsCard from '../../components/OptionsCard';
 
 // API services
 import {
@@ -118,13 +117,6 @@ function getForecastText(currentFullness: number): string {
   return `About ${forecastFullness}% full by ${targetTime}`;
 }
 
-const MODE_ICONS: Record<string, any> = {
-  driving: require('../../assets/icons/new/newCar.png'),
-  transit: require('../../assets/icons/new/newBus.png'),
-  walking: require('../../assets/icons/new/newShuttle.png'),
-  bicycling: require('../../assets/icons/new/newBike.png'),
-};
-
 interface ParkingLot {
   id: string;
   name: string;
@@ -146,7 +138,7 @@ export default function QuickstartScreen() {
   const { travelMode, setTravelMode } = useRideContext();
 
   // ============ PHASE STATE ============
-  const [phase, setPhase] = useState<ScreenPhase>('routes');
+  const [phase, setPhase] = useState<ScreenPhase>('availability');
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
 
   // ============ ROUTE DATA STATE ============
@@ -177,12 +169,6 @@ export default function QuickstartScreen() {
 
   // ============ MAP STATE ============
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-
-  // Route data for selected office (when user clicks "Route to" on a different office)
-  const [officeRouteData, setOfficeRouteData] = useState<RouteResponse | null>(
-    null
-  );
-  const [officeRouteLoading, setOfficeRouteLoading] = useState(false);
 
   const snapPoints = useMemo(() => ['20%', '50%', '80%'], []);
 
@@ -226,7 +212,7 @@ export default function QuickstartScreen() {
 
   // ============ FETCH PARKING LOTS ============
   useEffect(() => {
-    if (phase === 'routes' || parkingLots.length > 0) return;
+    if (parkingLots.length > 0) return;
     let cancelled = false;
 
     const fetchParking = async () => {
@@ -270,7 +256,11 @@ export default function QuickstartScreen() {
 
         setParkingLots(merged);
         if (merged.length > 0 && !selectedParkingId) {
-          setSelectedParkingId(merged[0].id);
+          // Find lot matching destination name, otherwise fallback to first
+          const targetLot = merged.find(
+            l => l.name === destinationName || l.name.includes(destinationName)
+          );
+          setSelectedParkingId(targetLot ? targetLot.id : merged[0].id);
         }
       } catch (err) {
         if (!cancelled) {
@@ -316,27 +306,6 @@ export default function QuickstartScreen() {
     };
   }, [phase, viewMode, selectedParkingId, parkingLots]);
 
-  // ============ BUILD ROUTE CARDS ============
-  const { quickStart, otherRoutes } = useMemo(() => {
-    if (!routeData?.routes?.length) return { quickStart: [], otherRoutes: [] };
-
-    const sorted = [...routeData.routes].sort(
-      (a, b) => a.duration_sec - b.duration_sec
-    );
-    const toCard = (r: (typeof sorted)[0], index: number): RouteCardItem => ({
-      id: String(index),
-      icon: MODE_ICONS[r.mode] || MODE_ICONS.driving,
-      duration: formatDuration(r.duration_sec),
-      etaText: formatDistance(r.distance_m),
-      subtitle: r.mode.charAt(0).toUpperCase() + r.mode.slice(1),
-    });
-
-    return {
-      quickStart: [toCard(sorted[0], 0)],
-      otherRoutes: sorted.slice(1).map((r, i) => toCard(r, i + 1)),
-    };
-  }, [routeData]);
-
   // ============ POLYLINE ============
   // Original route polyline from API (initial destination)
   const originalPolyline = useMemo(() => {
@@ -348,15 +317,6 @@ export default function QuickstartScreen() {
     return decodePolyline((sorted[idx] || sorted[0]).polyline);
   }, [routeData, selectedRouteId]);
 
-  // Office route polyline (when user clicks "Route to" on a different office)
-  const officePolyline = useMemo(() => {
-    if (!officeRouteData?.routes?.length) return [];
-    const sorted = [...officeRouteData.routes].sort(
-      (a, b) => a.duration_sec - b.duration_sec
-    );
-    return decodePolyline(sorted[0].polyline);
-  }, [officeRouteData]);
-
   // Get origin from original polyline
   const originCoord = useMemo(() => {
     if (originalPolyline.length > 0) return originalPolyline[0];
@@ -365,25 +325,9 @@ export default function QuickstartScreen() {
 
   // Active polyline - uses office route when in detail view with calculated route
   const activePolyline = useMemo(() => {
-    // In detail view while loading, hide polyline
-    if (
-      phase === 'availability' &&
-      viewMode === 'detail' &&
-      officeRouteLoading
-    ) {
-      return [];
-    }
-    // In detail view with calculated route, use office polyline
-    if (
-      phase === 'availability' &&
-      viewMode === 'detail' &&
-      officePolyline.length > 0
-    ) {
-      return officePolyline;
-    }
-    // Default to original route polyline (always points to office)
+    // Always use original route polyline (initial fetch)
     return originalPolyline;
-  }, [originalPolyline, phase, viewMode, officePolyline, officeRouteLoading]);
+  }, [originalPolyline]);
 
   // ============ MAP REGIONS ============
   const routeMapRegion = useMemo(() => {
@@ -411,6 +355,15 @@ export default function QuickstartScreen() {
     };
   }, [activePolyline]);
 
+  // UseEffect to auto-zoom when route appears
+  useEffect(() => {
+    if (activePolyline.length > 0) {
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(routeMapRegion, 800);
+      }, 500);
+    }
+  }, [activePolyline, routeMapRegion]);
+
   const destCoord = useMemo(() => {
     if (activePolyline.length > 0)
       return activePolyline[activePolyline.length - 1];
@@ -436,95 +389,12 @@ export default function QuickstartScreen() {
   }, [routeData]);
 
   // ============ HANDLERS ============
-  const handleRoutePress = useCallback(
-    (item: RouteCardItem) => {
-      setSelectedRouteId(item.id);
-      if (item.showParkingWarning) {
-        navigation.navigate('Parking', { fromRoutes: true });
-        return;
-      }
-
-      // Set travel mode based on route
-      const mode = item.subtitle?.toLowerCase() || '';
-      if (mode.includes('driving') || mode.includes('car'))
-        setTravelMode('car');
-      else if (mode.includes('walking') || mode.includes('shuttle'))
-        setTravelMode('shuttle');
-      else if (mode.includes('transit') || mode.includes('bus'))
-        setTravelMode('transit');
-      else if (mode.includes('bicycling') || mode.includes('bike'))
-        setTravelMode('bike');
-
-      // Transition to availability phase
-      setPhase('availability');
-      setViewMode('detail');
-
-      // Animate map
-      setTimeout(() => {
-        mapRef.current?.animateToRegion(
-          {
-            latitude: destCoord.latitude,
-            longitude: destCoord.longitude,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
-          },
-          600
-        );
-      }, 100);
-    },
-    [destCoord, navigation, setTravelMode]
-  );
 
   const handleParkingSelect = useCallback((id: string) => {
     setSelectedParkingId(id);
     // Don't auto-switch to detail view - user must click "Route to" button
     // Don't zoom the map - keep current view
   }, []);
-
-  // Handler for "Route to" button - fetches route to selected office
-  const handleRouteToOffice = useCallback(async () => {
-    if (!selectedParkingId) return;
-
-    const selectedLot = parkingLots.find(p => p.id === selectedParkingId);
-    if (!selectedLot) return;
-
-    // Instantly navigate to detail view with loading state
-    setViewMode('detail');
-    setOfficeRouteLoading(true);
-    setOfficeRouteData(null);
-
-    // Zoom to the selected office
-    setTimeout(() => {
-      mapRef.current?.animateToRegion(
-        {
-          latitude: selectedLot.coordinate.latitude,
-          longitude: selectedLot.coordinate.longitude,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        },
-        600
-      );
-    }, 100);
-
-    try {
-      const origin = await getUserLocation();
-      const data = await getRoutesToOffice({
-        origin,
-        officeName: selectedLot.name,
-      });
-      setOfficeRouteData(data);
-    } catch (err: any) {
-      console.error('Failed to fetch route to office:', err);
-      // Still show the view, just without a calculated route line
-    } finally {
-      setOfficeRouteLoading(false);
-    }
-  }, [selectedParkingId, parkingLots]);
-
-  const handleBackToRoutes = useCallback(() => {
-    setPhase('routes');
-    setTimeout(() => mapRef.current?.animateToRegion(routeMapRegion, 600), 100);
-  }, [routeMapRegion]);
 
   const openInGoogleMaps = useCallback(() => {
     const lot = parkingLots.find(p => p.id === selectedParkingId);
@@ -551,10 +421,8 @@ export default function QuickstartScreen() {
 
   // ============ BACK BUTTON ============
   const handleBackPress = useCallback(() => {
-    if (phase === 'routes') navigation.goBack();
-    else if (viewMode === 'list') handleBackToRoutes();
-    else setViewMode('list');
-  }, [phase, viewMode, navigation, handleBackToRoutes]);
+    navigation.goBack();
+  }, [navigation]);
 
   const origin = activePolyline.length > 0 ? activePolyline[0] : null;
   const dest =
@@ -563,126 +431,15 @@ export default function QuickstartScreen() {
       : null;
   const selectedLot = parkingLots.find(p => p.id === selectedParkingId);
 
-  // ============ RENDER: ROUTES PHASE ============
-  const renderRoutesContent = () => (
-    <>
-      {routesLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Finding best routes...</Text>
-        </View>
-      )}
-      {routesError && !routesLoading && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{routesError}</Text>
-        </View>
-      )}
-      {!routesLoading && !routesError && (
-        <>
-          {quickStart.length > 0 && (
-            <View style={styles.section}>
-              <RouteCards
-                title="QUICK START"
-                items={quickStart}
-                onPressItem={handleRoutePress}
-              />
-            </View>
-          )}
-          {otherRoutes.length > 0 && (
-            <View style={styles.section}>
-              <RouteCards
-                title="OTHER MODES"
-                items={otherRoutes}
-                onPressItem={handleRoutePress}
-              />
-            </View>
-          )}
-        </>
-      )}
-    </>
-  );
-
-  // ============ RENDER: PARKING LIST ============
-  const renderParkingList = () => (
-    <View>
-      {parkingLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Loading parking lots...</Text>
-        </View>
-      ) : parkingError ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{parkingError}</Text>
-        </View>
-      ) : (
-        <>
-          <OptionsCard
-            items={parkingLots.map(lot => ({
-              id: lot.id,
-              title: lot.name,
-              subtitle: lot.status,
-              rightText: `${lot.fullness}% Full`,
-              selected: selectedParkingId === lot.id,
-            }))}
-            onSelect={item => handleParkingSelect(item.id)}
-            style={{ borderWidth: 0, padding: 0 }}
-            itemStyle={{
-              backgroundColor: '#fff',
-              marginBottom: 12,
-              minHeight: 80,
-              height: 'auto',
-              alignItems: 'center',
-            }}
-          />
-
-          <Text style={styles.sectionHeader}>ALSO CONSIDER</Text>
-          <OptionsCard
-            items={[
-              {
-                id: 'shuttle-a',
-                title: 'Shuttle A',
-                subtitle: 'On Time',
-                rightText: 'Arrives in 5 min',
-                icon: require('../../assets/icons/new/newShuttle.png'),
-              },
-              {
-                id: 'shuttle-b',
-                title: 'Shuttle B',
-                subtitle: 'On Time',
-                rightText: 'Arrives in 10 min',
-                icon: require('../../assets/icons/new/newShuttle.png'),
-              },
-            ]}
-            onSelect={() => setTravelMode('shuttle')}
-            style={{ borderWidth: 0, padding: 0 }}
-            itemStyle={{ backgroundColor: '#fff', marginBottom: 12 }}
-          />
-
-          <View style={styles.actionRow}>
-            <GHTouchableOpacity
-              style={styles.startButton}
-              onPress={handleRouteToOffice}
-            >
-              <Text style={styles.startButtonText}>
-                Route to{' '}
-                {parkingLots.find(p => p.id === selectedParkingId)?.name ??
-                  '...'}
-              </Text>
-            </GHTouchableOpacity>
-          </View>
-        </>
-      )}
-    </View>
-  );
-
-  // Get route duration from office route data
-  const officeRouteDuration = useMemo(() => {
-    if (!officeRouteData?.routes?.length) return null;
-    const sorted = [...officeRouteData.routes].sort(
-      (a, b) => a.duration_sec - b.duration_sec
-    );
-    return formatDuration(sorted[0].duration_sec);
-  }, [officeRouteData]);
+  const routeDuration = useMemo(() => {
+    if (fetchedRouteData?.routes?.length) {
+      const sorted = [...fetchedRouteData.routes].sort(
+        (a, b) => a.duration_sec - b.duration_sec
+      );
+      return formatDuration(sorted[0].duration_sec);
+    }
+    return null;
+  }, [fetchedRouteData]);
 
   // ============ RENDER: PARKING DETAIL ============
   const renderParkingDetail = () => {
@@ -690,7 +447,7 @@ export default function QuickstartScreen() {
     return (
       <View style={styles.detailContainer}>
         {/* Route calculation loading state */}
-        {officeRouteLoading && (
+        {routesLoading && (
           <View style={styles.routeLoadingBanner}>
             <ActivityIndicator size="small" color="#007AFF" />
             <Text style={styles.routeLoadingText}>Calculating route...</Text>
@@ -698,15 +455,13 @@ export default function QuickstartScreen() {
         )}
 
         {/* Route time display when loaded */}
-        {!officeRouteLoading && officeRouteDuration && (
+        {!routesLoading && routeDuration && (
           <View style={styles.routeTimeBanner}>
             <Image
               source={require('../../assets/icons/new/newCar.png')}
               style={{ width: 20, height: 20, marginRight: 8 }}
             />
-            <Text style={styles.routeTimeText}>
-              {officeRouteDuration} drive
-            </Text>
+            <Text style={styles.routeTimeText}>{routeDuration} drive</Text>
           </View>
         )}
 
@@ -822,12 +577,6 @@ export default function QuickstartScreen() {
         </GHTouchableOpacity>
 
         <View style={styles.detailFooter}>
-          <GHTouchableOpacity
-            style={styles.backButton}
-            onPress={() => setViewMode('list')}
-          >
-            <Text style={styles.backButtonText}>Other Lots</Text>
-          </GHTouchableOpacity>
           <GHTouchableOpacity
             style={styles.startButton}
             onPress={openInGoogleMaps}
@@ -977,9 +726,9 @@ export default function QuickstartScreen() {
       );
     }
 
-    // Car mode shows parking list/detail, other modes show route content
+    // Car mode always shows parking detail
     if (travelMode === 'car') {
-      return viewMode === 'list' ? renderParkingList() : renderParkingDetail();
+      return renderParkingDetail();
     }
     return renderRouteContent();
   };
@@ -1047,7 +796,6 @@ export default function QuickstartScreen() {
           {phase === 'availability' &&
             viewMode === 'detail' &&
             selectedLot &&
-            !officeRouteLoading &&
             (sublots.length > 0 ? (
               sublots.map((sublot, index) => {
                 const isSelected = selectedSublot === sublot.lot_name;
@@ -1138,9 +886,7 @@ export default function QuickstartScreen() {
             onModeChange={mode => setTravelMode(mode as TravelMode)}
             modeTimes={modeTimes}
           />
-          {phase === 'routes'
-            ? renderRoutesContent()
-            : renderAvailabilityContent()}
+          {renderAvailabilityContent()}
         </BottomSheetScrollView>
       </BottomSheet>
     </View>

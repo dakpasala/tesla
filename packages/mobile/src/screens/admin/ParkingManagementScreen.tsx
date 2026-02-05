@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/admin/ParkingManagementScreen.tsx
+
 import React from 'react';
 import {
   View,

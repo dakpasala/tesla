@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/admin/LiveAlertsScreen.tsx
+
 import React from 'react';
 import {
   View,

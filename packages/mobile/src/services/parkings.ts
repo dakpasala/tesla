@@ -62,3 +62,10 @@ export async function getAllLocations(): Promise<Location[]> {
 export async function getAllParkingAvailability(): Promise<ParkingRow[]> {
   return get<ParkingRow[]>('parkings/all');
 }
+
+// get full
+
+export async function getFullLotsCount(): Promise<number> {
+  const response = await get<{ count: number }>('parkings/full-count');
+  return response.count;
+}

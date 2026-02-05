@@ -30,6 +30,19 @@ router.get('/locations', async (req, res) => {
   }
 });
 
+router.get('/full-count', async (req, res) => {
+  try {
+    const rows = await fetchParkingAvailability();
+    
+    // Count lots where availability is 0 (or >= 95% if you want almost full)
+    const fullLots = rows.filter(row => row.availability === 0);
+    
+    res.json({ count: fullLots.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // --------------------
 // parking availability
 // --------------------

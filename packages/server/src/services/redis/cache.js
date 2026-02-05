@@ -41,6 +41,11 @@ export async function getKeysByPattern(pattern) {
   return redis.keys(pattern);
 }
 
+export async function getLength(key) {
+  const redis = await getRedisClient();
+  await redis.lLen(key);
+}
+
 export async function getSetSize(key) {
   const redis = await getRedisClient();
   return redis.sCard(key);

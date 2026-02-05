@@ -12,7 +12,6 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import {
   MainHomeScreen,
   QuickstartScreen,
-  AvailabilityScreen,
   FavoritesScreen,
   SettingsScreen,
   RewardsScreen,
@@ -46,7 +45,6 @@ export default function AppNavigator() {
       {/* Main App Screens */}
       <Stack.Screen name="MainHome" component={MainHomeScreen} />
       <Stack.Screen name="Quickstart" component={QuickstartScreen} />
-      <Stack.Screen name="Availability" component={AvailabilityScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />

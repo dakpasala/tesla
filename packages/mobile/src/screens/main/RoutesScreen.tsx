@@ -176,7 +176,7 @@ export default function RoutesScreen() {
     if (item.showParkingWarning) {
       navigation.navigate('Parking', { fromRoutes: true });
     } else {
-      navigation.navigate('Directions', { routeId: item.id });
+      navigation.navigate('Availability', { routeId: item.id });
     }
   };
 

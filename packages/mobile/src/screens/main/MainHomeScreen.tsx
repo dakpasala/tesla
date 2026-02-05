@@ -1,6 +1,13 @@
 // packages/mobile/src/screens/main/MainHomeScreen.tsx
 
-import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react';
+import React, {
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+  memo,
+  useEffect,
+} from 'react';
 import { Alert } from 'react-native';
 import {
   View,
@@ -13,10 +20,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import BottomSheet, {
-  BottomSheetScrollView,
-  BottomSheetView,
-} from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 // Import existing components
 import SearchBar from '../../components/SearchBar';
@@ -36,10 +40,10 @@ import { getUserLocation } from '../../services/location';
 
 // Import alert and notification services
 import { getUserAlerts, clearUserAlerts } from '../../services/alerts';
-import { 
-  showParkingNotification, 
+import {
+  showParkingNotification,
   showShuttleNotification,
-  requestNotificationPermission 
+  requestNotificationPermission,
 } from '../../services/notifications';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -72,7 +76,7 @@ function MainHomeScreen() {
     const checkAlerts = async () => {
       try {
         const alerts = await getUserAlerts(userId);
-        
+
         for (const alert of alerts) {
           if (alert.type === 'parking') {
             await showParkingNotification({
@@ -116,71 +120,72 @@ function MainHomeScreen() {
       coordinate?: { latitude: number; longitude: number };
     }) => {
       setDestination(dest);
-      navigation.navigate('Directions', { routeId: 'route-1' });
+      navigation.navigate('Availability', { routeId: 'route-1' });
     },
     [navigation, setDestination]
   );
 
   // Home press — SearchBar passes the address up, we fetch routes here
-  const handleHomePress = useCallback(async (homeAddress: string | null) => {
-  if (!homeAddress) {
-    navigation.navigate('Favorites');
-    return;
-  }
-
-  try {
-    const origin = await getUserLocation();
-
-    const routeData = await getRoutesGoHome({
-      origin,
-      destination: homeAddress,
-    });
-
-    navigation.navigate('Routes', { routeData });
-
-  } catch (err: any) {
-      if (err?.status === 403 || err?.response?.status === 403) {
-        Alert.alert(
-          'Outside Supported Area',
-          'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
-        );
+  const handleHomePress = useCallback(
+    async (homeAddress: string | null) => {
+      if (!homeAddress) {
+        navigation.navigate('Favorites');
         return;
       }
 
-      // fallback: real errors
-      console.error('Failed to fetch home routes', err);
-    }
-  }, [navigation]);
+      try {
+        const origin = await getUserLocation();
+
+        const routeData = await getRoutesGoHome({
+          origin,
+          destination: homeAddress,
+        });
+
+        navigation.navigate('Routes', { routeData });
+      } catch (err: any) {
+        if (err?.status === 403 || err?.response?.status === 403) {
+          Alert.alert(
+            'Outside Supported Area',
+            'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
+          );
+          return;
+        }
+
+        // fallback: real errors
+        console.error('Failed to fetch home routes', err);
+      }
+    },
+    [navigation]
+  );
 
   // Work press — fetch routes to office
-  const handleWorkPress = useCallback(async (workAddress: string | null) => {
-    if (!workAddress) {
-      navigation.navigate('Favorites');
-      return;
-    }
-
-    try {
-      const origin = await getUserLocation();
-
-      const routeData = await getRoutesToOfficeQuickStart({
-        origin,
-        destinationAddress: workAddress,
-      });
-
-      navigation.navigate('Routes', { routeData });
-
-    } catch (err: any) {
-      if (err?.status === 403 || err?.response?.status === 403) {
-        Alert.alert(
-          'You are at Tesla Office',
-          'Routing is not needed here'
-        );
+  const handleWorkPress = useCallback(
+    async (workAddress: string | null) => {
+      if (!workAddress) {
+        navigation.navigate('Favorites');
         return;
       }
 
-      console.error('Failed to fetch work routes', err);
-    }
-  }, [navigation]);
+      try {
+        const origin = await getUserLocation();
+
+        const routeData = await getRoutesToOfficeQuickStart({
+          origin,
+          destinationAddress: workAddress,
+        });
+
+        navigation.navigate('Routes', { routeData });
+      } catch (err: any) {
+        if (err?.status === 403 || err?.response?.status === 403) {
+          Alert.alert('You are at Tesla Office', 'Routing is not needed here');
+          return;
+        }
+
+        console.error('Failed to fetch work routes', err);
+      }
+    },
+    [navigation]
+  );
 
   const handleHomeLongPress = useCallback(() => {
     navigation.navigate('Favorites');

@@ -1,4 +1,4 @@
-// packages/mobile/src/screens/main/DirectionsScreen.tsx
+// packages/mobile/src/screens/main/AvailabilityScreen.tsx
 
 import React, { useRef, useState, useMemo, useEffect, memo } from 'react';
 import {
@@ -11,7 +11,6 @@ import {
   Alert,
   Image,
   Dimensions,
-  ScrollView,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -21,16 +20,8 @@ import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRideContext, TravelMode } from '../../context/RideContext';
-import OptionsCard, { OptionItem } from '../../components/OptionsCard';
-import Svg, {
-  Circle,
-  Path,
-  Line,
-  G,
-  Defs,
-  LinearGradient,
-  Stop,
-} from 'react-native-svg';
+import OptionsCard from '../../components/OptionsCard';
+import Svg, { Circle, Line } from 'react-native-svg';
 import {
   RouteHeader,
   TransportMode as HeaderTransportMode,
@@ -42,9 +33,7 @@ import {
 } from '../../services/parkings';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type DirectionsRouteProp = RouteProp<RootStackParamList, 'Directions'>;
-
-const { width } = Dimensions.get('window');
+type AvailabilityRouteProp = RouteProp<RootStackParamList, 'Availability'>;
 
 // Internal shape the component uses — built from the two API responses
 interface ParkingLot {
@@ -65,9 +54,9 @@ function getStatus(availability: number): string {
   return 'Available';
 }
 
-function DirectionsScreen() {
+function AvailabilityScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<DirectionsRouteProp>();
+  const route = useRoute<AvailabilityRouteProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
   const mapRef = useRef<MapView>(null);
   const { destination, setDestination, travelMode, setTravelMode } =
@@ -705,7 +694,7 @@ function DirectionsScreen() {
   );
 }
 
-export default memo(DirectionsScreen);
+export default memo(AvailabilityScreen);
 
 const styles = StyleSheet.create({
   container: {

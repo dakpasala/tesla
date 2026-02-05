@@ -4,7 +4,6 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
 import { useAuth } from '../context/AuthContext';
-import SplashScreen from '../components/SplashScreen';
 
 // Auth Screen
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -13,11 +12,9 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import {
   MainHomeScreen,
   RoutesScreen,
-  DirectionsScreen,
+  AvailabilityScreen,
   FavoritesScreen,
-  ProfileScreen,
   SettingsScreen,
-  ParkingScreen,
   RewardsScreen,
 } from '../screens/main';
 
@@ -49,11 +46,9 @@ export default function AppNavigator() {
       {/* Main App Screens */}
       <Stack.Screen name="MainHome" component={MainHomeScreen} />
       <Stack.Screen name="Routes" component={RoutesScreen} />
-      <Stack.Screen name="Directions" component={DirectionsScreen} />
+      <Stack.Screen name="Availability" component={AvailabilityScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="Parking" component={ParkingScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />
 
       {/* Admin Screens (Unprotected for now) */}

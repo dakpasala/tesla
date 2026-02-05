@@ -4,13 +4,15 @@ import type { RouteResponse } from '../services/maps';
 export type RootStackParamList = {
   // Main App Screens
   MainHome: undefined;
-    Routes: {
-    destinationId?: string;
-    destinationName?: string;
-    destination?: string;
-    routeData?: RouteResponse;
-  } | undefined;
-  Directions: { routeId: string };
+  Routes:
+    | {
+        destinationId?: string;
+        destinationName?: string;
+        destination?: string;
+        routeData?: RouteResponse;
+      }
+    | undefined;
+  Availability: { routeId: string };
   Favorites: undefined;
   Profile: undefined;
   Settings: undefined;
@@ -34,7 +36,7 @@ export type RootStackParamList = {
 export const SCREENS = {
   MAIN_HOME: 'MainHome',
   ROUTES: 'Routes',
-  DIRECTIONS: 'Directions',
+  AVAILABILITY: 'Availability',
   FAVORITES: 'Favorites',
   PROFILE: 'Profile',
   SETTINGS: 'Settings',

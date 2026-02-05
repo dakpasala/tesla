@@ -1,7 +1,7 @@
 // packages/mobile/src/screens/main/QuickstartScreen.tsx
 
 import React, { useState, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -215,10 +215,6 @@ export default function QuickstartScreen() {
     });
   };
 
-  const handleViewParking = () => {
-    navigation.navigate('Parking', { fromRoutes: true });
-  };
-
   // Origin = first point, destination = last point of polyline
   const origin = activePolyline.length > 0 ? activePolyline[0] : null;
   const dest =
@@ -329,16 +325,6 @@ export default function QuickstartScreen() {
               />
             </View>
           )}
-
-          {/* View Parking Button */}
-          <TouchableOpacity
-            style={styles.parkingButton}
-            onPress={handleViewParking}
-          >
-            <Text style={styles.parkingButtonText}>
-              🅿️ View Parking Availability
-            </Text>
-          </TouchableOpacity>
         </BottomSheetScrollView>
       </BottomSheet>
     </View>

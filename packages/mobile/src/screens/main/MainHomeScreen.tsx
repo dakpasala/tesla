@@ -34,11 +34,13 @@ import {
   showShuttleNotification,
   requestNotificationPermission,
 } from '../../services/notifications';
+import { getUserLocation } from '../../services/location';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 function MainHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const mapRef = useRef<MapView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { userId } = useAuth();
 
@@ -99,6 +101,27 @@ function MainHomeScreen() {
     const interval = setInterval(checkAlerts, 30000);
     return () => clearInterval(interval);
   }, [userId]);
+
+  // Center map on user location on mount
+  useEffect(() => {
+    const centerMap = async () => {
+      try {
+        const location = await getUserLocation();
+        mapRef.current?.animateToRegion(
+          {
+            latitude: location.lat,
+            longitude: location.lng,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          },
+          1000
+        );
+      } catch (e) {
+        console.log('Could not center map on user', e);
+      }
+    };
+    centerMap();
+  }, []);
 
   // Stable callbacks - selecting any office/favorite goes to Quickstart immediately
   // QuickstartScreen will fetch the routes in the background for faster perceived performance
@@ -193,6 +216,7 @@ function MainHomeScreen() {
       {/* Map Background */}
       <View style={styles.mapContainer}>
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={{

@@ -905,12 +905,18 @@ const styles = StyleSheet.create({
   actionRow: { padding: 16, paddingTop: 0 },
   startButton: {
     backgroundColor: '#007AFF',
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 12,
+    width: '100%',
     alignItems: 'center',
-    flex: 1,
+    justifyContent: 'center',
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  startButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  startButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   backButton: {
     flex: 1,
     paddingVertical: 16,
@@ -1021,7 +1027,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   shuttleSuggestionText: { fontSize: 15, fontWeight: '600', color: '#000' },
-  detailFooter: { flexDirection: 'row', marginTop: 8 },
+  detailFooter: { marginTop: 8 },
   // Route content styles
   routeCard: {
     backgroundColor: '#fff',

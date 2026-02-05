@@ -111,16 +111,37 @@ function MainHomeScreen() {
     return () => clearInterval(interval);
   }, [userId]);
 
-  // Stable callbacks
+  // Stable callbacks - selecting any office/favorite goes to Quickstart with routes
   const handleSelectDestination = useCallback(
-    (dest: {
+    async (dest: {
       id: string;
       title: string;
       subtitle: string;
       coordinate?: { latitude: number; longitude: number };
     }) => {
       setDestination(dest);
-      navigation.navigate('Availability', { routeId: 'route-1' });
+
+      try {
+        const origin = await getUserLocation();
+
+        // Use the office address (subtitle) to fetch routes
+        const routeData = await getRoutesToOfficeQuickStart({
+          origin,
+          destinationAddress: dest.subtitle, // subtitle contains the address
+        });
+
+        navigation.navigate('Quickstart', { routeData });
+      } catch (err: any) {
+        if (err?.status === 403 || err?.response?.status === 403) {
+          Alert.alert(
+            'Outside Supported Area',
+            'Routing is only available when you are near a Tesla office. Please use a standard navigation app when commuting from other locations.'
+          );
+          return;
+        }
+
+        console.error('Failed to fetch routes for destination', err);
+      }
     },
     [navigation, setDestination]
   );

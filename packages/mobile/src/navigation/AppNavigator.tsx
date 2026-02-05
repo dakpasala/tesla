@@ -10,10 +10,10 @@ import LoginScreen from '../screens/auth/LoginScreen';
 
 // Main App Screens
 import {
-  MainHomeScreen,
+  MapScreen,
   FavoritesScreen,
-  SettingsScreen,
   RewardsScreen,
+  SettingsScreen,
 } from '../screens/main';
 
 // Admin Screens
@@ -35,14 +35,14 @@ export default function AppNavigator() {
   // Show main app if authenticated
   return (
     <Stack.Navigator
-      initialRouteName="MainHome"
+      initialRouteName="Map"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
       {/* Main App Screens */}
-      <Stack.Screen name="MainHome" component={MainHomeScreen} />
+      <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />

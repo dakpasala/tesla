@@ -134,7 +134,12 @@ export default function FavoritesScreen() {
   const renderFavorite = ({ item }: { item: FavoriteLocation }) => (
     <TouchableOpacity
       style={styles.favoriteCard}
-      onPress={() => navigation.navigate('Quickstart')}
+      onPress={() =>
+        navigation.navigate('Map', {
+          destinationName: item.name,
+          destinationAddress: item.address,
+        })
+      }
     >
       <TouchableOpacity
         style={styles.starButton}

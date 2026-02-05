@@ -3,25 +3,10 @@ import type { RouteResponse } from '../services/maps';
 
 export type RootStackParamList = {
   // Main App Screens
-  MainHome: undefined;
-  Quickstart:
+  Map:
     | {
-        destinationId?: string;
         destinationName?: string;
-        destinationAddress?: string; // Address for fetching routes (navigate-first pattern)
-        destination?: string;
-        routeData?: RouteResponse;
-        isHomeRoute?: boolean; // True if going home (uses different API)
-      }
-    | undefined;
-  Availability:
-    | {
-        routeId?: string;
-        parkingLotName?: string;
-        travelMode?: 'car' | 'shuttle' | 'transit' | 'bike';
-        startInDetailView?: boolean;
-        destinationName?: string;
-        routePolyline?: { latitude: number; longitude: number }[]; // For animated transition
+        destinationAddress?: string;
       }
     | undefined;
   Favorites: undefined;
@@ -45,9 +30,7 @@ export type RootStackParamList = {
 
 // Screen names as constants for type-safe navigation
 export const SCREENS = {
-  MAIN_HOME: 'MainHome',
-  QUICKSTART: 'Quickstart',
-  AVAILABILITY: 'Availability',
+  MAP: 'Map',
   FAVORITES: 'Favorites',
   PROFILE: 'Profile',
   SETTINGS: 'Settings',

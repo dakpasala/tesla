@@ -46,14 +46,6 @@ import { RouteDetailView } from '../../components/RouteDetailView';
 // Alerts imports removed (handled by hook)
 import { getUserLocation } from '../../services/location';
 
-// API services
-import {
-  getRoutesGoHome,
-  getRoutesToOffice,
-  getRoutesToOfficeQuickStart,
-  RouteResponse,
-} from '../../services/maps';
-import { ParkingRow, ParkingLot } from '../../services/parkings';
 // Hooks
 import { useMapAlerts } from '../../hooks/useMapAlerts';
 import { useRoutePlanning } from '../../hooks/useRoutePlanning';

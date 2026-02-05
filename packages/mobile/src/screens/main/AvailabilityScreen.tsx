@@ -5,7 +5,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Linking,
   Platform,
   Alert,
@@ -18,6 +17,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { RootStackParamList } from '../../navigation/types';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import { useRideContext, TravelMode } from '../../context/RideContext';
 import OptionsCard from '../../components/OptionsCard';
 import Svg, { Circle, Line } from 'react-native-svg';
@@ -362,7 +362,7 @@ function AvailabilityScreen() {
                     : styles.dotGreen;
 
               return (
-                <TouchableOpacity
+                <GHTouchableOpacity
                   key={`${sublot.loc_name}-${sublot.lot_name}-${index}`}
                   style={
                     isSelected ? styles.sublotRowSelected : styles.sublotRow
@@ -386,12 +386,12 @@ function AvailabilityScreen() {
                     {availability}% full
                   </Text>
                   <View style={dotStyle} />
-                </TouchableOpacity>
+                </GHTouchableOpacity>
               );
             })
           ) : (
             // Fallback: show main lot if no sublots
-            <TouchableOpacity
+            <GHTouchableOpacity
               style={styles.sublotRowSelected}
               onPress={() => setSelectedSublot('Main Lot')}
             >
@@ -408,13 +408,13 @@ function AvailabilityScreen() {
                       : styles.dotGreen
                 }
               />
-            </TouchableOpacity>
+            </GHTouchableOpacity>
           )}
         </View>
 
         {/* Also Consider Shuttle */}
         <Text style={styles.sectionHeader}>ALSO CONSIDER SHUTTLE</Text>
-        <TouchableOpacity
+        <GHTouchableOpacity
           style={styles.shuttleSuggestionCard}
           onPress={() => setTravelMode('shuttle')}
         >
@@ -426,24 +426,24 @@ function AvailabilityScreen() {
           <View style={{ flex: 1 }} />
           <View style={styles.dotYellow} />
           <Text style={styles.statusValue}>65% full</Text>
-        </TouchableOpacity>
+        </GHTouchableOpacity>
 
         {/* Footer Actions */}
         <View style={styles.detailFooter}>
-          <TouchableOpacity
+          <GHTouchableOpacity
             style={styles.backButton}
             onPress={() => setViewMode('list')}
           >
             <Text style={styles.backButtonText}>Other Lots</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+          </GHTouchableOpacity>
+          <GHTouchableOpacity
             style={styles.startButton}
             onPress={openInGoogleMaps}
           >
             <Text style={styles.startButtonText}>
               Route to {selectedSublot}
             </Text>
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         </View>
       </View>
     );
@@ -502,12 +502,15 @@ function AvailabilityScreen() {
       />
 
       <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.startButton} onPress={handleRoutePress}>
+        <GHTouchableOpacity
+          style={styles.startButton}
+          onPress={handleRoutePress}
+        >
           <Text style={styles.startButtonText}>
             Route to{' '}
             {parkingLots.find(p => p.id === selectedParkingId)?.name ?? '...'}
           </Text>
-        </TouchableOpacity>
+        </GHTouchableOpacity>
       </View>
     </View>
   );
@@ -515,7 +518,7 @@ function AvailabilityScreen() {
   const renderRouteContent = () => (
     <>
       {/* Quick Start Card (Primary Route) */}
-      <TouchableOpacity
+      <GHTouchableOpacity
         style={styles.routeCard}
         activeOpacity={0.9}
         onPress={openInGoogleMaps}
@@ -580,41 +583,41 @@ function AvailabilityScreen() {
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity
+          <GHTouchableOpacity
             style={styles.startButton}
             onPress={openInGoogleMaps}
           >
             <Text style={styles.startButtonText}>Start</Text>
-          </TouchableOpacity>
+          </GHTouchableOpacity>
         </View>
-      </TouchableOpacity>
+      </GHTouchableOpacity>
 
       {/* Other Modes / Report Link */}
       <View style={styles.footerLinks}>
         <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
         {/* Simple list of alternates */}
-        <TouchableOpacity
+        <GHTouchableOpacity
           style={styles.altRow}
           onPress={() => setTravelMode('shuttle')}
         >
           <Text style={styles.altText}>Tesla Shuttle B</Text>
           <Text style={styles.altTime}>55 min</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </GHTouchableOpacity>
+        <GHTouchableOpacity
           style={styles.altRow}
           onPress={() => setTravelMode('transit')}
         >
           <Text style={styles.altText}>Public Transit</Text>
           <Text style={styles.altTime}>1h 10m</Text>
-        </TouchableOpacity>
+        </GHTouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.reportLink} onPress={handleReport}>
+      <GHTouchableOpacity style={styles.reportLink} onPress={handleReport}>
         <Text style={styles.reportText}>
           See something off?{' '}
           <Text style={styles.reportLinkText}>Report it</Text>
         </Text>
-      </TouchableOpacity>
+      </GHTouchableOpacity>
     </>
   );
 
@@ -629,7 +632,7 @@ function AvailabilityScreen() {
   const renderError = () => (
     <View style={styles.centeredState}>
       <Text style={styles.stateText}>{error}</Text>
-      <TouchableOpacity
+      <GHTouchableOpacity
         style={[
           styles.startButton,
           { marginTop: 12, flex: 0, paddingHorizontal: 24 },
@@ -641,7 +644,7 @@ function AvailabilityScreen() {
         }}
       >
         <Text style={styles.startButtonText}>Retry</Text>
-      </TouchableOpacity>
+      </GHTouchableOpacity>
     </View>
   );
 
@@ -708,6 +711,7 @@ function AvailabilityScreen() {
         style={{ zIndex: 100 }}
       >
         <BottomSheetScrollView
+          key={`${viewMode}-${travelMode}`}
           contentContainerStyle={styles.sheetContent}
           showsVerticalScrollIndicator={false}
         >

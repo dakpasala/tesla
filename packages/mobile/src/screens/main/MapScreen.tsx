@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   Text,
   ActivityIndicator,
-  Image,
   Linking,
   Platform,
   Alert,
@@ -26,8 +25,6 @@ import type { RootStackParamList } from '../../navigation/types';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
-import Svg, { Circle, Line } from 'react-native-svg';
 
 // Import existing components
 import SearchBar from '../../components/SearchBar';
@@ -46,12 +43,7 @@ import { ParkingDetailView } from '../../components/ParkingDetailView';
 import { RouteDetailView } from '../../components/RouteDetailView';
 
 // Import alert and notification services
-import { getUserAlerts, clearUserAlerts } from '../../services/alerts';
-import {
-  showParkingNotification,
-  showShuttleNotification,
-  requestNotificationPermission,
-} from '../../services/notifications';
+// Alerts imports removed (handled by hook)
 import { getUserLocation } from '../../services/location';
 
 // API services
@@ -61,20 +53,13 @@ import {
   getRoutesToOfficeQuickStart,
   RouteResponse,
 } from '../../services/maps';
-import {
-  getAllLocations,
-  getAllParkingAvailability,
-  getParkingForLocation,
-  ParkingRow,
-  ParkingLot,
-} from '../../services/parkings';
+import { ParkingRow, ParkingLot } from '../../services/parkings';
+// Hooks
+import { useMapAlerts } from '../../hooks/useMapAlerts';
+import { useRoutePlanning } from '../../hooks/useRoutePlanning';
+import { useParkingData } from '../../hooks/useParkingData';
 
-import {
-  decodePolyline,
-  formatDuration,
-  getStatus,
-  getForecastText,
-} from '../../helpers/mapUtils';
+import { decodePolyline, formatDuration } from '../../helpers/mapUtils';
 
 // Interface removed, imported from services/parkings
 
@@ -109,73 +94,67 @@ function MapScreen() {
   const [phase, setPhase] = useState<ScreenPhase>('availability');
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
 
-  // Route Data State
-  const [fetchedRouteData, setFetchedRouteData] =
-    useState<RouteResponse | null>(null);
-  const [routesLoading, setRoutesLoading] = useState(false);
-  const [routesError, setRoutesError] = useState<string | null>(null);
-
-  // Parking Data State
-  const [parkingLots, setParkingLots] = useState<ParkingLot[]>([]);
-  const [parkingLoading, setParkingLoading] = useState(false);
-  const [parkingError, setParkingError] = useState<string | null>(null);
-  const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
-    null
-  );
-  const [sublots, setSublots] = useState<ParkingRow[]>([]);
-  const [sublotsLoading, setSublotsLoading] = useState(false);
-  const [selectedSublot, setSelectedSublot] = useState<string>('');
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
-
   // Snap points
   const searchSnapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
   const quickstartSnapPoints = useMemo(() => ['20%', '50%', '80%'], []);
   const snapPoints =
     mode === 'search' ? searchSnapPoints : quickstartSnapPoints;
 
-  // ============ NOTIFICATIONS & ALERTS ============
+  // ============ HANDLERS (Defined early for hooks) ============
+  // Return to Search Mode
+  const handleBackToSearch = useCallback(() => {
+    setMode('search');
+    // setFetchedRouteData(null); // Will be handled by hook setter if needed, or effect
+    setSearchExpanded(false);
+    bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
+  }, []);
+
+  // ============ CUSTOM HOOKS ============
+
+  // 1. Alerts & Notifications
+  useMapAlerts(userId);
+
+  // 2. Route Planning
+  const { fetchedRouteData, setFetchedRouteData, routesLoading, routesError } =
+    useRoutePlanning({
+      mode,
+      destinationAddress,
+      isHomeRoute,
+      onBackToSearch: handleBackToSearch,
+    });
+
+  // 3. Parking Data
+  const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
+    null
+  );
+  const [selectedSublot, setSelectedSublot] = useState<string>('');
+  const [selectedRouteId] = useState<string | null>(null);
+
+  const { parkingLots, parkingLoading, parkingError, sublots, sublotsLoading } =
+    useParkingData({
+      mode,
+      phase,
+      viewMode,
+      selectedParkingId,
+    });
+
+  // ============ ADDITIONAL EFFECT: Parking Selection ============
+  // Select Parking Lot based on Destination (Logic kept in component as it bridges route & parking)
   useEffect(() => {
-    if (userId) {
-      requestNotificationPermission();
+    if (mode === 'quickstart' && parkingLots.length > 0 && !selectedParkingId) {
+      const targetLot = parkingLots.find(
+        l => l.name === destinationName || l.name.includes(destinationName)
+      );
+      setSelectedParkingId(targetLot ? targetLot.id : parkingLots[0].id);
     }
-  }, [userId]);
+  }, [mode, parkingLots, selectedParkingId, destinationName]);
 
+  // ============ ADDITIONAL EFFECT: Default Sublot Selection ============
   useEffect(() => {
-    if (!userId) return;
-
-    const checkAlerts = async () => {
-      try {
-        const alerts = await getUserAlerts(userId);
-
-        for (const alert of alerts) {
-          if (alert.type === 'parking') {
-            await showParkingNotification({
-              locationName: alert.locationName,
-              lot: alert.lot,
-              available: alert.available,
-              type: alert.alertType,
-            });
-          } else if (alert.type === 'shuttle') {
-            await showShuttleNotification({
-              shuttleId: alert.shuttleId,
-              event: alert.event,
-              etaMinutes: alert.etaMinutes,
-            });
-          }
-        }
-
-        if (alerts.length > 0) {
-          await clearUserAlerts(userId);
-        }
-      } catch (err) {
-        console.error('Failed to check alerts:', err);
-      }
-    };
-
-    checkAlerts();
-    const interval = setInterval(checkAlerts, 30000);
-    return () => clearInterval(interval);
-  }, [userId]);
+    if (sublots.length > 0) {
+      setSelectedSublot(sublots[0].lot_name);
+    }
+  }, [sublots]);
 
   // ============ MAP CENTERING ============
   useEffect(() => {
@@ -223,141 +202,7 @@ function MapScreen() {
   // ============ QUICKSTART LOGIC ============
 
   // Fetch Routes
-  useEffect(() => {
-    if (mode !== 'quickstart' || !destinationAddress) return;
-
-    let cancelled = false;
-    const fetchRoutes = async () => {
-      setRoutesLoading(true);
-      setRoutesError(null);
-      try {
-        const origin = await getUserLocation();
-        const data = isHomeRoute
-          ? await getRoutesGoHome({ origin, destination: destinationAddress })
-          : await getRoutesToOfficeQuickStart({ origin, destinationAddress });
-        if (!cancelled) setFetchedRouteData(data);
-      } catch (err: any) {
-        if (cancelled) return;
-        if (err?.status === 403 || err?.response?.status === 403) {
-          Alert.alert(
-            'Routing Unavailable',
-            isHomeRoute
-              ? 'Routing is only available when you are near a Tesla office.'
-              : 'You are at Tesla Office. Routing is not needed here.',
-            [{ text: 'OK', onPress: handleBackToSearch }]
-          );
-          return;
-        }
-        setRoutesError('Failed to load routes. Please try again.');
-      } finally {
-        if (!cancelled) setRoutesLoading(false);
-      }
-    };
-
-    fetchRoutes();
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, destinationAddress, isHomeRoute]);
-
-  // Fetch Parking Lots
-  useEffect(() => {
-    if (mode !== 'quickstart') return;
-    if (parkingLots.length > 0) return;
-    let cancelled = false;
-
-    const fetchParking = async () => {
-      setParkingLoading(true);
-      setParkingError(null);
-      try {
-        const [locations, availability] = await Promise.all([
-          getAllLocations(),
-          getAllParkingAvailability(),
-        ]);
-        if (cancelled) return;
-
-        const merged: ParkingLot[] = locations.map((loc: any) => {
-          const lotsForLocation = availability.filter(
-            (a: any) => a.loc_name === loc.name
-          );
-
-          const totalFullness = lotsForLocation.reduce(
-            (sum: number, lot: any) => sum + (lot.availability ?? 0),
-            0
-          );
-          const avgFullness =
-            lotsForLocation.length > 0
-              ? Math.round(totalFullness / lotsForLocation.length)
-              : 0;
-
-          return {
-            id: String(loc.id),
-            name: loc.name,
-            status: getStatus(avgFullness),
-            fullness: avgFullness,
-            coordinate: {
-              latitude: loc.lat ?? 37.4419,
-              longitude: loc.lng ?? -122.143,
-            },
-          };
-        });
-
-        setParkingLots(merged);
-        // Selection is now handled by a separate effect
-      } catch (err) {
-        if (!cancelled) {
-          setParkingError('Failed to load parking lots');
-        }
-      } finally {
-        if (!cancelled) setParkingLoading(false);
-      }
-    };
-
-    fetchParking();
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, parkingLots.length]);
-
-  // Select Parking Lot based on Destination
-  useEffect(() => {
-    if (mode === 'quickstart' && parkingLots.length > 0 && !selectedParkingId) {
-      const targetLot = parkingLots.find(
-        l => l.name === destinationName || l.name.includes(destinationName)
-      );
-      setSelectedParkingId(targetLot ? targetLot.id : parkingLots[0].id);
-    }
-  }, [mode, parkingLots, selectedParkingId, destinationName]);
-
-  // Fetch Sublots
-  useEffect(() => {
-    if (mode !== 'quickstart') return;
-    if (phase !== 'availability' || viewMode !== 'detail' || !selectedParkingId)
-      return;
-    const lot = parkingLots.find(p => p.id === selectedParkingId);
-    if (!lot) return;
-
-    let cancelled = false;
-    const fetchSublots = async () => {
-      setSublotsLoading(true);
-      try {
-        const data = await getParkingForLocation(lot.name);
-        if (!cancelled) {
-          setSublots(data);
-          if (data.length > 0) setSelectedSublot(data[0].lot_name);
-        }
-      } catch {
-        if (!cancelled) setSublots([]);
-      } finally {
-        if (!cancelled) setSublotsLoading(false);
-      }
-    };
-
-    fetchSublots();
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, phase, viewMode, selectedParkingId, parkingLots]);
+  // Old Effects Removed (handled by hooks)
 
   // ============ COMPUTED VALUES (Polyline, Region, etc.) ============
   const originalPolyline = useMemo(() => {
@@ -512,14 +357,8 @@ function MapScreen() {
   );
 
   // Return to Search Mode
-  const handleBackToSearch = useCallback(() => {
-    setMode('search');
-    setFetchedRouteData(null);
-    setSearchExpanded(false);
-    bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
-    // Clear route polyline by clearing data
-    setFetchedRouteData(null);
-  }, []);
+  // Return to Search Mode (Moved up)
+  // const handleBackToSearch = ...
 
   const handleParkingSelect = useCallback((id: string) => {
     setSelectedParkingId(id);
@@ -857,7 +696,6 @@ const styles = StyleSheet.create({
   quickstartContainer: {
     paddingHorizontal: 20,
   },
-  // Quickstart specific styles
   originDot: {
     width: 20,
     height: 20,

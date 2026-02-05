@@ -10,13 +10,13 @@ import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 // Import existing components
-import NavBox from '../../components/NavBox';
 import RouteCards, { RouteCardItem } from '../../components/RouteCards';
 import {
   RouteHeader,
   TransportMode,
   ModeTimes,
 } from '../../components/RouteHeader';
+import { LocationBox } from '../../components/LocationBox';
 
 // Polyline decoding utility
 function decodePolyline(
@@ -249,19 +249,8 @@ export default function RoutesScreen() {
         </MapView>
       </View>
 
-      {/* NavBox overlay at top */}
-      <View style={styles.navBoxOverlay}>
-        <View style={styles.navBoxWrapper}>
-          <NavBox
-            currentLocation="Current"
-            destination={destinationName}
-            currentLocationIcon={require('../../assets/icons/current.png')}
-            destinationIcon={require('../../assets/icons/destination.png')}
-            onCurrentLocationChange={() => {}}
-            onDestinationChange={() => {}}
-          />
-        </View>
-      </View>
+      {/* Header Overlay - LocationBox */}
+      <LocationBox destination={destinationName} />
 
       {/* Bottom Sheet - using @gorhom/bottom-sheet */}
       <BottomSheet
@@ -345,16 +334,6 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: '#007AFF',
-  },
-  navBoxOverlay: {
-    position: 'absolute',
-    top: 60,
-    left: 35,
-    right: 35,
-    zIndex: 10,
-  },
-  navBoxWrapper: {
-    flex: 1,
   },
   // Bottom Sheet styles matching DirectionsScreen
   bottomSheetBackground: {

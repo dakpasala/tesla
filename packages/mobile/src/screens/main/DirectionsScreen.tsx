@@ -35,6 +35,7 @@ import {
   RouteHeader,
   TransportMode as HeaderTransportMode,
 } from '../../components/RouteHeader';
+import { LocationBox } from '../../components/LocationBox';
 import {
   getAllLocations,
   getAllParkingAvailability,
@@ -582,43 +583,6 @@ function DirectionsScreen() {
     </>
   );
 
-  // Custom Route Header resembling Figma
-  const renderRouteHeader = () => (
-    <View style={styles.headerContainer}>
-      {/* Route Card */}
-      <View style={styles.routeHeaderCard}>
-        {/* Row 1: Current */}
-        <View style={styles.routeRowItem}>
-          <View style={styles.iconCol}>
-            <Svg width={16} height={16} viewBox="0 0 16 16">
-              <Circle cx={8} cy={8} r={6} fill="#007AFF" />
-            </Svg>
-          </View>
-          <Text style={styles.locationLabel}>Current</Text>
-        </View>
-
-        {/* Full width Divider */}
-        <View style={styles.headerDivider} />
-
-        {/* Row 2: Destination */}
-        <View style={styles.routeRowItem}>
-          <View style={styles.iconCol}>
-            <Svg width={16} height={24} viewBox="0 0 16 24">
-              <G translateY={-28}>
-                <Path
-                  d="M8 50 C8 50 14 44 14 39 C14 35.6863 11.3137 33 8 33 C4.68629 33 2 35.6863 2 39 C2 44 8 50 8 50 Z"
-                  fill="#FF3B30"
-                />
-                <Circle cx={8} cy={39} r={2} fill="#FFF" />
-              </G>
-            </Svg>
-          </View>
-          <Text style={styles.locationTitle}>{destinationName}</Text>
-        </View>
-      </View>
-    </View>
-  );
-
   // --- Loading / Error states ---
   const renderLoading = () => (
     <View style={styles.centeredState}>
@@ -696,8 +660,8 @@ function DirectionsScreen() {
         </MapView>
       </View>
 
-      {/* Header Overlay */}
-      {renderRouteHeader()}
+      {/* Header Overlay - LocationBox */}
+      <LocationBox destination={destinationName} />
 
       {/* Bottom Sheet - Route Planning */}
       <BottomSheet
@@ -753,50 +717,6 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
-  },
-  headerContainer: {
-    position: 'absolute',
-    top: 60,
-    left: 35,
-    right: 35,
-    zIndex: 1,
-  },
-  routeHeaderCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  routeRowItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  iconCol: {
-    width: 24,
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  locationLabel: {
-    fontSize: 14,
-    color: '#000',
-    fontWeight: '400',
-  },
-  locationTitle: {
-    fontSize: 14,
-    fontWeight: '400',
-    color: '#000',
-  },
-  headerDivider: {
-    height: 1,
-    backgroundColor: '#E5E5E5',
-    marginVertical: 8,
   },
   bottomSheetBackground: {
     backgroundColor: '#FCFCFC',

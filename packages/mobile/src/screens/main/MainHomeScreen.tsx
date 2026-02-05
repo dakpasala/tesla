@@ -141,7 +141,7 @@ function MainHomeScreen() {
           destination: homeAddress,
         });
 
-        navigation.navigate('Routes', { routeData });
+        navigation.navigate('Quickstart', { routeData });
       } catch (err: any) {
         if (err?.status === 403 || err?.response?.status === 403) {
           Alert.alert(
@@ -174,7 +174,7 @@ function MainHomeScreen() {
           destinationAddress: workAddress,
         });
 
-        navigation.navigate('Routes', { routeData });
+        navigation.navigate('Quickstart', { routeData });
       } catch (err: any) {
         if (err?.status === 403 || err?.response?.status === 403) {
           Alert.alert('You are at Tesla Office', 'Routing is not needed here');

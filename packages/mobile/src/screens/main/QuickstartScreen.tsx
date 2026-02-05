@@ -1,4 +1,4 @@
-// packages/mobile/src/screens/main/RoutesScreen.tsx
+// packages/mobile/src/screens/main/QuickstartScreen.tsx
 
 import React, { useState, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
@@ -87,11 +87,11 @@ const MODE_ICONS: Record<string, any> = {
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type RoutesRouteProp = RouteProp<RootStackParamList, 'Routes'>;
+type QuickstartRouteProp = RouteProp<RootStackParamList, 'Quickstart'>;
 
-export default function RoutesScreen() {
+export default function QuickstartScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<RoutesRouteProp>();
+  const route = useRoute<QuickstartRouteProp>();
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   const routeData = route.params?.routeData;

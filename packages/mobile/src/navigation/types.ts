@@ -4,7 +4,7 @@ import type { RouteResponse } from '../services/maps';
 export type RootStackParamList = {
   // Main App Screens
   MainHome: undefined;
-  Routes:
+  Quickstart:
     | {
         destinationId?: string;
         destinationName?: string;
@@ -35,7 +35,7 @@ export type RootStackParamList = {
 // Screen names as constants for type-safe navigation
 export const SCREENS = {
   MAIN_HOME: 'MainHome',
-  ROUTES: 'Routes',
+  QUICKSTART: 'Quickstart',
   AVAILABILITY: 'Availability',
   FAVORITES: 'Favorites',
   PROFILE: 'Profile',

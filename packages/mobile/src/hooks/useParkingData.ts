@@ -31,7 +31,7 @@ export function useParkingData({
   // Fetch Parking Lots
   useEffect(() => {
     if (mode !== 'quickstart') return;
-    if (parkingLots.length > 0) return;
+
     let cancelled = false;
 
     const fetchParking = async () => {
@@ -49,13 +49,18 @@ export function useParkingData({
             (a: any) => a.loc_name === loc.name
           );
 
-          const totalFullness = lotsForLocation.reduce(
-            (sum: number, lot: any) => sum + (lot.availability ?? 0),
+          const totalCapacity = lotsForLocation.reduce(
+            (sum: number, lot: any) => sum + (lot.capacity ?? 0),
             0
           );
+          const totalAvailable = lotsForLocation.reduce(
+            (sum: number, lot: any) => sum + (lot.current_available ?? 0),
+            0
+          );
+          const totalTaken = totalCapacity - totalAvailable;
           const avgFullness =
-            lotsForLocation.length > 0
-              ? Math.round(totalFullness / lotsForLocation.length)
+            totalCapacity > 0
+              ? Math.round((totalTaken / totalCapacity) * 100)
               : 0;
 
           return {
@@ -84,7 +89,7 @@ export function useParkingData({
     return () => {
       cancelled = true;
     };
-  }, [mode, parkingLots.length]);
+  }, [mode]);
 
   // Fetch Sublots
   useEffect(() => {

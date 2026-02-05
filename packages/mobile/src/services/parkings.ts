@@ -6,7 +6,9 @@ export type ParkingRow = {
   id?: number;
   loc_name: string;
   lot_name: string;
-  availability: number;
+  current_available: number;
+  capacity: number;
+  availability?: number; // Keeping optional in case of legacy usage, but primary data is current_available/capacity
   error?: string;
 };
 

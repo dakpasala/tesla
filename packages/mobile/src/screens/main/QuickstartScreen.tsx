@@ -792,76 +792,31 @@ export default function QuickstartScreen() {
               </Marker>
             ))}
 
-          {/* Sublot markers in detail view - only show after route loaded */}
-          {phase === 'availability' &&
-            viewMode === 'detail' &&
-            selectedLot &&
-            (sublots.length > 0 ? (
-              sublots.map((sublot, index) => {
-                const isSelected = selectedSublot === sublot.lot_name;
-                const availability = sublot.availability ?? 0;
-                // Offset each sublot marker slightly so they don't overlap
-                const offsetLat = (index - sublots.length / 2) * 0.0008;
-                const offsetLng = (index % 2 === 0 ? 1 : -1) * 0.0005;
-                return (
-                  <Marker
-                    key={`sublot-${sublot.lot_name}-${index}`}
-                    coordinate={{
-                      latitude: selectedLot.coordinate.latitude + offsetLat,
-                      longitude: selectedLot.coordinate.longitude + offsetLng,
-                    }}
-                    title={sublot.lot_name}
-                    description={`${availability}% Full`}
-                    onPress={() => setSelectedSublot(sublot.lot_name)}
-                  >
-                    <View
-                      style={{
-                        backgroundColor: isSelected ? '#007AFF' : '#FF3B30',
-                        borderRadius: 12,
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderWidth: 2,
-                        borderColor: '#fff',
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: '#fff',
-                          fontSize: 11,
-                          fontWeight: '600',
-                        }}
-                      >
-                        {sublot.lot_name}
-                      </Text>
-                    </View>
-                  </Marker>
-                );
-              })
-            ) : (
-              // Single marker for main lot when no sublots
-              <Marker
-                coordinate={selectedLot.coordinate}
-                title={selectedLot.name}
-                description={`${selectedLot.fullness}% Full`}
+          {/* Parking lot marker in detail view */}
+          {phase === 'availability' && viewMode === 'detail' && selectedLot && (
+            <Marker
+              coordinate={selectedLot.coordinate}
+              title={selectedLot.name}
+              description={`${selectedLot.fullness}% Full`}
+            >
+              <View
+                style={{
+                  backgroundColor: '#007AFF',
+                  borderRadius: 12,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderWidth: 2,
+                  borderColor: '#fff',
+                }}
               >
-                <View
-                  style={{
-                    backgroundColor: '#007AFF',
-                    borderRadius: 12,
-                    paddingHorizontal: 8,
-                    paddingVertical: 4,
-                    borderWidth: 2,
-                    borderColor: '#fff',
-                  }}
+                <Text
+                  style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}
                 >
-                  <Text
-                    style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}
-                  >
-                    {selectedLot.fullness}%
-                  </Text>
-                </View>
-              </Marker>
-            ))}
+                  {selectedLot.fullness}%
+                </Text>
+              </View>
+            </Marker>
+          )}
         </MapView>
       </View>
 

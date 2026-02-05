@@ -795,26 +795,24 @@ export default function QuickstartScreen() {
           {/* Parking lot marker in detail view */}
           {phase === 'availability' && viewMode === 'detail' && selectedLot && (
             <Marker
-              coordinate={selectedLot.coordinate}
+              coordinate={destCoord}
               title={selectedLot.name}
               description={`${selectedLot.fullness}% Full`}
             >
               <View
                 style={{
-                  backgroundColor: '#007AFF',
-                  borderRadius: 12,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderWidth: 2,
+                  backgroundColor: '#FF3B30',
+                  borderRadius: 10,
+                  width: 20,
+                  height: 20,
+                  borderWidth: 3,
                   borderColor: '#fff',
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.2,
+                  shadowRadius: 3,
                 }}
-              >
-                <Text
-                  style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}
-                >
-                  {selectedLot.fullness}%
-                </Text>
-              </View>
+              />
             </Marker>
           )}
         </MapView>

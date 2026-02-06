@@ -16,6 +16,7 @@ import type { RootStackParamList } from '../../navigation/types';
 import { BackButton } from '../../components/BackButton';
 import { getShuttleReportsCount } from '../../services/shuttleAlerts';
 import { getFullLotsCount } from '../../services/parkings';
+import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -57,12 +58,16 @@ export default function AdminHomeScreen() {
     return () => clearInterval(interval);
   }, []);
 
+  // ... (existing imports)
+
+  // ... (inside component)
   const MENU_ITEMS = [
     {
       id: 'shuttle',
       title: 'Shuttle Dashboard',
       subtitle: `${shuttleReportsCount} NEW REPORTS`,
-      icon: '🚌',
+      // icon: '🚌', // OLD
+      image: require('../../assets/icons/new/newShuttle.png'),
       route: 'ShuttleDashboard',
       badge: shuttleReportsCount > 0 ? shuttleReportsCount : undefined,
     },
@@ -70,7 +75,10 @@ export default function AdminHomeScreen() {
       id: 'parking',
       title: 'Parking Management',
       subtitle: `${fullLotsCount} SUBLOTS FULL`,
-      icon: '🅿️',
+      // icon: '🅿️', // OLD
+      // Using newCar as proxy for parking or if we have a parking icon.
+      // checked assets: new/newCar.png exists.
+      image: require('../../assets/icons/new/newCar.png'),
       route: 'ParkingManagement',
     },
   ];
@@ -91,9 +99,11 @@ export default function AdminHomeScreen() {
         />
       </View>
 
-      <TouchableOpacity style={styles.createButton}>
-        <Text style={styles.createButtonText}>+ Create new announcement</Text>
-      </TouchableOpacity>
+      <View style={{ paddingHorizontal: 20, marginBottom: 24, zIndex: 100 }}>
+        <AnnouncementDropDown
+          onSelectOption={opt => console.log('Selected', opt)}
+        />
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -104,6 +114,7 @@ export default function AdminHomeScreen() {
             <TouchableOpacity
               key={item.id}
               style={styles.menuCard}
+              activeOpacity={0.7}
               onPress={() => {
                 if (item.route) {
                   // @ts-ignore - dynamic nav
@@ -112,7 +123,10 @@ export default function AdminHomeScreen() {
               }}
             >
               <View style={styles.iconContainer}>
-                <Text style={styles.icon}>{item.icon}</Text>
+                <Image
+                  source={item.image}
+                  style={{ width: 28, height: 28, resizeMode: 'contain' }}
+                />
                 {item.badge && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>N</Text>
@@ -123,6 +137,7 @@ export default function AdminHomeScreen() {
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
               </View>
+              {/* Chevron SVG or text */}
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           ))}
@@ -135,15 +150,15 @@ export default function AdminHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#F9F9F9', // Matches dashboard
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20,
-    marginBottom: 24,
+    paddingTop: 10,
+    marginBottom: 20,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -154,37 +169,20 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 14,
-    color: '#666',
+    color: '#8E8E93',
     fontWeight: '400',
+    marginBottom: 2,
   },
   userName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#000',
   },
   profileImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#ddd',
-  },
-  createButton: {
-    backgroundColor: '#007AFF',
-    marginHorizontal: 20,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E5E5EA',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -192,63 +190,66 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'column',
-    gap: 16,
+    gap: 12,
   },
   menuCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
+
+    // Polished shadow matches Dashboard cards
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#F2F2F7',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
     position: 'relative',
   },
-  icon: {
-    fontSize: 24,
-  },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: -2,
+    right: -2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#FF3B30',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#fff',
   },
   badgeText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '700',
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15, // slightly more refined
     fontWeight: '600',
     color: '#000',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   cardSubtitle: {
-    fontSize: 13,
+    fontSize: 12, // match dashboard text size
     color: '#8E8E93',
     fontWeight: '500',
   },
   chevron: {
-    fontSize: 24,
+    fontSize: 22,
     color: '#C7C7CC',
     marginLeft: 8,
+    marginTop: -2, // visual alignment
   },
 });

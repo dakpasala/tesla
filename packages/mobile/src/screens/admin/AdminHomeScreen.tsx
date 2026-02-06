@@ -21,7 +21,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AdminHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
-  
+
   const [shuttleReportsCount, setShuttleReportsCount] = useState(0);
   const [fullLotsCount, setFullLotsCount] = useState(0);
 
@@ -36,7 +36,7 @@ export default function AdminHomeScreen() {
       }
     }
     fetchReportCount();
-    
+
     const interval = setInterval(fetchReportCount, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -52,7 +52,7 @@ export default function AdminHomeScreen() {
       }
     }
     fetchFullLots();
-    
+
     const interval = setInterval(fetchFullLots, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -126,20 +126,6 @@ export default function AdminHomeScreen() {
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           ))}
-
-          {/* Settings */}
-          <TouchableOpacity
-            style={styles.menuCard}
-            onPress={() => navigation.navigate('Settings' as any)}
-          >
-            <View style={styles.iconContainer}>
-              <Text style={styles.icon}>⚙️</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>Settings</Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>

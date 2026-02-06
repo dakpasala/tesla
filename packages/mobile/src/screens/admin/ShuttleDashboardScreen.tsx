@@ -366,49 +366,91 @@ export default function ShuttleDashboardScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Title changes based on view */}
-        <Text style={styles.dashTitle}>{getTitle()}</Text>
+      {/* 
+            FIX: VirtualizedLists Support
+            If we are in a "Detailed View" (tab selected), we use a standard View container
+            so the inner List (FlatList/ScrollView) can handle its own scrolling.
+            If we are in "Summary View" (no tab), we use a main ScrollView for the mixed content.
+        */}
+      {selectedTab === null ? (
+        <ScrollView
+          contentContainerStyle={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <Text style={styles.dashTitle}>{getTitle()}</Text>
 
-        {/* Filter Buttons (Key Metrics) */}
-        <View style={styles.statsRow}>
-          <StatBox
-            value={loading ? '...' : reports.length}
-            label="New Reports"
-            active={selectedTab === 'reports'}
-            onPress={() => handleTabPress('reports')}
-          />
-          <StatBox
-            value={alertsLoading ? '...' : alerts.length}
-            label="Live Alerts"
-            active={selectedTab === 'alerts'}
-            onPress={() => handleTabPress('alerts')}
-          />
-          <StatBox
-            value={shuttlesLoading ? '...' : activeShuttles.length}
-            label="Shuttles Active"
-            active={selectedTab === 'active'}
-            onPress={() => handleTabPress('active')}
-          />
+          {/* Filter Buttons */}
+          <View style={styles.statsRow}>
+            <StatBox
+              value={loading ? '...' : reports.length}
+              label="New Reports"
+              active={selectedTab === 'reports'}
+              onPress={() => handleTabPress('reports')}
+            />
+            <StatBox
+              value={alertsLoading ? '...' : alerts.length}
+              label="Live Alerts"
+              active={selectedTab === 'alerts'}
+              onPress={() => handleTabPress('alerts')}
+            />
+            <StatBox
+              value={shuttlesLoading ? '...' : activeShuttles.length}
+              label="Shuttles Active"
+              active={selectedTab === 'active'}
+              onPress={() => handleTabPress('active')}
+            />
+          </View>
+
+          <View style={styles.announcementWrapper}>
+            <AnnouncementDropDown
+              onSelectOption={option => {
+                console.log('Selected:', option);
+              }}
+            />
+          </View>
+
+          {renderContent()}
+        </ScrollView>
+      ) : (
+        <View style={[styles.content, { flex: 1, paddingBottom: 0 }]}>
+          <Text style={styles.dashTitle}>{getTitle()}</Text>
+
+          {/* Filter Buttons */}
+          <View style={styles.statsRow}>
+            <StatBox
+              value={loading ? '...' : reports.length}
+              label="New Reports"
+              active={selectedTab === 'reports'}
+              onPress={() => handleTabPress('reports')}
+            />
+            <StatBox
+              value={alertsLoading ? '...' : alerts.length}
+              label="Live Alerts"
+              active={selectedTab === 'alerts'}
+              onPress={() => handleTabPress('alerts')}
+            />
+            <StatBox
+              value={shuttlesLoading ? '...' : activeShuttles.length}
+              label="Shuttles Active"
+              active={selectedTab === 'active'}
+              onPress={() => handleTabPress('active')}
+            />
+          </View>
+
+          <View style={styles.announcementWrapper}>
+            <AnnouncementDropDown
+              onSelectOption={option => {
+                console.log('Selected:', option);
+              }}
+            />
+          </View>
+
+          {/* The Detailed content (List) will fill the remaining space */}
+          <View style={{ flex: 1 }}>{renderContent()}</View>
         </View>
-
-        {/* Announcement Dropdown - Always visible */}
-        <View style={styles.announcementWrapper}>
-          <AnnouncementDropDown
-            onSelectOption={option => {
-              console.log('Selected:', option);
-            }}
-          />
-        </View>
-
-        {/* Dynamic Content */}
-        {renderContent()}
-      </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -471,5 +513,6 @@ const styles = StyleSheet.create({
   },
   detailedContainer: {
     minHeight: 200,
+    flex: 1,
   },
 });

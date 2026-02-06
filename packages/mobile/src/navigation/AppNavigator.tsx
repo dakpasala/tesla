@@ -19,7 +19,7 @@ import {
 // Admin Screens
 import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
 import ShuttleDashboardScreen from '../screens/admin/ShuttleDashboardScreen';
-import LiveAlertsScreen from '../screens/admin/LiveAlertsScreen';
+import ShuttleReportsScreen from '../screens/admin/ShuttleReportsScreen';
 import ParkingManagementScreen from '../screens/admin/ParkingManagementScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -53,7 +53,7 @@ export default function AppNavigator() {
         name="ShuttleDashboard"
         component={ShuttleDashboardScreen}
       />
-      <Stack.Screen name="LiveAlerts" component={LiveAlertsScreen} />
+      <Stack.Screen name="ShuttleReports" component={ShuttleReportsScreen} />
       <Stack.Screen
         name="ParkingManagement"
         component={ParkingManagementScreen}

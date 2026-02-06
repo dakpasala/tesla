@@ -41,6 +41,12 @@ export async function getShuttleAlerts(
 
 // ADMIN ROUTES
 
+// get total count
+export async function getShuttleReportsCount(): Promise<number> {
+  const response = await get<{ count: number }>('shuttles/admin/count');
+  return response.count;
+}
+
 // fetch reports
 export async function getShuttleReportsAdmin(
   shuttleName: string
@@ -64,4 +70,20 @@ export async function createShuttleAlertAdmin(
     `shuttles/admin/${encodeURIComponent(shuttleName)}/alerts`,
     alert
   );
+}
+
+export type Announcement = {
+  id: string;
+  shuttleName: string;
+  delayMinutes: number;
+  createdAt: string;
+};
+
+export type AnnouncementsResponse = {
+  announcements: Announcement[];
+};
+
+export async function getAnnouncements(): Promise<Announcement[]> {
+  const response = await get<AnnouncementsResponse>('shuttles/announcements');
+  return response.announcements;
 }

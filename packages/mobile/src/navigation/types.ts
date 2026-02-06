@@ -18,6 +18,9 @@ export type RootStackParamList = {
   // Admin
   AdminHome: undefined;
   ShuttleDashboard: undefined;
+  ShuttleReports: { shuttleName: string };
+  LiveAlertsPage: undefined;
+  ShuttlesActivePage: undefined;
   LiveAlerts: undefined;
   ParkingManagement: undefined;
 

@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import {
-  getShuttleReportsCount,
   getShuttleReportsAdmin,
   getAnnouncements,
 } from '../../services/shuttleAlerts';
@@ -40,21 +39,6 @@ const HARDCODED_ALERTS_SUMMARY = [
   },
 ];
 
-const HARDCODED_SHUTTLES_SUMMARY = [
-  {
-    id: '1',
-    name: 'Tesla HQ Deer Creek Shuttle A',
-    route: 'Stevens Creek / Albany → Palo Alto BART',
-    color: 'red' as const,
-  },
-  {
-    id: '2',
-    name: 'Tesla HQ Deer Creek Shuttle B',
-    route: 'Stevens Creek / Albany → Palo Alto BART',
-    color: 'blue' as const,
-  },
-];
-
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type ActionRequiredShuttle = {
@@ -72,7 +56,6 @@ type DashboardTab = 'reports' | 'alerts' | 'active' | null;
 export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
 
-  const [reportsCount, setReportsCount] = useState<number>(0);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
 
@@ -80,33 +63,9 @@ export default function ShuttleDashboardScreen() {
   const [reports, setReports] = useState<any[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
 
-  // Active Shuttles State (Mock for now)
-  const [activeShuttles, setActiveShuttles] = useState([
-    {
-      id: '1',
-      name: 'Tesla HQ Deer Creek Shuttle A',
-      route: 'Stevens Creek / Albany → Palo Alto BART',
-      color: 'red' as const,
-    },
-    {
-      id: '2',
-      name: 'Tesla HQ Deer Creek Shuttle B',
-      route: 'Stevens Creek / Albany → Palo Alto BART',
-      color: 'blue' as const,
-    },
-    {
-      id: '3',
-      name: 'Tesla HQ Deer Creek Shuttle C',
-      route: 'Stevens Creek / Albany → Palo Alto BART',
-      color: 'green' as const,
-    },
-    {
-      id: '4',
-      name: 'Tesla HQ Deer Creek Shuttle D',
-      route: 'Stevens Creek / Albany → Palo Alto BART',
-      color: 'orange' as const,
-    },
-  ]);
+  // Active Shuttles State
+  const [activeShuttles, setActiveShuttles] = useState<any[]>([]);
+  const [shuttlesLoading, setShuttlesLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -119,13 +78,6 @@ export default function ShuttleDashboardScreen() {
 
   const fetchDashboardData = async () => {
     try {
-      const count = await getShuttleReportsCount();
-      setReportsCount(count);
-    } catch (_e) {
-      // keep existing
-    }
-
-    try {
       // Fetch live alerts
       const alertsData = await getAnnouncements();
       setAlerts(alertsData);
@@ -135,50 +87,97 @@ export default function ShuttleDashboardScreen() {
       setAlertsLoading(false);
     }
 
+    let fetchedShuttles: any[] = [];
     try {
-      // Fetch ALL reports for the list view
-      // In a real app, maybe we just fetch specific ones or paginate
-      // For now, loop through our known shuttles like the old list did
-      const ALL_SHUTTLES_NAMES = [
-        'Tesla HQ Deer Creek Shuttle A',
-        'Tesla HQ Deer Creek Shuttle B',
-        'Tesla HQ Deer Creek Shuttle C',
-        'Tesla HQ Deer Creek Shuttle D',
-      ];
+      // TODO: Fetch active shuttles
+      // const shuttlesData = await getActiveShuttles();
 
-      const allReports = [];
-      for (const name of ALL_SHUTTLES_NAMES) {
-        try {
-          const r = await getShuttleReportsAdmin(name);
-          allReports.push(...r);
-        } catch (_e) {}
-      }
-      allReports.sort(
-        (a, b) =>
-          new Date(b.createdAt ?? 0).getTime() -
-          new Date(a.createdAt ?? 0).getTime()
-      );
-      setReports(allReports);
+      // Mock API response
+      fetchedShuttles = [
+        {
+          id: '1',
+          name: 'Tesla HQ Deer Creek Shuttle A',
+          route: 'Stevens Creek / Albany → Palo Alto BART',
+          color: 'red' as const,
+        },
+        {
+          id: '2',
+          name: 'Tesla HQ Deer Creek Shuttle B',
+          route: 'Stevens Creek / Albany → Palo Alto BART',
+          color: 'blue' as const,
+        },
+        {
+          id: '3',
+          name: 'Tesla HQ Deer Creek Shuttle C',
+          route: 'Stevens Creek / Albany → Palo Alto BART',
+          color: 'green' as const,
+        },
+        {
+          id: '4',
+          name: 'Tesla HQ Deer Creek Shuttle D',
+          route: 'Stevens Creek / Albany → Palo Alto BART',
+          color: 'orange' as const,
+        },
+      ];
+      setActiveShuttles(fetchedShuttles);
     } catch (err) {
-      console.error('Failed to fetch reports', err);
+      console.error('Failed to fetch shuttles', err);
     } finally {
-      setReportsLoading(false);
+      setShuttlesLoading(false);
     }
 
-    // Mock logic for "Action Required" section in summary
-    // TODO fetch from API
-    const results: ActionRequiredShuttle[] = [];
-    // Using internal hardcoded list just for summary logic demo
-    const MOCK_NAMES = [
-      'Tesla HQ Deer Creek Shuttle A',
-      'Tesla HQ Deer Creek Shuttle B',
-    ];
+    try {
+      const allReports: any[] = [];
+      const results: ActionRequiredShuttle[] = [];
 
-    for (const name of MOCK_NAMES) {
-      try {
-        const reports = await getShuttleReportsAdmin(name);
-        if (reports.length > 0) {
-          const sorted = [...reports].sort(
+      // TODO: Replace with real API call
+      // const allReportsData = await getAllShuttleReports();
+
+      // Mock API Response (Simulating a backend that returns all reports for all shuttles)
+      const MOCK_ALL_REPORTS_RESPONSE = [
+        {
+          id: '101',
+          shuttleName: 'Tesla HQ Deer Creek Shuttle A',
+          comment: 'Traffic delay on 280',
+          createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 mins ago
+        },
+        {
+          id: '102',
+          shuttleName: 'Tesla HQ Deer Creek Shuttle A',
+          comment: 'Passenger assistance required',
+          createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 mins ago
+        },
+        {
+          id: '103',
+          shuttleName: 'Tesla HQ Deer Creek Shuttle B',
+          comment: 'Routine maintenance check',
+          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+        },
+        {
+          id: '104',
+          shuttleName: 'Tesla HQ Deer Creek Shuttle C',
+          comment: 'Slight delay departing',
+          createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(), // 2 mins ago
+        },
+      ];
+
+      allReports.push(...MOCK_ALL_REPORTS_RESPONSE);
+
+      const reportsByShuttle: Record<string, any[]> = {};
+
+      // Group by shuttle
+      for (const report of allReports) {
+        if (!reportsByShuttle[report.shuttleName]) {
+          reportsByShuttle[report.shuttleName] = [];
+        }
+        reportsByShuttle[report.shuttleName].push(report);
+      }
+
+      // Generate Action Required items
+      for (const shuttleName in reportsByShuttle) {
+        const r = reportsByShuttle[shuttleName];
+        if (r.length > 0) {
+          const sorted = [...r].sort(
             (a, b) =>
               new Date(b.createdAt ?? 0).getTime() -
               new Date(a.createdAt ?? 0).getTime()
@@ -191,25 +190,33 @@ export default function ShuttleDashboardScreen() {
             : 0;
           const lastReported = minsAgo < 1 ? 'just now' : `${minsAgo} min ago`;
           const severity: 'high' | 'medium' | 'low' =
-            reports.length >= 5
-              ? 'high'
-              : reports.length >= 2
-                ? 'medium'
-                : 'low';
+            r.length >= 5 ? 'high' : r.length >= 2 ? 'medium' : 'low';
 
           results.push({
-            shuttleName: name,
-            reportCount: reports.length,
+            shuttleName: shuttleName,
+            reportCount: r.length,
             lastReported,
             lastType: newest?.comment?.split(' ')[0] ?? 'Report',
             severity,
           });
         }
-      } catch (_e) {
-        // skip
       }
+
+      // Sort all reports by date for the list
+      allReports.sort(
+        (a, b) =>
+          new Date(b.createdAt ?? 0).getTime() -
+          new Date(a.createdAt ?? 0).getTime()
+      );
+
+      // Update states
+      setReports(allReports);
+      setActionRequired(results);
+    } catch (err) {
+      console.error('Failed to fetch reports', err);
+    } finally {
+      setReportsLoading(false);
     }
-    setActionRequired(results);
   };
 
   useEffect(() => {
@@ -371,7 +378,7 @@ export default function ShuttleDashboardScreen() {
         {/* Filter Buttons (Key Metrics) */}
         <View style={styles.statsRow}>
           <StatBox
-            value={loading ? '...' : reportsCount}
+            value={loading ? '...' : reports.length}
             label="New Reports"
             active={selectedTab === 'reports'}
             onPress={() => handleTabPress('reports')}
@@ -383,7 +390,7 @@ export default function ShuttleDashboardScreen() {
             onPress={() => handleTabPress('alerts')}
           />
           <StatBox
-            value={activeShuttles.length}
+            value={shuttlesLoading ? '...' : activeShuttles.length}
             label="Shuttles Active"
             active={selectedTab === 'active'}
             onPress={() => handleTabPress('active')}

@@ -74,32 +74,33 @@ router.get('/', async (req, res) => {
 
 // update parking for a single location again
 router.patch('/', async (req, res) => {
-  const { loc_name, lot_name, availability } = req.body;
+  const { location_name, lot_name, availability, status_override } = req.body;
 
-  if (!loc_name || !lot_name || typeof availability !== 'number') {
+  // validate that we have the identifiers and at least one thing to update
+  if (!location_name || !lot_name || (typeof availability !== 'number' && !status_override)) {
     return res.status(400).json({
-      error: 'loc_name, lot_name, and numeric availability are required',
+      error: 'location_name, lot_name, and either availability or status_override are required',
     });
   }
 
   try {
     const rowsAffected = await updateParkingAvailability(
-      loc_name,
+      location_name,
       lot_name,
-      availability
+      availability,
+      status_override // this will be "Mark as full", "Lot closed", etc.
     );
 
     if (rowsAffected === 0) {
-      return res.status(404).json({
-        error: 'Location or parking lot not found',
-      });
+      return res.status(404).json({ error: 'Location or parking lot not found' });
     }
 
     res.json({
       success: true,
-      loc_name,
+      location_name,
       lot_name,
       availability,
+      status_override
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,3 +1,4 @@
+// packages/mobile/src/components/ParkingDetailView.tsx
 import React from 'react';
 import {
   View,
@@ -5,11 +6,9 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
-  TouchableOpacity,
 } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
-import { ParkingLot } from '../services/parkings';
-import { ParkingRow } from '../services/parkings';
+import { ParkingLot, ParkingRow } from '../services/parkings';
 import { getForecastText } from '../helpers/mapUtils';
 import { ModeTimes } from './RouteHeader';
 import { TravelMode } from '../context/RideContext';
@@ -41,10 +40,12 @@ export function ParkingDetailView({
 }: ParkingDetailViewProps) {
   const lot = selectedLot;
 
-  // Helper to get dot style
-  const getDotStyle = (percent: number) => {
-    if (percent >= 80) return styles.dotRed;
-    if (percent >= 50) return styles.dotYellow;
+  /**
+   * Helper to determine dot color based on fullness or override status
+   */
+  const getDotStyle = (percent: number, status?: string | null) => {
+    if (status === 'Lot closed' || percent >= 90) return styles.dotRed;
+    if (status === 'Reserved for event' || percent >= 75) return styles.dotYellow;
     return styles.dotGreen;
   };
 
@@ -61,12 +62,12 @@ export function ParkingDetailView({
         </View>
       )}
 
-      {/* Route time display when loaded */}
+      {/* Route time display */}
       {!routesLoading && routeDuration && (
         <View style={styles.routeTimeBanner}>
           <Image
             source={require('../assets/icons/new/newCar.png')}
-            style={{ width: 20, height: 20, marginRight: 8 }}
+            style={styles.iconSmall}
           />
           <Text style={styles.routeTimeText}>{routeDuration} drive</Text>
         </View>
@@ -75,7 +76,7 @@ export function ParkingDetailView({
       <View style={styles.detailHeaderRow}>
         <Image
           source={require('../assets/icons/new/newCar.png')}
-          style={{ width: 28, height: 28, marginRight: 12 }}
+          style={styles.iconLarge}
         />
         <Text style={styles.detailTitle}>{lot?.name || 'Loading...'}</Text>
         <Text style={styles.detailUpdateText}>Updated recently</Text>
@@ -98,47 +99,38 @@ export function ParkingDetailView({
 
       <Text style={styles.sectionHeader}>SELECT SUBLOT</Text>
       {sublotsLoading ? (
-        <ActivityIndicator
-          size="small"
-          color="#007AFF"
-          style={{ marginVertical: 20 }}
-        />
+        <ActivityIndicator size="small" color="#007AFF" style={styles.loader} />
       ) : (
         <View style={styles.sublotList}>
           {sublots.length > 0 ? (
             sublots.map((sublot, index) => {
               const isSelected = selectedSublot === sublot.lot_name;
+              
+              /**
+               * Logic: Use status_override if present, otherwise calculate percentage
+               */
+              const hasOverride = !!sublot.status_override;
+              const capacity = sublot.capacity ?? 500;
+              const available = sublot.availability ?? 0;
+              const fullness = Math.round(((capacity - available) / capacity) * 100);
+              
+              const displayText = hasOverride 
+                ? sublot.status_override 
+                : `${fullness}% full`;
 
-              const capacity = sublot.capacity ?? 0;
-              const available = sublot.current_available ?? 0;
-              const taken = Math.max(0, capacity - available);
-              const fullness =
-                capacity > 0 ? Math.round((taken / capacity) * 100) : 0;
+              const dotStyle = getDotStyle(fullness, sublot.status_override);
 
-              const dotStyle = getDotStyle(fullness);
               return (
                 <GHTouchableOpacity
-                  key={`${sublot.loc_name}-${sublot.lot_name}-${index}`}
-                  style={
-                    isSelected ? styles.sublotRowSelected : styles.sublotRow
-                  }
+                  key={`${sublot.location_name}-${sublot.lot_name}-${index}`}
+                  style={isSelected ? styles.sublotRowSelected : styles.sublotRow}
                   onPress={() => onSelectSublot(sublot.lot_name)}
                 >
-                  <Text
-                    style={
-                      isSelected ? styles.sublotNameSelected : styles.sublotName
-                    }
-                  >
+                  <Text style={isSelected ? styles.sublotNameSelected : styles.sublotName}>
                     {sublot.lot_name}
                   </Text>
-                  <Text
-                    style={
-                      isSelected
-                        ? styles.sublotStatsSelected
-                        : styles.sublotStats
-                    }
-                  >
-                    {fullness}% full
+                  <Text style={isSelected ? styles.sublotStatsSelected : styles.sublotStats}>
+                    {displayText}
                   </Text>
                   <View style={dotStyle} />
                 </GHTouchableOpacity>
@@ -166,13 +158,12 @@ export function ParkingDetailView({
       >
         <Image
           source={require('../assets/icons/new/newShuttle.png')}
-          style={{ width: 24, height: 24, marginRight: 12 }}
+          style={styles.shuttleIcon}
         />
         <Text style={styles.shuttleSuggestionText}>
           {modeTimes.shuttle || '50 min'}
         </Text>
-        <View style={{ flex: 1 }} />
-        {/* Shuttle availability not available in API yet */}
+        <View style={styles.spacer} />
       </GHTouchableOpacity>
 
       <View style={styles.detailFooter}>
@@ -191,126 +182,36 @@ export function ParkingDetailView({
 
 const styles = StyleSheet.create({
   detailContainer: { paddingBottom: 20 },
-  routeLoadingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F8FF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  routeLoadingText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#007AFF',
-  },
-  routeTimeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  routeTimeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2E7D32',
-  },
-  detailHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
+  routeLoadingBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F8FF', padding: 12, borderRadius: 8, marginBottom: 16 },
+  routeLoadingText: { marginLeft: 8, fontSize: 14, color: '#007AFF' },
+  routeTimeBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E8F5E9', padding: 12, borderRadius: 8, marginBottom: 16 },
+  routeTimeText: { fontSize: 14, fontWeight: '600', color: '#2E7D32' },
+  iconSmall: { width: 20, height: 20, marginRight: 8 },
+  iconLarge: { width: 28, height: 28, marginRight: 12 },
+  detailHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   detailTitle: { fontSize: 20, fontWeight: '700', color: '#000', flex: 1 },
   detailUpdateText: { fontSize: 12, color: '#8E8E93' },
   statusSection: { marginBottom: 16 },
   statusRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   statusLabel: { fontSize: 11, fontWeight: '600', color: '#8E8E93', width: 80 },
   statusValue: { fontSize: 13, color: '#000' },
-  dotYellow: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FFCC00',
-    marginRight: 8,
-  },
-  dotRed: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#FF3B30',
-    marginRight: 8,
-  },
-  dotGreen: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#34C759',
-    marginRight: 8,
-  },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#8E8E93',
-    marginBottom: 12,
-    marginTop: 12,
-    textTransform: 'uppercase',
-  },
+  dotYellow: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFCC00', marginRight: 8 },
+  dotRed: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF3B30', marginRight: 8 },
+  dotGreen: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#34C759', marginRight: 8 },
+  sectionHeader: { fontSize: 11, fontWeight: '600', color: '#8E8E93', marginBottom: 12, marginTop: 12, textTransform: 'uppercase' },
+  loader: { marginVertical: 20 },
   sublotList: { marginBottom: 20 },
-  sublotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    marginBottom: 8,
-  },
-  sublotRowSelected: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F8FF',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#007AFF',
-    marginBottom: 8,
-  },
+  sublotRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5E5', marginBottom: 8 },
+  sublotRowSelected: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F2F8FF', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#007AFF', marginBottom: 8 },
   sublotName: { flex: 1, fontSize: 15, fontWeight: '600', color: '#000' },
-  sublotNameSelected: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
+  sublotNameSelected: { flex: 1, fontSize: 15, fontWeight: '600', color: '#181c20ff' },
   sublotStats: { fontSize: 13, color: '#8E8E93', marginRight: 8 },
   sublotStatsSelected: { fontSize: 13, color: '#007AFF', marginRight: 8 },
-  shuttleSuggestionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    marginBottom: 20,
-  },
+  shuttleSuggestionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#E5E5E5', marginBottom: 20 },
+  shuttleIcon: { width: 24, height: 24, marginRight: 12 },
   shuttleSuggestionText: { fontSize: 15, fontWeight: '600', color: '#000' },
+  spacer: { flex: 1 },
   detailFooter: { marginTop: 8 },
-  startButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 16,
-    paddingVertical: 12,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
-  },
+  startButton: { backgroundColor: '#007AFF', borderRadius: 16, paddingVertical: 12, width: '100%', alignItems: 'center', justifyContent: 'center', elevation: 6 },
   startButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
 });

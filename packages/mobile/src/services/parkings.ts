@@ -3,15 +3,13 @@
 import { get, patch } from './crud';
 
 export type ParkingRow = {
-  location_id: number;     // from curl
-  location_name: string;   // changed from loc_name
-  lot_id: number;          // from curl
-  lot_name: string;        
-  availability: number;    // this is your "current available"
-  
-  // Keep these as optional if you still use them elsewhere, 
-  // but they aren't in your current /all response
-  capacity?: number;
+  location_id: number;
+  location_name: string;
+  lot_id: number;
+  lot_name: string;
+  availability: number;     
+  capacity: number;        
+  status_override: string | null; 
   current_available?: number; 
   error?: string;
 };
@@ -34,36 +32,41 @@ export interface ParkingLot {
   coordinate: { latitude: number; longitude: number };
 }
 
+
 export async function getParkingForLocation(
-  locName: string
+  locationName: string
 ): Promise<ParkingRow[]> {
-  // Note: If you changed the DB column name, 
-  // you might need to change 'loc_name' to 'location_name' here too
-  const endpoint = `parkings?loc_name=${encodeURIComponent(locName)}`;
+  // Use location_name to match backend query param
+  const endpoint = `parkings?loc_name=${encodeURIComponent(locationName)}`;
   return get<ParkingRow[]>(endpoint);
 }
 
 export async function updateParkingAvailability(params: {
-  location_name: string; // Updated key
+  location_name: string;
   lot_name: string;
   availability: number;
+  status_override?: string | null; // Accept the new string override
 }): Promise<{
   success: boolean;
-  location_name: string; // Updated key
+  location_name: string;
   lot_name: string;
   availability: number;
+  status_override?: string | null;
 }> {
   return patch<{
     success: boolean;
     location_name: string;
     lot_name: string;
     availability: number;
+    status_override?: string | null;
   }>('parkings', params);
 }
+
 
 export async function getAllLocations(): Promise<Location[]> {
   return get<Location[]>('parkings/locations');
 }
+
 
 export async function getAllParkingAvailability(): Promise<ParkingRow[]> {
   return get<ParkingRow[]>('parkings/all');

@@ -4,13 +4,16 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 interface ParkingUtilizationCardProps {
   title: string;
-  percentage: number; // 0–100
+  percentage: number;
   statusLabel: string;
   onEditPress?: () => void;
 }
 
-const SIZE = 140;
-const STROKE_WIDTH = 14;
+// DIMENSIONS FROM SCREENSHOT
+const CARD_WIDTH = 97;
+const CARD_HEIGHT = 93.67;
+const SIZE = 50; // Scaled down for the new card size
+const STROKE_WIDTH = 6;
 const RADIUS = (SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
@@ -21,29 +24,33 @@ export default function ParkingUtilizationCard({
   onEditPress,
 }: ParkingUtilizationCardProps) {
   const clampedPercentage = Math.min(100, Math.max(0, percentage));
-  const strokeDashoffset =
-    CIRCUMFERENCE - (CIRCUMFERENCE * clampedPercentage) / 100;
+  const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * clampedPercentage) / 100;
+
+  // Determine color based on fullness
+  const getStrokeColor = () => {
+    if (percentage >= 90) return '#FF3B30'; // Red
+    if (percentage >= 75) return '#FFCC00'; // Yellow/Orange
+    return '#4CAF50'; // Green
+  };
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        {onEditPress && (
+          <Pressable onPress={onEditPress}>
+             <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth={2}>
+                <Path d="M12 20h9" /><Path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+             </Svg>
+          </Pressable>
+        )}
+      </View>
 
-      {/* Circular Progress */}
       <View style={styles.progressWrapper}>
         <Svg width={SIZE} height={SIZE}>
-          {/* Background ring */}
+          <Circle stroke="#F0F0F0" fill="none" cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} strokeWidth={STROKE_WIDTH} />
           <Circle
-            stroke="#F0F0F0"
-            fill="none"
-            cx={SIZE / 2}
-            cy={SIZE / 2}
-            r={RADIUS}
-            strokeWidth={STROKE_WIDTH}
-          />
-
-          {/* Progress ring */}
-          <Circle
-            stroke="#4CAF50"
+            stroke={getStrokeColor()}
             fill="none"
             cx={SIZE / 2}
             cy={SIZE / 2}
@@ -51,45 +58,19 @@ export default function ParkingUtilizationCard({
             strokeWidth={STROKE_WIDTH}
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={strokeDashoffset}
-            strokeLinecap="butt"
-            // rotation={-90}
-            // originX={SIZE / 2}
-            // originY={SIZE / 2}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
           />
         </Svg>
-
-        {/* Percentage text */}
         <View style={styles.percentageContainer}>
-          <Text style={styles.percentageText}>{clampedPercentage}%</Text>
+          <Text style={[styles.percentageText, { color: getStrokeColor() }]}>
+            {percentage >= 100 ? 'FULL' : `${clampedPercentage}%`}
+          </Text>
         </View>
       </View>
 
-      {/* Status pill */}
-      <View style={styles.statusRow}>
-        <Pressable
-          style={styles.statusPill}
-          onPress={onEditPress}
-          disabled={!onEditPress}
-        >
-          <Text style={styles.statusText}>{statusLabel}</Text>
-
-          {onEditPress && (
-            <Svg
-              width={14}
-              height={14}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#333333"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={styles.pencilIcon}
-            >
-              <Path d="M12 20h9" />
-              <Path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-            </Svg>
-          )}
-        </Pressable>
+      <View style={[styles.statusPill, { backgroundColor: percentage >= 90 ? '#FFEBEB' : '#F0F0F0' }]}>
+        <Text style={styles.statusText}>{statusLabel}</Text>
       </View>
     </View>
   );
@@ -97,66 +78,48 @@ export default function ParkingUtilizationCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: 220,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    backgroundColor: '#F0F0F0',
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    padding: 8,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
-
   title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333333',
-    marginBottom: 8,
-    textAlign: 'center',
+    fontSize: 9,
+    fontWeight: '400',
+    color: '#8E8E93',
+    flex: 1,
   },
-
   progressWrapper: {
     position: 'relative',
-    marginVertical: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
   percentageContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-
   percentageText: {
-    fontSize: 28,
-    fontWeight: '400',
-    color: '#4CAF50',
-    fontFamily: 'Inter',
+    fontSize: 10,
+    fontWeight: '600',
   },
-
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-
   statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    backgroundColor: '#E6B8B7',
-    gap: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-
-  pencilIcon: {
-    marginLeft: 4,
-  },
-
   statusText: {
-    fontSize: 13,
+    fontSize: 8,
     fontStyle: 'italic',
     color: '#333333',
   },

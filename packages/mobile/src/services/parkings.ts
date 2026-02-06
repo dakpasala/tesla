@@ -3,12 +3,16 @@
 import { get, patch } from './crud';
 
 export type ParkingRow = {
-  id?: number;
-  loc_name: string;
-  lot_name: string;
-  current_available: number;
-  capacity: number;
-  availability?: number; // Keeping optional in case of legacy usage, but primary data is current_available/capacity
+  location_id: number;     // from curl
+  location_name: string;   // changed from loc_name
+  lot_id: number;          // from curl
+  lot_name: string;        
+  availability: number;    // this is your "current available"
+  
+  // Keep these as optional if you still use them elsewhere, 
+  // but they aren't in your current /all response
+  capacity?: number;
+  current_available?: number; 
   error?: string;
 };
 
@@ -33,23 +37,25 @@ export interface ParkingLot {
 export async function getParkingForLocation(
   locName: string
 ): Promise<ParkingRow[]> {
+  // Note: If you changed the DB column name, 
+  // you might need to change 'loc_name' to 'location_name' here too
   const endpoint = `parkings?loc_name=${encodeURIComponent(locName)}`;
   return get<ParkingRow[]>(endpoint);
 }
 
 export async function updateParkingAvailability(params: {
-  loc_name: string;
+  location_name: string; // Updated key
   lot_name: string;
   availability: number;
 }): Promise<{
   success: boolean;
-  loc_name: string;
+  location_name: string; // Updated key
   lot_name: string;
   availability: number;
 }> {
   return patch<{
     success: boolean;
-    loc_name: string;
+    location_name: string;
     lot_name: string;
     availability: number;
   }>('parkings', params);
@@ -62,8 +68,6 @@ export async function getAllLocations(): Promise<Location[]> {
 export async function getAllParkingAvailability(): Promise<ParkingRow[]> {
   return get<ParkingRow[]>('parkings/all');
 }
-
-// get full
 
 export async function getFullLotsCount(): Promise<number> {
   const response = await get<{ count: number }>('parkings/full-count');

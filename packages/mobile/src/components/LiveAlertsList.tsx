@@ -1,10 +1,17 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Text,
+  ActivityIndicator,
+} from 'react-native';
 import ShuttleListItem from './ShuttleListItem';
 import { getAnnouncements, Announcement } from '../services/shuttleAlerts';
 
 export default function LiveAlertsList() {
   const [alerts, setAlerts] = React.useState<Announcement[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function fetchAlerts() {
@@ -13,6 +20,8 @@ export default function LiveAlertsList() {
         setAlerts(data);
       } catch (err) {
         console.error('Failed to fetch announcements:', err);
+      } finally {
+        setLoading(false);
       }
     }
     fetchAlerts();
@@ -23,6 +32,14 @@ export default function LiveAlertsList() {
       hour: 'numeric',
       minute: '2-digit',
     });
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="small" color="#0000ff" />
+      </View>
+    );
+  }
 
   if (alerts.length === 0) {
     return <Text style={styles.emptyText}>No active alerts.</Text>;
@@ -48,6 +65,10 @@ export default function LiveAlertsList() {
 const styles = StyleSheet.create({
   content: {
     paddingBottom: 30,
+  },
+  loadingContainer: {
+    marginTop: 40,
+    alignItems: 'center',
   },
   emptyText: {
     fontSize: 15,

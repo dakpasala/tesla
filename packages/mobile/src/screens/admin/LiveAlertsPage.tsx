@@ -12,35 +12,23 @@ import { useNavigation } from '@react-navigation/native';
 import ShuttleListItem from '../../components/ShuttleListItem'; // Swapped import
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 
-const HARDCODED_ALERTS = [
-  {
-    id: '1',
-    shuttleName: 'Tesla HQ Deer Creek Shuttle A',
-    delayMinutes: 5,
-    createdAt: new Date(Date.now() - 3 * 60000).toISOString(),
-  },
-  {
-    id: '2',
-    shuttleName: 'Tesla HQ Deer Creek Shuttle B',
-    delayMinutes: 15,
-    createdAt: new Date(Date.now() - 8 * 60000).toISOString(),
-  },
-  {
-    id: '3',
-    shuttleName: 'Tesla HQ Deer Creek Shuttle C',
-    delayMinutes: 10,
-    createdAt: new Date(Date.now() - 12 * 60000).toISOString(),
-  },
-  {
-    id: '4',
-    shuttleName: 'Tesla HQ Deer Creek Shuttle D',
-    delayMinutes: 20,
-    createdAt: new Date(Date.now() - 20 * 60000).toISOString(),
-  },
-];
+import { getAnnouncements, Announcement } from '../../services/shuttleAlerts';
 
 export default function LiveAlertsPage() {
   const navigation = useNavigation();
+  const [alerts, setAlerts] = React.useState<Announcement[]>([]);
+
+  React.useEffect(() => {
+    async function fetchAlerts() {
+      try {
+        const data = await getAnnouncements();
+        setAlerts(data);
+      } catch (err) {
+        console.error('Failed to fetch announcements:', err);
+      }
+    }
+    fetchAlerts();
+  }, []);
 
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], {
@@ -51,7 +39,10 @@ export default function LiveAlertsPage() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>{'< '}Shuttle Dashboard</Text>
         </TouchableOpacity>
       </View>
@@ -61,22 +52,22 @@ export default function LiveAlertsPage() {
 
         <View style={styles.announcementWrapper}>
           <AnnouncementDropDown
-            onSelectOption={(option) => {
+            onSelectOption={option => {
               console.log('Selected:', option);
             }}
           />
         </View>
 
         <Text style={styles.sectionLabel}>ALL ALERTS</Text>
-        
-        {HARDCODED_ALERTS.map((alert, index) => (
+
+        {alerts.map((alert, index) => (
           <ShuttleListItem
             key={alert.id}
             title={alert.shuttleName}
             subtitle={`Sent ${formatTime(alert.createdAt)}`}
             rightText={`${alert.delayMinutes} MIN DELAY`}
             statusColor="red" // Standardizing on Red for delays/alerts
-            showSeparator={index !== HARDCODED_ALERTS.length - 1}
+            showSeparator={index !== alerts.length - 1}
             onPress={() => console.log('Alert pressed', alert.id)}
           />
         ))}

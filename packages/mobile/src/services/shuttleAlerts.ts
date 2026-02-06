@@ -71,3 +71,19 @@ export async function createShuttleAlertAdmin(
     alert
   );
 }
+
+export type Announcement = {
+  id: string;
+  shuttleName: string;
+  delayMinutes: number;
+  createdAt: string;
+};
+
+export type AnnouncementsResponse = {
+  announcements: Announcement[];
+};
+
+export async function getAnnouncements(): Promise<Announcement[]> {
+  const response = await get<AnnouncementsResponse>('shuttles/announcements');
+  return response.announcements;
+}

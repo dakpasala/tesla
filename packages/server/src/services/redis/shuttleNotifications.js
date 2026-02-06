@@ -28,10 +28,10 @@ export async function getShuttleReports(shuttleName) {
 
 export async function createShuttleAlert({
   shuttleName,
-  type,            // "delay" | "cancellation"
-  reason,          // "traffic", "weather", etc.
-  delayMinutes,    // number | null
-  clearReports,    // boolean
+  type, // "delay" | "cancellation"
+  reason, // "traffic", "weather", etc.
+  delayMinutes, // number | null
+  clearReports, // boolean
 }) {
   const redis = await getRedisClient();
 
@@ -66,4 +66,28 @@ export async function getShuttleAlerts(shuttleName) {
   const alerts = await redis.lRange(key, 0, -1);
 
   return alerts.map(JSON.parse);
+}
+export async function getAllShuttleAlerts() {
+  const redis = await getRedisClient();
+  const keys = await redis.keys('alerts:shuttle:*');
+
+  let allAlerts = [];
+
+  for (const key of keys) {
+    const shuttleName = key.replace('alerts:shuttle:', '');
+    const alerts = await redis.lRange(key, 0, -1);
+
+    const parsedAlerts = alerts.map(a => {
+      const parsed = JSON.parse(a);
+      return { ...parsed, shuttleName };
+    });
+
+    allAlerts = [...allAlerts, ...parsedAlerts];
+  }
+
+  // Sort by newest first
+  return allAlerts.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 }

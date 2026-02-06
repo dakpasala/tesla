@@ -31,7 +31,10 @@ router.get('/admin/count', async (req, res) => {
     
     // Get the length of each list and sum them
     let totalCount = 0;
-    for (const key of keys) totalCount += getLength(key);
+    for (const key of keys) {
+      const len = await getLength(key);
+      totalCount += len || 0;
+    }
     res.json({ count: totalCount });
 
   } catch (err) {

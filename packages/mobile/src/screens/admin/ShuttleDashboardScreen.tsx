@@ -8,7 +8,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -20,6 +19,7 @@ import ActionRequiredCard from '../../components/ActionRequiredCard';
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import LiveAlertCard from '../../components/LiveAlertCard';
+import StatBox from '../../components/StatBox';
 
 // ── Hardcoded data ──────────────────────────────────────────────────────────
 
@@ -72,90 +72,6 @@ type ActionRequiredShuttle = {
   severity: 'high' | 'medium' | 'low';
 };
 
-// ── Sub-components ──────────────────────────────────────────────────────────
-
-function StatBox({
-  value,
-  label,
-  onPress,
-}: {
-  value: string | number;
-  label: string;
-  onPress?: () => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.statBox} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-// ── Alerts Modal (hardcoded) ────────────────────────────────────────────────
-
-function AlertsModal({
-  visible,
-  onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) {
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.modalBack}>{'< '}Shuttle Dashboard</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.modalTitle}>Live Alerts</Text>
-
-        {HARDCODED_ALERTS.map((a) => (
-          <LiveAlertCard
-            key={a.id}
-            shuttleName={a.shuttleName}
-            delayText={`${a.delayMinutes} MIN DELAY`}
-            timeText={`Sent ${new Date(a.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
-          />
-        ))}
-      </SafeAreaView>
-    </Modal>
-  );
-}
-
-// ── Shuttles Modal (hardcoded) ──────────────────────────────────────────────
-
-function ShuttlesModal({
-  visible,
-  onClose,
-}: {
-  visible: boolean;
-  onClose: () => void;
-}) {
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.modalBack}>{'< '}Shuttle Dashboard</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.modalTitle}>Shuttle Status</Text>
-
-        {HARDCODED_SHUTTLES.map((s, idx) => (
-          <ShuttleListItem
-            key={s.id}
-            title={s.name}
-            subtitle={s.route}
-            statusColor={s.color}
-            showSeparator={idx < HARDCODED_SHUTTLES.length - 1}
-          />
-        ))}
-      </SafeAreaView>
-    </Modal>
-  );
-}
-
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 
 export default function ShuttleDashboardScreen() {
@@ -165,9 +81,6 @@ export default function ShuttleDashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>([]);
-
-  const [showAlerts, setShowAlerts] = useState(false);
-  const [showShuttles, setShowShuttles] = useState(false);
 
   const fetchDashboardData = async () => {
     try {
@@ -251,8 +164,8 @@ export default function ShuttleDashboardScreen() {
             label="New Reports"
             onPress={() => (navigation as any).navigate('ShuttleReports', { shuttleName: 'all' })}
           />
-          <StatBox value={4} label="Live Alerts" onPress={() => setShowAlerts(true)} />
-          <StatBox value={9} label="Shuttles Active" onPress={() => setShowShuttles(true)} />
+          <StatBox value={4} label="Live Alerts" onPress={() => (navigation as any).navigate('LiveAlertsPage')} />
+          <StatBox value={9} label="Shuttles Active" onPress={() => (navigation as any).navigate('ShuttlesActivePage')} />
         </View>
 
         {/* Announcement Dropdown */}
@@ -327,10 +240,6 @@ export default function ShuttleDashboardScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Modals */}
-      <AlertsModal visible={showAlerts} onClose={() => setShowAlerts(false)} />
-      <ShuttlesModal visible={showShuttles} onClose={() => setShowShuttles(false)} />
     </SafeAreaView>
   );
 }
@@ -373,27 +282,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#1C1C1E',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#A0A0A5',
-    marginTop: 4,
-    fontWeight: '500',
-  },
-
   // Announcement
   announcementWrapper: {
     alignItems: 'center',
@@ -419,21 +307,4 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Modal
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',    paddingHorizontal: 20,
-  },
-  modalHeader: { paddingVertical: 10 },
-  modalBack: {
-    fontSize: 16,
-    color: '#FF3B30',
-    fontWeight: '500',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 16,
-  },
 });

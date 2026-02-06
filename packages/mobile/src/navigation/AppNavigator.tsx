@@ -19,6 +19,7 @@ import {
 // Admin Screens
 import AdminHomeScreen from '../screens/admin/AdminHomeScreen';
 import ShuttleDashboardScreen from '../screens/admin/ShuttleDashboardScreen';
+import ShuttleReportsScreen from '../screens/admin/ShuttleReportsScreen';
 import LiveAlertsScreen from '../screens/admin/LiveAlertsScreen';
 import ParkingManagementScreen from '../screens/admin/ParkingManagementScreen';
 
@@ -52,6 +53,10 @@ export default function AppNavigator() {
       <Stack.Screen
         name="ShuttleDashboard"
         component={ShuttleDashboardScreen}
+      />
+      <Stack.Screen
+        name="ShuttleReports"
+        component={ShuttleReportsScreen}
       />
       <Stack.Screen name="LiveAlerts" component={LiveAlertsScreen} />
       <Stack.Screen

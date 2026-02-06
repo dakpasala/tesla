@@ -1,201 +1,439 @@
 // packages/mobile/src/screens/admin/ShuttleDashboardScreen.tsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import AdminStatsCard from './AdminStatsCard';
-import { SHUTTLE_STATS } from '../../helpers/AdminHelper';
+import {
+  getShuttleReportsCount,
+  getShuttleReportsAdmin,
+} from '../../services/shuttleAlerts';
+import ActionRequiredCard from '../../components/ActionRequiredCard';
+import ShuttleListItem from '../../components/ShuttleListItem';
+import AnnouncementDropDown from '../../components/AnnouncementDropdown';
+import LiveAlertCard from '../../components/LiveAlertCard';
+
+// ── Hardcoded data ──────────────────────────────────────────────────────────
+
+const HARDCODED_ALERTS = [
+  {
+    id: '1',
+    shuttleName: 'Tesla HQ Deer Creek Shuttle A',
+    type: 'delay',
+    reason: 'Shuttle B Delayed By 15 Min',
+    delayMinutes: 5,
+    createdAt: new Date(Date.now() - 3 * 60000).toISOString(),
+    label: 'ALERT POSTED 3 MIN AGO',
+  },
+];
+
+const HARDCODED_SHUTTLES = [
+  {
+    id: '1',
+    name: 'Tesla HQ Deer Creek Shuttle A',
+    route: 'Stevens Creek / Albany → Palo Alto BART',
+    color: 'red' as const,
+  },
+  {
+    id: '2',
+    name: 'Tesla HQ Deer Creek Shuttle B',
+    route: 'Stevens Creek / Albany → Palo Alto BART',
+    color: 'blue' as const,
+  },
+  {
+    id: '3',
+    name: 'Tesla HQ Deer Creek Shuttle C',
+    route: 'Stevens Creek / Albany → Palo Alto BART',
+    color: 'green' as const,
+  },
+  {
+    id: '4',
+    name: 'Tesla HQ Deer Creek Shuttle D',
+    route: 'Stevens Creek / Albany → Palo Alto BART',
+    color: 'orange' as const,
+  },
+];
+
+// ── Types ───────────────────────────────────────────────────────────────────
+
+type ActionRequiredShuttle = {
+  shuttleName: string;
+  reportCount: number;
+  lastReported: string;
+  lastType: string;
+  severity: 'high' | 'medium' | 'low';
+};
+
+// ── Sub-components ──────────────────────────────────────────────────────────
+
+function StatBox({
+  value,
+  label,
+  onPress,
+}: {
+  value: string | number;
+  label: string;
+  onPress?: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.statBox} onPress={onPress} activeOpacity={0.7}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ── Alerts Modal (hardcoded) ────────────────────────────────────────────────
+
+function AlertsModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={styles.modalBack}>{'< '}Shuttle Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.modalTitle}>Live Alerts</Text>
+
+        {HARDCODED_ALERTS.map((a) => (
+          <LiveAlertCard
+            key={a.id}
+            shuttleName={a.shuttleName}
+            delayText={`${a.delayMinutes} MIN DELAY`}
+            timeText={`Sent ${new Date(a.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
+          />
+        ))}
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+// ── Shuttles Modal (hardcoded) ──────────────────────────────────────────────
+
+function ShuttlesModal({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
+      <SafeAreaView style={styles.modalContainer}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={styles.modalBack}>{'< '}Shuttle Dashboard</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.modalTitle}>Shuttle Status</Text>
+
+        {HARDCODED_SHUTTLES.map((s, idx) => (
+          <ShuttleListItem
+            key={s.id}
+            title={s.name}
+            subtitle={s.route}
+            statusColor={s.color}
+            showSeparator={idx < HARDCODED_SHUTTLES.length - 1}
+          />
+        ))}
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+// ── Main Dashboard ──────────────────────────────────────────────────────────
 
 export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
 
+  const [reportsCount, setReportsCount] = useState<number>(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>([]);
+
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [showShuttles, setShowShuttles] = useState(false);
+
+  const fetchDashboardData = async () => {
+    try {
+      const count = await getShuttleReportsCount();
+      setReportsCount(count);
+    } catch (_e) {
+      // keep existing
+    }
+
+    const results: ActionRequiredShuttle[] = [];
+    for (const shuttle of HARDCODED_SHUTTLES) {
+      try {
+        const reports = await getShuttleReportsAdmin(shuttle.name);
+        if (reports.length > 0) {
+          const sorted = [...reports].sort(
+            (a, b) =>
+              new Date(b.createdAt ?? 0).getTime() -
+              new Date(a.createdAt ?? 0).getTime()
+          );
+          const newest = sorted[0];
+          const minsAgo = newest?.createdAt
+            ? Math.round(
+                (Date.now() - new Date(newest.createdAt).getTime()) / 60000
+              )
+            : 0;
+          const lastReported = minsAgo < 1 ? 'just now' : `${minsAgo} min ago`;
+          const severity: 'high' | 'medium' | 'low' =
+            reports.length >= 5 ? 'high' : reports.length >= 2 ? 'medium' : 'low';
+
+          results.push({
+            shuttleName: shuttle.name,
+            reportCount: reports.length,
+            lastReported,
+            lastType: newest?.comment?.split(' ')[0] ?? 'Report',
+            severity,
+          });
+        }
+      } catch (_e) {
+        // skip
+      }
+    }
+    setActionRequired(results);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await fetchDashboardData();
+      if (!cancelled) setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backText}>{'< '}Home</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Shuttle Dashboard</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity style={styles.createBtn}>
-          <Text style={styles.createBtnText}>
-            + Create New Route / Schedule
-          </Text>
-        </TouchableOpacity>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {/* 20 semi-bold */}
+        <Text style={styles.dashTitle}>Shuttle Dashboard</Text>
 
+        {/* Stat Boxes */}
         <View style={styles.statsRow}>
-          {SHUTTLE_STATS.map(stat => (
-            <AdminStatsCard
-              key={stat.id}
-              title={stat.title}
-              value={stat.value}
-              trend={stat.trend}
-              trendValue={stat.trendValue}
-              style={{ marginRight: 10, marginBottom: 10 }}
-            />
-          ))}
+          <StatBox
+            value={loading ? '...' : reportsCount}
+            label="New Reports"
+            onPress={() => (navigation as any).navigate('ShuttleReports', { shuttleName: 'all' })}
+          />
+          <StatBox value={4} label="Live Alerts" onPress={() => setShowAlerts(true)} />
+          <StatBox value={9} label="Shuttles Active" onPress={() => setShowShuttles(true)} />
         </View>
 
-        <Text style={styles.sectionHeader}>Active Routes</Text>
-        {/* Placeholder list for routes */}
-        <View style={styles.routeCard}>
-          <View style={styles.routeHeader}>
-            <Text style={styles.routeName}>Suttle A</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>Active</Text>
-            </View>
-          </View>
-          <View style={styles.routeDetailRow}>
-            <Text style={styles.detailLabel}>Driver</Text>
-            <Text style={styles.detailValue}>John D.</Text>
-          </View>
-          <View style={styles.routeDetailRow}>
-            <Text style={styles.detailLabel}>Next Stop</Text>
-            <Text style={styles.detailValue}>Deer Creek</Text>
-          </View>
-          <View style={styles.routeFooter}>
-            <Text style={styles.etaText}>Arrives in 5 min</Text>
-          </View>
+        {/* Announcement Dropdown */}
+        <View style={styles.announcementWrapper}>
+          <AnnouncementDropDown
+            onSelectOption={(option) => {
+              // TODO: handle announcement option selection
+              console.log('Selected:', option);
+            }}
+          />
         </View>
 
-        <View style={styles.routeCard}>
-          <View style={styles.routeHeader}>
-            <Text style={styles.routeName}>Tesla Shuttle B</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>Active</Text>
+        {/* Action Required — 16 medium */}
+        {actionRequired.length > 0 && (
+          <>
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionHeader}>Action Required</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View All</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-          <View style={styles.routeDetailRow}>
-            <Text style={styles.detailLabel}>Driver</Text>
-            <Text style={styles.detailValue}>Sarah M.</Text>
-          </View>
-          <View style={styles.routeFooter}>
-            <Text style={styles.etaText}>Arrives in 12 min</Text>
-          </View>
+
+            {actionRequired.map((shuttle) => (
+              <ActionRequiredCard
+                key={shuttle.shuttleName}
+                shuttleName={shuttle.shuttleName}
+                reportCount={shuttle.reportCount}
+                lastReported={shuttle.lastReported}
+                lastType={shuttle.lastType}
+                severity={shuttle.severity}
+                onPress={() =>
+                  (navigation as any).navigate('ShuttleReports', {
+                    shuttleName: shuttle.shuttleName,
+                  })
+                }
+              />
+            ))}
+          </>
+        )}
+
+        {/* Live Alerts — 16 medium */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionHeader}>Live Alerts</Text>
+          <TouchableOpacity>
+            <Text style={styles.viewAllText}>View All</Text>
+          </TouchableOpacity>
         </View>
+
+        {HARDCODED_ALERTS.map((alert) => (
+          <LiveAlertCard
+            key={alert.id}
+            shuttleName={alert.shuttleName}
+            delayText={`${alert.delayMinutes} MIN DELAY`}
+            timeText={`Sent ${new Date(alert.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
+          />
+        ))}
+
+        {/* Shuttles — 16 medium */}
+        <Text style={[styles.sectionHeader, { marginTop: 24, marginBottom: 8 }]}>
+          Shuttles
+        </Text>
+
+        {HARDCODED_SHUTTLES.map((shuttle, idx) => (
+          <ShuttleListItem
+            key={shuttle.id}
+            title={shuttle.name}
+            subtitle={shuttle.route}
+            statusColor={shuttle.color}
+            showSeparator={idx < HARDCODED_SHUTTLES.length - 1}
+          />
+        ))}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Modals */}
+      <AlertsModal visible={showAlerts} onClose={() => setShowAlerts(false)} />
+      <ShuttlesModal visible={showShuttles} onClose={() => setShowShuttles(false)} />
     </SafeAreaView>
   );
 }
 
+// ── Styles ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F7',
+    backgroundColor: '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+    paddingVertical: 10,
   },
-  backButton: {
-    padding: 8,
-  },
+  backButton: { padding: 4 },
   backText: {
-    fontSize: 24,
+    fontSize: 16,
     color: '#007AFF',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
+    fontWeight: '500',
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
   },
-  createBtn: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
+  // 20 semi-bold
+  dashTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
     marginBottom: 20,
   },
-  createBtnText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
+
+  // Stat Boxes
   statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  statLabel: {
+    fontSize: 11,
+    color: '#A0A0A5',
+    marginTop: 4,
+    fontWeight: '500',
+  },
+
+  // Announcement
+  announcementWrapper: {
+    alignItems: 'center',
+    marginBottom: 24,
+    zIndex: 100,
+  },
+
+  // Section headers — 16 medium
+  sectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   sectionHeader: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: '#111',
-  },
-  routeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    elevation: 2,
-  },
-  routeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  routeName: {
     fontSize: 16,
-    fontWeight: '600',
-  },
-  statusBadge: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    color: '#2E7D32',
-    fontSize: 12,
     fontWeight: '500',
-  },
-  routeDetailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    color: '#666',
-    fontSize: 14,
-  },
-  detailValue: {
     color: '#111',
+  },
+  viewAllText: {
     fontSize: 14,
-    fontWeight: '500',
-  },
-  routeFooter: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F2F2F7',
-  },
-  etaText: {
     color: '#007AFF',
     fontWeight: '500',
+  },
+
+  // Modal
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',    paddingHorizontal: 20,
+  },
+  modalHeader: { paddingVertical: 10 },
+  modalBack: {
+    fontSize: 16,
+    color: '#FF3B30',
+    fontWeight: '500',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 16,
   },
 });

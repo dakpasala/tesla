@@ -21,21 +21,23 @@ import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import LiveAlertCard from '../../components/LiveAlertCard';
 import StatBox from '../../components/StatBox';
 
-// ── Hardcoded data ──────────────────────────────────────────────────────────
+// Extracted Lists
+import ShuttleReportsList from '../../components/ShuttleReportsList';
+import LiveAlertsList from '../../components/LiveAlertsList';
+import ActiveShuttlesList from '../../components/ActiveShuttlesList';
 
-const HARDCODED_ALERTS = [
+// ── Hardcoded data for summary view ─────────────────────────────────────────
+
+const HARDCODED_ALERTS_SUMMARY = [
   {
     id: '1',
     shuttleName: 'Tesla HQ Deer Creek Shuttle A',
-    type: 'delay',
-    reason: 'Shuttle B Delayed By 15 Min',
     delayMinutes: 5,
     createdAt: new Date(Date.now() - 3 * 60000).toISOString(),
-    label: 'ALERT POSTED 3 MIN AGO',
   },
 ];
 
-const HARDCODED_SHUTTLES = [
+const HARDCODED_SHUTTLES_SUMMARY = [
   {
     id: '1',
     name: 'Tesla HQ Deer Creek Shuttle A',
@@ -47,18 +49,6 @@ const HARDCODED_SHUTTLES = [
     name: 'Tesla HQ Deer Creek Shuttle B',
     route: 'Stevens Creek / Albany → Palo Alto BART',
     color: 'blue' as const,
-  },
-  {
-    id: '3',
-    name: 'Tesla HQ Deer Creek Shuttle C',
-    route: 'Stevens Creek / Albany → Palo Alto BART',
-    color: 'green' as const,
-  },
-  {
-    id: '4',
-    name: 'Tesla HQ Deer Creek Shuttle D',
-    route: 'Stevens Creek / Albany → Palo Alto BART',
-    color: 'orange' as const,
   },
 ];
 
@@ -72,6 +62,8 @@ type ActionRequiredShuttle = {
   severity: 'high' | 'medium' | 'low';
 };
 
+type DashboardTab = 'reports' | 'alerts' | 'active' | null;
+
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 
 export default function ShuttleDashboardScreen() {
@@ -80,7 +72,12 @@ export default function ShuttleDashboardScreen() {
   const [reportsCount, setReportsCount] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>([]);
+  const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>(
+    []
+  );
+
+  // Filter State
+  const [selectedTab, setSelectedTab] = useState<DashboardTab>(null);
 
   const fetchDashboardData = async () => {
     try {
@@ -90,10 +87,18 @@ export default function ShuttleDashboardScreen() {
       // keep existing
     }
 
+    // Mock logic for "Action Required" section in summary
+    // TODO fetch from API
     const results: ActionRequiredShuttle[] = [];
-    for (const shuttle of HARDCODED_SHUTTLES) {
+    // Using internal hardcoded list just for summary logic demo
+    const MOCK_NAMES = [
+      'Tesla HQ Deer Creek Shuttle A',
+      'Tesla HQ Deer Creek Shuttle B',
+    ];
+
+    for (const name of MOCK_NAMES) {
       try {
-        const reports = await getShuttleReportsAdmin(shuttle.name);
+        const reports = await getShuttleReportsAdmin(name);
         if (reports.length > 0) {
           const sorted = [...reports].sort(
             (a, b) =>
@@ -108,10 +113,14 @@ export default function ShuttleDashboardScreen() {
             : 0;
           const lastReported = minsAgo < 1 ? 'just now' : `${minsAgo} min ago`;
           const severity: 'high' | 'medium' | 'low' =
-            reports.length >= 5 ? 'high' : reports.length >= 2 ? 'medium' : 'low';
+            reports.length >= 5
+              ? 'high'
+              : reports.length >= 2
+                ? 'medium'
+                : 'low';
 
           results.push({
-            shuttleName: shuttle.name,
+            shuttleName: name,
             reportCount: reports.length,
             lastReported,
             lastType: newest?.comment?.split(' ')[0] ?? 'Report',
@@ -131,7 +140,9 @@ export default function ShuttleDashboardScreen() {
       await fetchDashboardData();
       if (!cancelled) setLoading(false);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const onRefresh = async () => {
@@ -140,55 +151,61 @@ export default function ShuttleDashboardScreen() {
     setRefreshing(false);
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Text style={styles.backText}>{'< '}Home</Text>
-        </TouchableOpacity>
-        <View style={{ width: 40 }} />
-      </View>
+  const handleTabPress = (tab: DashboardTab) => {
+    if (selectedTab === tab) {
+      setSelectedTab(null); // toggle off
+    } else {
+      setSelectedTab(tab);
+    }
+  };
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* 20 semi-bold */}
-        <Text style={styles.dashTitle}>Shuttle Dashboard</Text>
+  const getTitle = () => {
+    if (selectedTab === 'reports') return 'All Shuttle Reports';
+    if (selectedTab === 'alerts') return 'All Live Alerts';
+    if (selectedTab === 'active') return 'All Active Shuttles';
+    return 'Shuttle Dashboard';
+  };
 
-        {/* Stat Boxes */}
-        <View style={styles.statsRow}>
-          <StatBox
-            value={loading ? '...' : reportsCount}
-            label="New Reports"
-            onPress={() => (navigation as any).navigate('ShuttleReports', { shuttleName: 'all' })}
-          />
-          <StatBox value={4} label="Live Alerts" onPress={() => (navigation as any).navigate('LiveAlertsPage')} />
-          <StatBox value={9} label="Shuttles Active" onPress={() => (navigation as any).navigate('ShuttlesActivePage')} />
+  // Render Content
+
+  const renderContent = () => {
+    // 1. Detailed Views
+    if (selectedTab === 'reports') {
+      return (
+        <View style={styles.detailedContainer}>
+          <ShuttleReportsList shuttleName="all" />
         </View>
-
-        {/* Announcement Dropdown */}
-        <View style={styles.announcementWrapper}>
-          <AnnouncementDropDown
-            onSelectOption={(option) => {
-              // TODO: handle announcement option selection
-              console.log('Selected:', option);
-            }}
-          />
+      );
+    }
+    if (selectedTab === 'alerts') {
+      return (
+        <View style={styles.detailedContainer}>
+          <LiveAlertsList />
         </View>
+      );
+    }
+    if (selectedTab === 'active') {
+      return (
+        <View style={styles.detailedContainer}>
+          <ActiveShuttlesList />
+        </View>
+      );
+    }
 
-        {/* Action Required — 16 medium */}
+    // 2. Summary View (Default)
+    return (
+      <View>
+        {/* Action Required */}
         {actionRequired.length > 0 && (
           <>
             <View style={styles.sectionRow}>
               <Text style={styles.sectionHeader}>Action Required</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => setSelectedTab('reports')}>
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             </View>
 
-            {actionRequired.map((shuttle) => (
+            {actionRequired.map(shuttle => (
               <ActionRequiredCard
                 key={shuttle.shuttleName}
                 shuttleName={shuttle.shuttleName}
@@ -206,15 +223,15 @@ export default function ShuttleDashboardScreen() {
           </>
         )}
 
-        {/* Live Alerts — 16 medium */}
+        {/* Live Alerts Summary */}
         <View style={styles.sectionRow}>
           <Text style={styles.sectionHeader}>Live Alerts</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setSelectedTab('alerts')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
 
-        {HARDCODED_ALERTS.map((alert) => (
+        {HARDCODED_ALERTS_SUMMARY.map(alert => (
           <LiveAlertCard
             key={alert.id}
             shuttleName={alert.shuttleName}
@@ -223,22 +240,84 @@ export default function ShuttleDashboardScreen() {
           />
         ))}
 
-        {/* Shuttles — 16 medium */}
-        <Text style={[styles.sectionHeader, { marginTop: 24, marginBottom: 8 }]}>
-          Shuttles
-        </Text>
+        {/* Shuttles Summary */}
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionHeader}>Shuttles</Text>
+          <TouchableOpacity onPress={() => setSelectedTab('active')}>
+            <Text style={styles.viewAllText}>View All</Text>
+          </TouchableOpacity>
+        </View>
 
-        {HARDCODED_SHUTTLES.map((shuttle, idx) => (
+        {HARDCODED_SHUTTLES_SUMMARY.map((shuttle, idx) => (
           <ShuttleListItem
             key={shuttle.id}
             title={shuttle.name}
             subtitle={shuttle.route}
             statusColor={shuttle.color}
-            showSeparator={idx < HARDCODED_SHUTTLES.length - 1}
+            showSeparator={idx < HARDCODED_SHUTTLES_SUMMARY.length - 1}
           />
         ))}
 
         <View style={{ height: 40 }} />
+      </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Text style={styles.backText}>{'< '}Home</Text>
+        </TouchableOpacity>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Title changes based on view */}
+        <Text style={styles.dashTitle}>{getTitle()}</Text>
+
+        {/* Filter Buttons (Key Metrics) */}
+        <View style={styles.statsRow}>
+          <StatBox
+            value={loading ? '...' : reportsCount}
+            label="New Reports"
+            active={selectedTab === 'reports'}
+            onPress={() => handleTabPress('reports')}
+          />
+          <StatBox
+            value={4}
+            label="Live Alerts"
+            active={selectedTab === 'alerts'}
+            onPress={() => handleTabPress('alerts')}
+          />
+          <StatBox
+            value={9}
+            label="Shuttles Active"
+            active={selectedTab === 'active'}
+            onPress={() => handleTabPress('active')}
+          />
+        </View>
+
+        {/* Announcement Dropdown - Always visible */}
+        <View style={styles.announcementWrapper}>
+          <AnnouncementDropDown
+            onSelectOption={option => {
+              console.log('Selected:', option);
+            }}
+          />
+        </View>
+
+        {/* Dynamic Content */}
+        {renderContent()}
       </ScrollView>
     </SafeAreaView>
   );
@@ -268,33 +347,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 30,
   },
-  // 20 semi-bold
   dashTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#000',
     marginBottom: 20,
   },
-
-  // Stat Boxes
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  // Announcement
   announcementWrapper: {
     alignItems: 'center',
     marginBottom: 24,
     zIndex: 100,
   },
-
-  // Section headers — 16 medium
   sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    marginTop: 12,
   },
   sectionHeader: {
     fontSize: 16,
@@ -306,5 +380,7 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '500',
   },
-
+  detailedContainer: {
+    minHeight: 200,
+  },
 });

@@ -8,6 +8,7 @@ interface StatBoxProps {
   label: string;
   onPress?: () => void;
   variant?: 'light' | 'dark';
+  active?: boolean;
 }
 
 export default function StatBox({
@@ -15,6 +16,7 @@ export default function StatBox({
   label,
   onPress,
   variant = 'light',
+  active = false,
 }: StatBoxProps) {
   const isDark = variant === 'dark';
 
@@ -22,7 +24,9 @@ export default function StatBox({
     <TouchableOpacity
       style={[
         styles.box,
-        { backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7' },
+        {
+          backgroundColor: isDark ? '#1C1C1E' : active ? '#000000' : '#F2F2F7',
+        },
       ]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
@@ -30,7 +34,7 @@ export default function StatBox({
       <Text
         style={[
           styles.value,
-          { color: isDark ? '#fff' : '#000' },
+          { color: isDark ? '#fff' : active ? '#FFFFFF' : '#000' },
         ]}
       >
         {value}
@@ -38,7 +42,7 @@ export default function StatBox({
       <Text
         style={[
           styles.label,
-          { color: isDark ? '#A0A0A5' : '#8E8E93' },
+          { color: isDark ? '#A0A0A5' : active ? '#D1D1D6' : '#8E8E93' },
         ]}
       >
         {label}

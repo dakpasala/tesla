@@ -5,12 +5,8 @@ import {
   StyleSheet,
   ActivityIndicator,
   FlatList,
-  RefreshControl,
 } from 'react-native';
-import {
-  getShuttleReportsAdmin,
-  ShuttleReport,
-} from '../services/shuttleAlerts';
+import { ShuttleReport } from '../services/shuttleAlerts';
 import ShuttleListItem from './ShuttleListItem';
 
 // TODO fetch from API
@@ -23,58 +19,16 @@ const ALL_SHUTTLES = [
 ];
 
 interface ShuttleReportsListProps {
-  shuttleName?: string; // 'all' or specific name. Defaults to 'all'
+  reports: ShuttleReport[];
+  loading: boolean;
 }
 
 export default function ShuttleReportsList({
-  shuttleName = 'all',
+  reports,
+  loading,
 }: ShuttleReportsListProps) {
-  const [reports, setReports] = useState<ShuttleReport[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchReports = async () => {
-    try {
-      if (shuttleName === 'all') {
-        const allReports: ShuttleReport[] = [];
-        for (const name of ALL_SHUTTLES) {
-          try {
-            const r = await getShuttleReportsAdmin(name);
-            allReports.push(...r);
-          } catch (_e) {}
-        }
-        allReports.sort(
-          (a, b) =>
-            new Date(b.createdAt ?? 0).getTime() -
-            new Date(a.createdAt ?? 0).getTime()
-        );
-        setReports(allReports);
-      } else {
-        const r = await getShuttleReportsAdmin(shuttleName);
-        r.sort(
-          (a, b) =>
-            new Date(b.createdAt ?? 0).getTime() -
-            new Date(a.createdAt ?? 0).getTime()
-        );
-        setReports(r);
-      }
-    } catch (_e) {
-      setReports([]);
-    }
-  };
-
-  useEffect(() => {
-    (async () => {
-      await fetchReports();
-      setLoading(false);
-    })();
-  }, [shuttleName]);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchReports();
-    setRefreshing(false);
-  };
+  // Internal refresh state if we want pull-to-refresh to trigger parent refresh
+  // For now simple implementation without internal refresh logic or we could pass onRefresh from parent
 
   const formatTime = (dateStr?: string) => {
     if (!dateStr) return '';
@@ -97,9 +51,6 @@ export default function ShuttleReportsList({
       data={reports}
       keyExtractor={(item, idx) => item.id ?? String(idx)}
       contentContainerStyle={{ paddingBottom: 40 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
       renderItem={({ item, index }) => (
         <ShuttleListItem
           title="Shuttle Delay"

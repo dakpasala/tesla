@@ -75,6 +75,39 @@ export default function ShuttleDashboardScreen() {
   const [reportsCount, setReportsCount] = useState<number>(0);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
+
+  // Reports State
+  const [reports, setReports] = useState<any[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(true);
+
+  // Active Shuttles State (Mock for now)
+  const [activeShuttles, setActiveShuttles] = useState([
+    {
+      id: '1',
+      name: 'Tesla HQ Deer Creek Shuttle A',
+      route: 'Stevens Creek / Albany → Palo Alto BART',
+      color: 'red' as const,
+    },
+    {
+      id: '2',
+      name: 'Tesla HQ Deer Creek Shuttle B',
+      route: 'Stevens Creek / Albany → Palo Alto BART',
+      color: 'blue' as const,
+    },
+    {
+      id: '3',
+      name: 'Tesla HQ Deer Creek Shuttle C',
+      route: 'Stevens Creek / Albany → Palo Alto BART',
+      color: 'green' as const,
+    },
+    {
+      id: '4',
+      name: 'Tesla HQ Deer Creek Shuttle D',
+      route: 'Stevens Creek / Albany → Palo Alto BART',
+      color: 'orange' as const,
+    },
+  ]);
+
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>(
@@ -100,6 +133,36 @@ export default function ShuttleDashboardScreen() {
       console.error('Failed to fetch alerts', err);
     } finally {
       setAlertsLoading(false);
+    }
+
+    try {
+      // Fetch ALL reports for the list view
+      // In a real app, maybe we just fetch specific ones or paginate
+      // For now, loop through our known shuttles like the old list did
+      const ALL_SHUTTLES_NAMES = [
+        'Tesla HQ Deer Creek Shuttle A',
+        'Tesla HQ Deer Creek Shuttle B',
+        'Tesla HQ Deer Creek Shuttle C',
+        'Tesla HQ Deer Creek Shuttle D',
+      ];
+
+      const allReports = [];
+      for (const name of ALL_SHUTTLES_NAMES) {
+        try {
+          const r = await getShuttleReportsAdmin(name);
+          allReports.push(...r);
+        } catch (_e) {}
+      }
+      allReports.sort(
+        (a, b) =>
+          new Date(b.createdAt ?? 0).getTime() -
+          new Date(a.createdAt ?? 0).getTime()
+      );
+      setReports(allReports);
+    } catch (err) {
+      console.error('Failed to fetch reports', err);
+    } finally {
+      setReportsLoading(false);
     }
 
     // Mock logic for "Action Required" section in summary
@@ -188,7 +251,7 @@ export default function ShuttleDashboardScreen() {
     if (selectedTab === 'reports') {
       return (
         <View style={styles.detailedContainer}>
-          <ShuttleReportsList shuttleName="all" />
+          <ShuttleReportsList reports={reports} loading={reportsLoading} />
         </View>
       );
     }
@@ -202,7 +265,7 @@ export default function ShuttleDashboardScreen() {
     if (selectedTab === 'active') {
       return (
         <View style={styles.detailedContainer}>
-          <ActiveShuttlesList />
+          <ActiveShuttlesList shuttles={activeShuttles} />
         </View>
       );
     }
@@ -263,13 +326,13 @@ export default function ShuttleDashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {HARDCODED_SHUTTLES_SUMMARY.map((shuttle, idx) => (
+        {activeShuttles.slice(0, 3).map((shuttle, idx) => (
           <ShuttleListItem
             key={shuttle.id}
             title={shuttle.name}
             subtitle={shuttle.route}
             statusColor={shuttle.color}
-            showSeparator={idx < HARDCODED_SHUTTLES_SUMMARY.length - 1}
+            showSeparator={idx < 2}
             onPress={() =>
               (navigation as any).navigate('ShuttleReports', {
                 shuttleName: shuttle.name,
@@ -320,7 +383,7 @@ export default function ShuttleDashboardScreen() {
             onPress={() => handleTabPress('alerts')}
           />
           <StatBox
-            value={9}
+            value={activeShuttles.length}
             label="Shuttles Active"
             active={selectedTab === 'active'}
             onPress={() => handleTabPress('active')}

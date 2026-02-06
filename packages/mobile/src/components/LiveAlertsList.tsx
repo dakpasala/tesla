@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import ShuttleListItem from './ShuttleListItem';
-import { getAnnouncements, Announcement } from '../services/shuttleAlerts';
+import { Announcement } from '../services/shuttleAlerts';
 
 interface LiveAlertsListProps {
   alerts?: Announcement[];

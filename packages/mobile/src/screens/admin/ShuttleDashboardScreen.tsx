@@ -366,12 +366,6 @@ export default function ShuttleDashboardScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      {/* 
-            FIX: VirtualizedLists Support
-            If we are in a "Detailed View" (tab selected), we use a standard View container
-            so the inner List (FlatList/ScrollView) can handle its own scrolling.
-            If we are in "Summary View" (no tab), we use a main ScrollView for the mixed content.
-        */}
       {selectedTab === null ? (
         <ScrollView
           contentContainerStyle={styles.content}

@@ -41,15 +41,17 @@ export default function ActionRequiredCard({
   onPress,
 }: ActionRequiredCardProps) {
   return (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
+    <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={onPress}>
       <View style={styles.topRow}>
-        <Text style={styles.shuttleName} numberOfLines={1}>{shuttleName}</Text>
-        <View style={[styles.badge, { backgroundColor: SEVERITY_BG[severity] }]}>
-          <Text style={[styles.badgeText, { color: SEVERITY_COLORS[severity] }]}>
+        <Text style={styles.shuttleName} numberOfLines={1}>
+          {shuttleName}
+        </Text>
+        <View
+          style={[styles.badge, { backgroundColor: SEVERITY_BG[severity] }]}
+        >
+          <Text
+            style={[styles.badgeText, { color: SEVERITY_COLORS[severity] }]}
+          >
             {SEVERITY_LABEL[severity]}
           </Text>
         </View>
@@ -68,9 +70,7 @@ export default function ActionRequiredCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: 328,
     minHeight: 100,
-    alignSelf: 'center',
     backgroundColor: '#fff',
     borderRadius: 14,
     paddingVertical: 16,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   reportCount: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#007AFF',
+    color: '#FF3B30',
     marginBottom: 2,
   },
   // 12 regular

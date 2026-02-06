@@ -25,7 +25,9 @@ export default function StatBox({
       style={[
         styles.box,
         {
-          backgroundColor: isDark ? '#1C1C1E' : active ? '#000000' : '#F2F2F7',
+          backgroundColor: isDark ? '#1C1C1E' : active ? '#F2F8FF' : '#F2F2F7',
+          borderColor: active ? '#007AFF' : 'transparent',
+          borderWidth: active ? 1 : 0,
         },
       ]}
       onPress={onPress}
@@ -34,7 +36,7 @@ export default function StatBox({
       <Text
         style={[
           styles.value,
-          { color: isDark ? '#fff' : active ? '#FFFFFF' : '#000' },
+          { color: isDark ? '#fff' : active ? '#000000' : '#000' },
         ]}
       >
         {value}
@@ -42,7 +44,7 @@ export default function StatBox({
       <Text
         style={[
           styles.label,
-          { color: isDark ? '#A0A0A5' : active ? '#D1D1D6' : '#8E8E93' },
+          { color: isDark ? '#A0A0A5' : active ? '#007AFF' : '#8E8E93' },
         ]}
       >
         {label}

@@ -9,23 +9,17 @@ import {
 import ShuttleListItem from './ShuttleListItem';
 import { getAnnouncements, Announcement } from '../services/shuttleAlerts';
 
-export default function LiveAlertsList() {
-  const [alerts, setAlerts] = React.useState<Announcement[]>([]);
-  const [loading, setLoading] = React.useState(true);
+interface LiveAlertsListProps {
+  alerts?: Announcement[];
+  loading?: boolean;
+}
 
-  React.useEffect(() => {
-    async function fetchAlerts() {
-      try {
-        const data = await getAnnouncements();
-        setAlerts(data);
-      } catch (err) {
-        console.error('Failed to fetch announcements:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAlerts();
-  }, []);
+export default function LiveAlertsList({
+  alerts,
+  loading,
+}: LiveAlertsListProps) {
+  // If no data provided, component could self-fetch, but for now we assume data is passed
+  // or we render empty.
 
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], {
@@ -41,7 +35,7 @@ export default function LiveAlertsList() {
     );
   }
 
-  if (alerts.length === 0) {
+  if (!alerts || alerts.length === 0) {
     return <Text style={styles.emptyText}>No active alerts.</Text>;
   }
 

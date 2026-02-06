@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import {
   getShuttleReportsCount,
   getShuttleReportsAdmin,
+  getAnnouncements,
 } from '../../services/shuttleAlerts';
 import ActionRequiredCard from '../../components/ActionRequiredCard';
 import ShuttleListItem from '../../components/ShuttleListItem';
@@ -72,6 +73,8 @@ export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
 
   const [reportsCount, setReportsCount] = useState<number>(0);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>(
@@ -87,6 +90,16 @@ export default function ShuttleDashboardScreen() {
       setReportsCount(count);
     } catch (_e) {
       // keep existing
+    }
+
+    try {
+      // Fetch live alerts
+      const alertsData = await getAnnouncements();
+      setAlerts(alertsData);
+    } catch (err) {
+      console.error('Failed to fetch alerts', err);
+    } finally {
+      setAlertsLoading(false);
     }
 
     // Mock logic for "Action Required" section in summary
@@ -182,7 +195,7 @@ export default function ShuttleDashboardScreen() {
     if (selectedTab === 'alerts') {
       return (
         <View style={styles.detailedContainer}>
-          <LiveAlertsList />
+          <LiveAlertsList alerts={alerts} loading={alertsLoading} />
         </View>
       );
     }
@@ -301,7 +314,7 @@ export default function ShuttleDashboardScreen() {
             onPress={() => handleTabPress('reports')}
           />
           <StatBox
-            value={4}
+            value={alertsLoading ? '...' : alerts.length}
             label="Live Alerts"
             active={selectedTab === 'alerts'}
             onPress={() => handleTabPress('alerts')}

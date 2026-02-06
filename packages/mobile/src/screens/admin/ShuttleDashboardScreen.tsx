@@ -359,7 +359,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   announcementWrapper: {
-    alignItems: 'center',
     marginBottom: 24,
     zIndex: 100,
   },

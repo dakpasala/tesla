@@ -28,6 +28,8 @@ import ActiveShuttlesList from '../../components/ActiveShuttlesList';
 
 // ── Hardcoded data for summary view ─────────────────────────────────────────
 
+// TODO fetch from backend
+
 const HARDCODED_ALERTS_SUMMARY = [
   {
     id: '1',

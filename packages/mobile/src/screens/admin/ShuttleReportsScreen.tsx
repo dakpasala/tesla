@@ -19,6 +19,8 @@ import {
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 
+// TODO fetch from backend
+
 const ALL_SHUTTLES = [
   'Tesla HQ Deer Creek Shuttle A',
   'Tesla HQ Deer Creek Shuttle B',

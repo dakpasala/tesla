@@ -1,5 +1,5 @@
-import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import ShuttleListItem from './ShuttleListItem';
 
 // TODO fetch from API
@@ -32,6 +32,8 @@ const HARDCODED_SHUTTLES = [
 ];
 
 export default function ActiveShuttlesList() {
+  const navigation = useNavigation<any>();
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {HARDCODED_SHUTTLES.map((shuttle, idx) => (
@@ -41,6 +43,11 @@ export default function ActiveShuttlesList() {
           subtitle={shuttle.route}
           statusColor={shuttle.color}
           showSeparator={idx < HARDCODED_SHUTTLES.length - 1}
+          onPress={() =>
+            navigation.navigate('ShuttleReports', {
+              shuttleName: shuttle.name,
+            })
+          }
         />
       ))}
     </ScrollView>

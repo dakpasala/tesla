@@ -96,7 +96,10 @@ export default function ShuttleReportsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <Text style={styles.backText}>{'< '}Shuttle Dashboard</Text>
         </TouchableOpacity>
       </View>
@@ -108,7 +111,7 @@ export default function ShuttleReportsScreen() {
         {/* Announcement Dropdown */}
         <View style={styles.announcementWrapper}>
           <AnnouncementDropDown
-            onSelectOption={(option) => {
+            onSelectOption={option => {
               // TODO: handle announcement option
               console.log('Selected:', option);
             }}
@@ -158,7 +161,7 @@ const styles = StyleSheet.create({
   backButton: { padding: 4 },
   backText: {
     fontSize: 16,
-    color: '#FF3B30',
+    color: '#007AFF',
     fontWeight: '500',
   },
   content: {
@@ -173,7 +176,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   announcementWrapper: {
-    alignItems: 'center',
     marginBottom: 20,
     zIndex: 100,
   },

@@ -255,6 +255,11 @@ export default function ShuttleDashboardScreen() {
             subtitle={shuttle.route}
             statusColor={shuttle.color}
             showSeparator={idx < HARDCODED_SHUTTLES_SUMMARY.length - 1}
+            onPress={() =>
+              (navigation as any).navigate('ShuttleReports', {
+                shuttleName: shuttle.name,
+              })
+            }
           />
         ))}
 

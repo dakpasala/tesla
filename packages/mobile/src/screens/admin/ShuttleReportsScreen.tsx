@@ -1,6 +1,6 @@
 // packages/mobile/src/screens/admin/ShuttleReportsScreen.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Modalize } from 'react-native-modalize';
 import {
   getShuttleReportsAdmin,
   getAllReports,
@@ -19,11 +20,13 @@ import {
 } from '../../services/shuttleAlerts';
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
+import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
 
 export default function ShuttleReportsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { shuttleName } = route.params as { shuttleName: string };
+  const announcementModalRef = useRef<Modalize>(null);
 
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +100,11 @@ export default function ShuttleReportsScreen() {
         <View style={styles.announcementWrapper}>
           <AnnouncementDropDown
             onSelectOption={option => {
-              console.log('Selected:', option);
+              if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                announcementModalRef.current?.open();
+              } else {
+                console.log('Selected:', option);
+              }
             }}
           />
         </View>
@@ -129,6 +136,15 @@ export default function ShuttleReportsScreen() {
           />
         )}
       </View>
+
+      {/* Create Announcement Modal */}
+      <CreateNewAnnouncement
+        ref={announcementModalRef}
+        onSuccess={() => {
+          // Refresh reports after creating announcement
+          fetchReports();
+        }}
+      />
     </SafeAreaView>
   );
 }

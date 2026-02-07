@@ -18,6 +18,7 @@ import {
   Linking,
   Platform,
   Alert,
+  AppState,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -41,9 +42,21 @@ import {
 import { LocationBox } from '../../components/LocationBox';
 import { ParkingDetailView } from '../../components/ParkingDetailView';
 import { RouteDetailView } from '../../components/RouteDetailView';
+import { ShuttleArrivalSheet } from '../../components/ShuttleArrivalSheet';
 
-// Import alert and notification services
+// Import services
 import { getUserLocation } from '../../services/location';
+import {
+  getMinutesUntil,
+  isRideDelayed,
+  getLiveStatus,
+  getOccupancyPercentage,
+} from '../../services/tripshot';
+import {
+  startShuttleTracking,
+  stopShuttleTracking,
+  setupShuttleNotificationHandlers,
+} from '../../services/notifications';
 
 // Hooks
 import { useMapAlerts } from '../../hooks/useMapAlerts';
@@ -83,6 +96,9 @@ function MapScreen() {
   const [phase, setPhase] = useState<ScreenPhase>('availability');
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
 
+  // Navigation State
+  const [isNavigating, setIsNavigating] = useState(false);
+
   // Snap points
   const searchSnapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
   const quickstartSnapPoints = useMemo(() => ['20%', '50%', '80%'], []);
@@ -94,6 +110,8 @@ function MapScreen() {
   const handleBackToSearch = useCallback(() => {
     setMode('search');
     setSearchExpanded(false);
+    setIsNavigating(false);
+    stopShuttleTracking(); // Stop background notifications
     bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
   }, []);
 
@@ -133,6 +151,81 @@ function MapScreen() {
       viewMode,
       selectedParkingId,
     });
+
+  // ============ SHUTTLE TRACKING & NOTIFICATIONS ============
+  useEffect(() => {
+    if (isNavigating && travelMode === 'shuttle' && tripshotData?.options?.[0]) {
+      // Get the ride ID from first option
+      const firstStep = tripshotData.options[0].steps.find(
+        s => 'OnRouteScheduledStep' in s
+      );
+
+      if (firstStep && 'OnRouteScheduledStep' in firstStep) {
+        const rideId = firstStep.OnRouteScheduledStep.rideId;
+        const stopName =
+          tripshotData.stops?.find(
+            s => s.stopId === tripshotData.options[0].departureStopId
+          )?.name || 'Shuttle Stop';
+
+        // Function to get live status for notifications
+        const getLiveStatusForNotification = async (id: string) => {
+          try {
+            const status = await getLiveStatus([id]);
+            const ride = status.rides[0];
+
+            if (!ride) {
+              return {
+                etaMinutes: 0,
+                isDelayed: false,
+                delayMinutes: 0,
+                occupancy: 0,
+              };
+            }
+
+            const nextStop = ride.stopStatus[0];
+            const etaMinutes = nextStop?.Awaiting?.expectedArrivalTime
+              ? getMinutesUntil(nextStop.Awaiting.expectedArrivalTime)
+              : 0;
+
+            return {
+              etaMinutes,
+              isDelayed: isRideDelayed(ride),
+              delayMinutes: Math.round(ride.lateBySec / 60),
+              occupancy: getOccupancyPercentage(ride),
+            };
+          } catch (error) {
+            console.error('Failed to get live status:', error);
+            return {
+              etaMinutes: 0,
+              isDelayed: false,
+              delayMinutes: 0,
+              occupancy: 0,
+            };
+          }
+        };
+
+        // Start background tracking
+        startShuttleTracking(rideId, stopName, getLiveStatusForNotification);
+
+        // Setup notification handlers
+        const unsubscribe = setupShuttleNotificationHandlers(
+          () => {
+            // User tapped notification - ensure we're showing the tracking screen
+            setIsNavigating(true);
+          },
+          () => {
+            // User stopped tracking
+            handleBackFromNavigation();
+          }
+        );
+
+        return () => {
+          unsubscribe();
+          stopShuttleTracking();
+        };
+      }
+    }
+  }, [isNavigating, travelMode, tripshotData]);
 
   // ============ ADDITIONAL EFFECT: Parking Selection ============
   useEffect(() => {
@@ -185,6 +278,7 @@ function MapScreen() {
       setFetchedRouteData(null);
       setTripshotData(null);
       setSelectedParkingId(null);
+      setIsNavigating(false);
       bottomSheetRef.current?.snapToIndex(1);
     }
   }, [route.params, setFetchedRouteData, setTripshotData]);
@@ -299,6 +393,7 @@ function MapScreen() {
       setFetchedRouteData(null);
       setTripshotData(null);
       setSelectedParkingId(null);
+      setIsNavigating(false);
       bottomSheetRef.current?.snapToIndex(1); // Snap to 50%
     },
     [setDestination, setFetchedRouteData, setTripshotData]
@@ -319,6 +414,7 @@ function MapScreen() {
       setFetchedRouteData(null);
       setTripshotData(null);
       setSelectedParkingId(null);
+      setIsNavigating(false);
       bottomSheetRef.current?.snapToIndex(1);
     },
     [navigation, setFetchedRouteData, setTripshotData]
@@ -339,6 +435,7 @@ function MapScreen() {
       setFetchedRouteData(null);
       setTripshotData(null);
       setSelectedParkingId(null);
+      setIsNavigating(false);
       bottomSheetRef.current?.snapToIndex(1);
     },
     [navigation, setFetchedRouteData, setTripshotData]
@@ -349,26 +446,44 @@ function MapScreen() {
   }, []);
 
   const openInGoogleMaps = useCallback(() => {
-    const lot = parkingLots.find(p => p.id === selectedParkingId);
-    if (!lot) return;
-    const { latitude, longitude } = lot.coordinate;
-    const url = Platform.select({
-      ios: `comgooglemaps://?daddr=${latitude},${longitude}&directionsmode=driving`,
-      android: `google.navigation:q=${latitude},${longitude}`,
-    });
-    const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-    if (url) {
-      Linking.canOpenURL(url).then(supported =>
-        Linking.openURL(supported ? url : webUrl)
-      );
+    if (travelMode === 'shuttle') {
+      // For shuttle mode, start in-app navigation
+      setIsNavigating(true);
+    } else {
+      // For car mode, open Google Maps
+      const lot = parkingLots.find(p => p.id === selectedParkingId);
+      if (!lot) return;
+      const { latitude, longitude } = lot.coordinate;
+      const url = Platform.select({
+        ios: `comgooglemaps://?daddr=${latitude},${longitude}&directionsmode=driving`,
+        android: `google.navigation:q=${latitude},${longitude}`,
+      });
+      const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+      if (url) {
+        Linking.canOpenURL(url).then(supported =>
+          Linking.openURL(supported ? url : webUrl)
+        );
+      }
     }
-  }, [parkingLots, selectedParkingId]);
+  }, [parkingLots, selectedParkingId, travelMode]);
 
   const handleReport = useCallback(() => {
     Alert.alert(
       'Report Issue',
       'Thank you! Your feedback helps improve our service.'
     );
+  }, []);
+
+  const handleBackFromNavigation = useCallback(() => {
+    setIsNavigating(false);
+    stopShuttleTracking(); // Stop background notifications
+  }, []);
+
+  // Callback to refresh shuttle status (for polling)
+  const handleRefreshStatus = useCallback(() => {
+    // The useRoutePlanning hook already handles polling via its effect
+    // This is just a placeholder if we need manual refresh
+    console.log('Manual refresh triggered');
   }, []);
 
   // SearchBar Handlers
@@ -410,8 +525,32 @@ function MapScreen() {
 
   const selectedLot = parkingLots.find(p => p.id === selectedParkingId);
 
+  // ============ GET NEXT STOPS FOR ARRIVAL SHEET ============
+  const nextStops = useMemo(() => {
+    if (!tripshotData?.stops || !liveStatus?.rides?.[0])
+      return ['Stevens Creek', 'Sunnyvale', 'Mountain View'];
+
+    const stops = liveStatus.rides[0].stopStatus
+      .slice(0, 3)
+      .map(status => {
+        const stop = tripshotData.stops?.find(
+          s => s.stopId === status.Awaiting.stopId
+        );
+        return stop?.name || 'Stop';
+      });
+
+    return stops.length > 0
+      ? stops
+      : ['Stevens Creek', 'Sunnyvale', 'Mountain View'];
+  }, [tripshotData, liveStatus]);
+
   // ============ RENDER: AVAILABILITY CONTENT ============
   const renderAvailabilityContent = () => {
+    // If navigating with shuttle, don't show RouteDetailView
+    if (isNavigating && travelMode === 'shuttle') {
+      return null;
+    }
+
     if (parkingLoading || routesLoading) {
       return (
         <View style={styles.loadingContainer}>
@@ -571,7 +710,9 @@ function MapScreen() {
         )}
 
         {/* Quickstart specific Overlay */}
-        {mode === 'quickstart' && <LocationBox destination={destinationName} />}
+        {mode === 'quickstart' && !isNavigating && (
+          <LocationBox destination={destinationName} />
+        )}
       </View>
 
       {/* Bottom Sheet - Unified */}
@@ -602,8 +743,39 @@ function MapScreen() {
                 onWorkLongPress={handleWorkLongPress}
               />
             </View>
+          ) : isNavigating && travelMode === 'shuttle' ? (
+            // Show ShuttleArrivalSheet inside bottom sheet when navigating
+            <View style={styles.quickstartContainer}>
+              <ShuttleArrivalSheet
+                stopName={
+                  tripshotData?.stops?.find(
+                    s =>
+                      s.stopId === tripshotData?.options?.[0]?.departureStopId
+                  )?.name || 'Stevens Creek & Albany Bus Stop'
+                }
+                etaMinutes={
+                  liveStatus?.rides?.[0]?.stopStatus?.[0]?.Awaiting
+                    ?.expectedArrivalTime
+                    ? getMinutesUntil(
+                        liveStatus.rides[0].stopStatus[0].Awaiting
+                          .expectedArrivalTime
+                      )
+                    : 6
+                }
+                status={
+                  liveStatus?.rides?.[0] && isRideDelayed(liveStatus.rides[0])
+                    ? 'Delayed'
+                    : 'On Time'
+                }
+                nextStops={nextStops}
+                onBack={handleBackFromNavigation}
+                onReportIssue={handleReport}
+                liveStatus={liveStatus}
+                onRefreshStatus={handleRefreshStatus}
+              />
+            </View>
           ) : (
-            // Quickstart Content
+            // Quickstart Content (RouteDetailView)
             <View style={styles.quickstartContainer}>
               <RouteHeader
                 onBackPress={handleBackToSearch}

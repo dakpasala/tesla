@@ -2,7 +2,9 @@
 
 import { get, post } from './crud';
 
-// types
+// ============================================================================
+// Types
+// ============================================================================
 
 export type Location = {
   lg: number; // longitude
@@ -53,11 +55,39 @@ export type Route = {
   color: string;
 };
 
+export type Stop = {
+  stopId: string;
+  name: string;
+  location: Location;
+  address: {
+    address: string;
+    tags: string[];
+  };
+  description: string;
+  regionId: string;
+  deleted: null | string;
+  onDemand: boolean;
+  terminal: boolean;
+  hasParking: boolean;
+  parentId: null | string;
+  groupParent: null | string;
+  gtfsId: null | string;
+  photoIds: string[];
+  tags: string[];
+  ttsStopName: null | string;
+  yard: boolean;
+  yardCapacity: null | number;
+  yardMiddayParking: null | boolean;
+  yardVendorId: null | string;
+  geofence: any;
+};
+
 export type CommutePlanResponse = {
   startPoint: LocationPoint;
   endPoint: LocationPoint;
   options: TripOption[];
   routes: Route[];
+  stops?: Stop[];
 };
 
 export type StopStatus = {
@@ -96,11 +126,13 @@ export type LiveStatusResponse = {
   timestamp: string;
 };
 
+// ============================================================================
 // API Functions
+// ============================================================================
 
 export async function getCommutePlan(params: {
-  day: string; 
-  time: string; 
+  day: string; // YYYY-MM-DD
+  time: string; // HH:MM AM/PM
   timezone?: 'Pacific' | 'UTC';
   startLat: number;
   startLng: number;
@@ -145,8 +177,13 @@ export async function getLiveStatus(
   );
 }
 
-// helper Functions
+// ============================================================================
+// Helper Functions
+// ============================================================================
 
+/**
+ * Format a trip step for display (without context)
+ */
 export function formatTripStep(step: TripStep): {
   type: 'walk' | 'shuttle';
   from: string;
@@ -174,21 +211,76 @@ export function formatTripStep(step: TripStep): {
     const onRoute = step.OnRouteScheduledStep;
     return {
       type: 'shuttle',
-      from: onRoute.departureStopId,
-      to: onRoute.arrivalStopId,
+      from: 'Shuttle Stop',
+      to: 'Destination Stop',
       departureTime: onRoute.departureTime,
       arrivalTime: onRoute.arrivalTime,
     };
   }
 }
 
+/**
+ * Format a trip step for display with stop name lookup
+ */
+export function formatTripStepWithContext(
+  step: TripStep,
+  tripshotData: CommutePlanResponse | null
+): {
+  type: 'walk' | 'shuttle';
+  from: string;
+  to: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  duration?: number;
+} {
+  if ('OffRouteStep' in step) {
+    const offRoute = step.OffRouteStep;
+    const durationMs =
+      new Date(offRoute.arrivalTime).getTime() -
+      new Date(offRoute.departureTime).getTime();
+    const durationMin = Math.round(durationMs / 60000);
 
+    return {
+      type: 'walk',
+      from: offRoute.departFrom.name,
+      to: offRoute.arriveAt.name,
+      departureTime: offRoute.departureTime,
+      arrivalTime: offRoute.arrivalTime,
+      duration: durationMin,
+    };
+  } else {
+    const onRoute = step.OnRouteScheduledStep;
+    
+    // Look up stop names from stops array
+    const departureStop = tripshotData?.stops?.find(
+      s => s.stopId === onRoute.departureStopId
+    );
+    const arrivalStop = tripshotData?.stops?.find(
+      s => s.stopId === onRoute.arrivalStopId
+    );
+
+    return {
+      type: 'shuttle',
+      from: departureStop?.name || 'Shuttle Stop',
+      to: arrivalStop?.name || 'Destination',
+      departureTime: onRoute.departureTime,
+      arrivalTime: onRoute.arrivalTime,
+    };
+  }
+}
+
+/**
+ * Calculate minutes until a given time
+ */
 export function getMinutesUntil(isoTime: string): number {
   const now = new Date().getTime();
   const target = new Date(isoTime).getTime();
   return Math.round((target - now) / 60000);
 }
 
+/**
+ * Format time from ISO to human-readable
+ */
 export function formatTime(isoTime: string): string {
   return new Date(isoTime).toLocaleTimeString([], {
     hour: 'numeric',
@@ -196,11 +288,25 @@ export function formatTime(isoTime: string): string {
   });
 }
 
-
+/**
+ * Check if a ride is delayed
+ */
 export function isRideDelayed(ride: Ride): boolean {
   return ride.lateBySec > 60; // More than 1 minute late
 }
 
+/**
+ * Get occupancy percentage
+ */
 export function getOccupancyPercentage(ride: Ride): number {
   return Math.round((ride.riderCount / ride.vehicleCapacity) * 100);
+}
+
+/**
+ * Get delay status text
+ */
+export function getDelayText(ride: Ride): string {
+  if (!isRideDelayed(ride)) return 'On Time';
+  const delayMinutes = Math.round(ride.lateBySec / 60);
+  return `${delayMinutes} Min Delay`;
 }

@@ -1,9 +1,20 @@
+// packages/mobile/src/components/RouteDetailView.tsx
+
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { TravelMode } from '../context/RideContext';
 import { ModeTimes } from './RouteHeader';
+import {
+  CommutePlanResponse,
+  LiveStatusResponse,
+  formatTime,
+  formatTripStep,
+  getMinutesUntil,
+  isRideDelayed,
+  formatTripStepWithContext
+} from '../services/tripshot';
 
 interface RouteDetailViewProps {
   travelMode: TravelMode;
@@ -12,6 +23,8 @@ interface RouteDetailViewProps {
   onSetTravelMode: (mode: TravelMode) => void;
   modeTimes: ModeTimes;
   onReportIssue: () => void;
+  tripshotData?: CommutePlanResponse | null;
+  liveStatus?: LiveStatusResponse | null;
 }
 
 export function RouteDetailView({
@@ -21,7 +34,48 @@ export function RouteDetailView({
   onSetTravelMode,
   modeTimes,
   onReportIssue,
+  tripshotData,
+  liveStatus,
 }: RouteDetailViewProps) {
+  // Parse TripShot data if available
+  const firstOption = tripshotData?.options?.[0];
+  const steps = firstOption?.steps || [];
+  const routeInfo = tripshotData?.routes?.[0];
+
+  // Get live status for the first ride
+  const firstRide = liveStatus?.rides?.[0];
+  const nextStop = firstRide?.stopStatus?.[0];
+
+  // Calculate status text
+  const getStatusText = () => {
+    if (!firstRide) return 'On Time · 10 min away';
+
+    const delayed = isRideDelayed(firstRide);
+    const delayMinutes = Math.round(firstRide.lateBySec / 60);
+
+    let statusText = delayed ? `${delayMinutes} Min Delay` : 'On Time';
+
+    if (nextStop?.Awaiting?.expectedArrivalTime) {
+      const minutesAway = getMinutesUntil(
+        nextStop.Awaiting.expectedArrivalTime
+      );
+      statusText += ` · ${minutesAway} min away`;
+    }
+
+    return statusText;
+  };
+
+  // Calculate total duration
+  const totalDuration = firstOption
+    ? Math.round(
+        (new Date(firstOption.travelEnd).getTime() -
+          new Date(firstOption.travelStart).getTime()) /
+          60000
+      )
+    : 50;
+
+  const etaTime = firstOption ? formatTime(firstOption.travelEnd) : '9:30 AM';
+
   return (
     <>
       <GHTouchableOpacity
@@ -33,66 +87,133 @@ export function RouteDetailView({
           <View>
             <Text style={styles.routeTitle}>
               {travelMode === 'shuttle'
-                ? 'Tesla Shuttle A'
+                ? routeInfo?.shortName || 'Tesla Shuttle A'
                 : travelMode === 'transit'
                   ? 'Public Transit'
                   : 'Bike Route'}
             </Text>
-            <Text style={styles.routeSub}>On Time · 10 min away</Text>
+            <Text
+              style={[
+                styles.routeSub,
+                firstRide && isRideDelayed(firstRide) && styles.routeSubDelayed,
+              ]}
+            >
+              {travelMode === 'shuttle' ? getStatusText() : 'On Time · 10 min away'}
+            </Text>
           </View>
           <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>50 Min</Text>
-            <Text style={styles.etaSub}>9:30 AM ETA</Text>
+            <Text style={styles.etaText}>{totalDuration} Min</Text>
+            <Text style={styles.etaSub}>{etaTime} ETA</Text>
           </View>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.routeDetails}>
-          <View style={styles.stepRow}>
-            <Svg width={12} height={40}>
-              <Circle cx={6} cy={6} r={3} fill="#007AFF" />
-              <Line
-                x1={6}
-                y1={6}
-                x2={6}
-                y2={40}
-                stroke="#E5E5E5"
-                strokeWidth={2}
-              />
-            </Svg>
-            <Text style={styles.stepText}>Your Location</Text>
-            <Text style={styles.stepTime}>8:40 AM</Text>
-          </View>
-          <View style={styles.stepRow}>
-            <Svg width={12} height={40}>
-              <Line
-                x1={6}
-                y1={0}
-                x2={6}
-                y2={40}
-                stroke="#E5E5E5"
-                strokeWidth={2}
-              />
-              <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
-            </Svg>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepText}>
-                {travelMode === 'shuttle'
-                  ? '10 min walk to shuttle stop'
-                  : travelMode === 'bike'
-                    ? '25 min bike ride'
-                    : '15 min bus ride'}
-              </Text>
-            </View>
-          </View>
-          <View style={styles.stepRow}>
-            <Svg width={12} height={12}>
-              <Circle cx={6} cy={6} r={3} fill="#000" />
-            </Svg>
-            <Text style={styles.stepText}>{destinationName}</Text>
-            <Text style={styles.stepTime}>9:30 AM</Text>
-          </View>
+          {/* Render steps from TripShot data */}
+          {steps.length > 0 ? (
+            steps.map((step, index) => {
+              const formatted = formatTripStepWithContext(step, tripshotData || null); 
+              const isFirst = index === 0;
+              const isLast = index === steps.length - 1;
+
+              return (
+                <View key={index} style={styles.stepRow}>
+                  <Svg width={12} height={isLast ? 12 : 40}>
+                    {isFirst && <Circle cx={6} cy={6} r={3} fill="#007AFF" />}
+                    {!isFirst && !isLast && (
+                      <>
+                        <Line
+                          x1={6}
+                          y1={0}
+                          x2={6}
+                          y2={40}
+                          stroke="#E5E5E5"
+                          strokeWidth={2}
+                        />
+                        <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
+                      </>
+                    )}
+                    {isLast && <Circle cx={6} cy={6} r={3} fill="#000" />}
+                    {!isLast && (
+                      <Line
+                        x1={6}
+                        y1={6}
+                        x2={6}
+                        y2={40}
+                        stroke="#E5E5E5"
+                        strokeWidth={2}
+                      />
+                    )}
+                  </Svg>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepText}>
+                      {isFirst
+                        ? formatted.from
+                        : formatted.type === 'walk'
+                          ? `${formatted.duration} min walk to ${formatted.to}`
+                          : isLast
+                            ? formatted.to
+                            : `Shuttle to ${formatted.to}`}
+                    </Text>
+                  </View>
+                  <Text style={styles.stepTime}>
+                    {formatted.departureTime
+                      ? formatTime(formatted.departureTime)
+                      : ''}
+                  </Text>
+                </View>
+              );
+            })
+          ) : (
+            // Fallback to hardcoded data when no TripShot data
+            <>
+              <View style={styles.stepRow}>
+                <Svg width={12} height={40}>
+                  <Circle cx={6} cy={6} r={3} fill="#007AFF" />
+                  <Line
+                    x1={6}
+                    y1={6}
+                    x2={6}
+                    y2={40}
+                    stroke="#E5E5E5"
+                    strokeWidth={2}
+                  />
+                </Svg>
+                <Text style={styles.stepText}>Your Location</Text>
+                <Text style={styles.stepTime}>8:40 AM</Text>
+              </View>
+              <View style={styles.stepRow}>
+                <Svg width={12} height={40}>
+                  <Line
+                    x1={6}
+                    y1={0}
+                    x2={6}
+                    y2={40}
+                    stroke="#E5E5E5"
+                    strokeWidth={2}
+                  />
+                  <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
+                </Svg>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepText}>
+                    {travelMode === 'shuttle'
+                      ? '10 min walk to shuttle stop'
+                      : travelMode === 'bike'
+                        ? '25 min bike ride'
+                        : '15 min bus ride'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.stepRow}>
+                <Svg width={12} height={12}>
+                  <Circle cx={6} cy={6} r={3} fill="#000" />
+                </Svg>
+                <Text style={styles.stepText}>{destinationName}</Text>
+                <Text style={styles.stepTime}>9:30 AM</Text>
+              </View>
+            </>
+          )}
         </View>
 
         <View style={styles.actionRow}>
@@ -160,21 +281,25 @@ const styles = StyleSheet.create({
   },
   routeTitle: { fontSize: 17, fontWeight: '600', color: '#000' },
   routeSub: { fontSize: 13, color: '#34C759', marginTop: 2 },
+  routeSubDelayed: { color: '#FF9500' }, // Orange for delays
   etaBadge: { alignItems: 'flex-end' },
   etaText: { fontSize: 20, fontWeight: '700', color: '#000' },
   etaSub: { fontSize: 12, color: '#8E8E93' },
   divider: { height: 1, backgroundColor: '#F2F2F7', marginHorizontal: 16 },
   routeDetails: { padding: 16, paddingVertical: 12 },
-  stepRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
   stepText: {
     fontSize: 13,
     fontWeight: '500',
     color: '#000',
-    marginLeft: 8,
     flex: 1,
   },
   stepContent: { flex: 1, marginLeft: 8, paddingBottom: 4 },
-  stepTime: { fontSize: 12, color: '#8E8E93' },
+  stepTime: { fontSize: 12, color: '#8E8E93', marginLeft: 8 },
   actionRow: { padding: 16, paddingTop: 0 },
   startButton: {
     backgroundColor: '#007AFF',

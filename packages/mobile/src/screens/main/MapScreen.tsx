@@ -43,7 +43,6 @@ import { ParkingDetailView } from '../../components/ParkingDetailView';
 import { RouteDetailView } from '../../components/RouteDetailView';
 
 // Import alert and notification services
-// Alerts imports removed (handled by hook)
 import { getUserLocation } from '../../services/location';
 
 // Hooks
@@ -52,8 +51,6 @@ import { useRoutePlanning } from '../../hooks/useRoutePlanning';
 import { useParkingData } from '../../hooks/useParkingData';
 
 import { decodePolyline, formatDuration } from '../../helpers/mapUtils';
-
-// Interface removed, imported from services/parkings
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type MapScreenRouteProp = RouteProp<RootStackParamList, 'Map'>;
@@ -96,7 +93,6 @@ function MapScreen() {
   // Return to Search Mode
   const handleBackToSearch = useCallback(() => {
     setMode('search');
-    // setFetchedRouteData(null); // Will be handled by hook setter if needed, or effect
     setSearchExpanded(false);
     bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
   }, []);
@@ -106,14 +102,22 @@ function MapScreen() {
   // 1. Alerts & Notifications
   useMapAlerts(userId);
 
-  // 2. Route Planning
-  const { fetchedRouteData, setFetchedRouteData, routesLoading, routesError } =
-    useRoutePlanning({
-      mode,
-      destinationAddress,
-      isHomeRoute,
-      onBackToSearch: handleBackToSearch,
-    });
+  // 2. Route Planning (with TripShot integration)
+  const {
+    fetchedRouteData,
+    setFetchedRouteData,
+    tripshotData,
+    setTripshotData,
+    liveStatus,
+    routesLoading,
+    routesError,
+  } = useRoutePlanning({
+    mode,
+    destinationAddress,
+    isHomeRoute,
+    travelMode, // Pass travel mode to hook
+    onBackToSearch: handleBackToSearch,
+  });
 
   // 3. Parking Data
   const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
@@ -131,7 +135,6 @@ function MapScreen() {
     });
 
   // ============ ADDITIONAL EFFECT: Parking Selection ============
-  // Select Parking Lot based on Destination (Logic kept in component as it bridges route & parking)
   useEffect(() => {
     if (mode === 'quickstart' && parkingLots.length > 0 && !selectedParkingId) {
       const targetLot = parkingLots.find(
@@ -150,8 +153,6 @@ function MapScreen() {
 
   // ============ MAP CENTERING ============
   useEffect(() => {
-    // Only center on user location if we are in search mode and haven't fetched a route yet
-    // This prevents re-centering when switching back from quickstart or during quickstart interactions
     if (mode === 'search') {
       const centerMap = async () => {
         try {
@@ -182,19 +183,11 @@ function MapScreen() {
       setPhase('availability');
       setViewMode('detail');
       setFetchedRouteData(null);
+      setTripshotData(null);
       setSelectedParkingId(null);
       bottomSheetRef.current?.snapToIndex(1);
-
-      // Clear params to prevent re-triggering?
-      // Actually, standard practice is to let them be, or use setParams to clear if needed.
-      // But since we use state, it's fine.
     }
-  }, [route.params]);
-
-  // ============ QUICKSTART LOGIC ============
-
-  // Fetch Routes
-  // Old Effects Removed (handled by hooks)
+  }, [route.params, setFetchedRouteData, setTripshotData]);
 
   // ============ COMPUTED VALUES (Polyline, Region, etc.) ============
   const originalPolyline = useMemo(() => {
@@ -304,10 +297,11 @@ function MapScreen() {
       setPhase('availability');
       setViewMode('detail');
       setFetchedRouteData(null);
+      setTripshotData(null);
       setSelectedParkingId(null);
       bottomSheetRef.current?.snapToIndex(1); // Snap to 50%
     },
-    [setDestination]
+    [setDestination, setFetchedRouteData, setTripshotData]
   );
 
   const handleHomePress = useCallback(
@@ -323,10 +317,11 @@ function MapScreen() {
       setPhase('availability');
       setViewMode('detail');
       setFetchedRouteData(null);
+      setTripshotData(null);
       setSelectedParkingId(null);
       bottomSheetRef.current?.snapToIndex(1);
     },
-    [navigation]
+    [navigation, setFetchedRouteData, setTripshotData]
   );
 
   const handleWorkPress = useCallback(
@@ -342,15 +337,12 @@ function MapScreen() {
       setPhase('availability');
       setViewMode('detail');
       setFetchedRouteData(null);
+      setTripshotData(null);
       setSelectedParkingId(null);
       bottomSheetRef.current?.snapToIndex(1);
     },
-    [navigation]
+    [navigation, setFetchedRouteData, setTripshotData]
   );
-
-  // Return to Search Mode
-  // Return to Search Mode (Moved up)
-  // const handleBackToSearch = ...
 
   const handleParkingSelect = useCallback((id: string) => {
     setSelectedParkingId(id);
@@ -420,7 +412,7 @@ function MapScreen() {
 
   // ============ RENDER: AVAILABILITY CONTENT ============
   const renderAvailabilityContent = () => {
-    if (parkingLoading) {
+    if (parkingLoading || routesLoading) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#007AFF" />
@@ -428,10 +420,10 @@ function MapScreen() {
         </View>
       );
     }
-    if (parkingError) {
+    if (parkingError || routesError) {
       return (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{parkingError}</Text>
+          <Text style={styles.errorText}>{parkingError || routesError}</Text>
         </View>
       );
     }
@@ -461,6 +453,8 @@ function MapScreen() {
         onSetTravelMode={setTravelMode}
         modeTimes={modeTimes}
         onReportIssue={handleReport}
+        tripshotData={tripshotData}
+        liveStatus={liveStatus}
       />
     );
   };

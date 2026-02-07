@@ -1,6 +1,6 @@
 // packages/mobile/src/screens/admin/ShuttleDashboardScreen.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Modalize } from 'react-native-modalize';
 import {
   getAnnouncements,
   getAllReports,
@@ -20,6 +21,7 @@ import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import LiveAlertCard from '../../components/LiveAlertCard';
 import StatBox from '../../components/StatBox';
+import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
 
 // Extracted Lists
 import ShuttleReportsList from '../../components/ShuttleReportsList';
@@ -42,6 +44,7 @@ type DashboardTab = 'reports' | 'alerts' | 'active' | null;
 
 export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
+  const announcementModalRef = useRef<Modalize>(null);
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
@@ -348,7 +351,11 @@ export default function ShuttleDashboardScreen() {
           <View style={styles.announcementWrapper}>
             <AnnouncementDropDown
               onSelectOption={option => {
-                console.log('Selected:', option);
+                if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                  announcementModalRef.current?.open();
+                } else {
+                  console.log('Selected:', option);
+                }
               }}
             />
           </View>
@@ -384,7 +391,11 @@ export default function ShuttleDashboardScreen() {
           <View style={styles.announcementWrapper}>
             <AnnouncementDropDown
               onSelectOption={option => {
-                console.log('Selected:', option);
+                if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                  announcementModalRef.current?.open();
+                } else {
+                  console.log('Selected:', option);
+                }
               }}
             />
           </View>
@@ -393,6 +404,15 @@ export default function ShuttleDashboardScreen() {
           <View style={{ flex: 1 }}>{renderContent()}</View>
         </View>
       )}
+
+      {/* Create Announcement Modal */}
+      <CreateNewAnnouncement
+        ref={announcementModalRef}
+        onSuccess={() => {
+          // Refresh dashboard data after creating announcement
+          fetchDashboardData();
+        }}
+      />
     </SafeAreaView>
   );
 }

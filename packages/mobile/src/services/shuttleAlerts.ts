@@ -85,7 +85,7 @@ export type AnnouncementsResponse = {
 
 // alerts = announcements
 export async function getAnnouncements(): Promise<Announcement[]> {
-  const response = await get<AnnouncementsResponse>('shuttles/announcements');
+  const response = await get<AnnouncementsResponse>('shuttles/admin/announcements');
   return response.announcements;
 }
 

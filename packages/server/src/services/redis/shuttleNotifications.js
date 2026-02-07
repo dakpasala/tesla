@@ -67,6 +67,33 @@ export async function getShuttleAlerts(shuttleName) {
 
   return alerts.map(JSON.parse);
 }
+
+
+export async function getAllShuttleReports() {
+  const redis = await getRedisClient();
+  const keys = await redis.keys('reports:shuttle:*');
+
+  let allReports = [];
+
+  for (const key of keys) {
+    const shuttleName = key.replace('reports:shuttle:', '');
+    const reports = await redis.lRange(key, 0, -1);
+
+    const parsedReports = reports.map(r => {
+      const parsed = JSON.parse(r);
+      return { ...parsed, shuttleName };
+    });
+
+    allReports = [...allReports, ...parsedReports];
+  }
+
+  // Sort by newest first
+  return allReports.sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
+
 export async function getAllShuttleAlerts() {
   const redis = await getRedisClient();
   const keys = await redis.keys('alerts:shuttle:*');

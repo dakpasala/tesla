@@ -5,33 +5,12 @@ import {
   createShuttleAlert,
   getShuttleAlerts,
   getAllShuttleAlerts,
+  getAllShuttleReports
 } from '../services/redis/shuttleNotifications.js';
 
 import { getKeysByPattern, getLength } from '../services/redis/cache.js';
 
 const router = express.Router();
-
-// get announcements
-router.get('/announcements', async (req, res) => {
-  try {
-    const alerts = await getAllShuttleAlerts();
-
-    // Map backend snake_case to frontend camelCase
-    const announcements = alerts.map(alert => ({
-      id: alert.id,
-      shuttleName: alert.shuttleName || 'Unknown Shuttle',
-      delayMinutes: alert.delay_minutes,
-      createdAt: alert.created_at,
-      type: alert.type,
-      reason: alert.reason,
-    }));
-
-    res.json({ announcements });
-  } catch (err) {
-    console.error('Failed to fetch announcements:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 // submit a report
 router.post('/:shuttleName/reports', async (req, res) => {
@@ -73,7 +52,6 @@ router.get('/:shuttleName/alerts', async (req, res) => {
   res.json(alerts);
 });
 
-// admin routes
 
 // fetch reports
 router.get('/admin/:shuttleName/reports', async (req, res) => {
@@ -103,6 +81,47 @@ router.post('/admin/:shuttleName/alerts', async (req, res) => {
   });
 
   res.json(alert);
+});
+
+// // get announcements
+router.get('/admin/announcements', async (req, res) => {
+  try {
+    const alerts = await getAllShuttleAlerts();
+
+    // Map backend snake_case to frontend camelCase
+    const announcements = alerts.map(alert => ({
+      id: alert.id,
+      shuttleName: alert.shuttleName || 'Unknown Shuttle',
+      delayMinutes: alert.delay_minutes,
+      createdAt: alert.created_at,
+      type: alert.type,
+      reason: alert.reason,
+    }));
+
+    res.json({ announcements });
+  } catch (err) {
+    console.error('Failed to fetch announcements:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/admin/reports', async(req, res) => {
+  try {
+    const reports = await getAllShuttleReports();
+
+    // Map backend snake_case to frontend camelCase
+    const formattedReports = reports.map(report => ({
+      id: report.id,
+      shuttleName: report.shuttleName || 'Unknown Shuttle',
+      comment: report.comment,
+      createdAt: report.created_at,
+    }));
+
+    res.json({ reports: formattedReports });
+  } catch (err) {
+    console.error('Failed to fetch reports:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;

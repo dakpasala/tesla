@@ -92,7 +92,7 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
               <Text style={styles.mainTitle}>Create Announcement</Text>
 
               {/* Shuttle Dropdown */}
-              <View style={styles.dropdownWrapper}>
+              <View style={styles.dropdownWrapper}> 
                 <Pressable
                   style={styles.dropdownButton}
                   onPress={() => setDropdownOpen(v => !v)}

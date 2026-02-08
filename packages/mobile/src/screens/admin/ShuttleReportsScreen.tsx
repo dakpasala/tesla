@@ -1,6 +1,6 @@
 // packages/mobile/src/screens/admin/ShuttleReportsScreen.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,49 +12,36 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { Modalize } from 'react-native-modalize';
 import {
   getShuttleReportsAdmin,
-  ShuttleReport,
+  getAllReports,
+  Report,
 } from '../../services/shuttleAlerts';
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
-
-// TODO fetch from backend
-
-const ALL_SHUTTLES = [
-  'Tesla HQ Deer Creek Shuttle A',
-  'Tesla HQ Deer Creek Shuttle B',
-  'Tesla HQ Deer Creek Shuttle C',
-  'Tesla HQ Deer Creek Shuttle D',
-];
+import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
 
 export default function ShuttleReportsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { shuttleName } = route.params as { shuttleName: string };
+  const announcementModalRef = useRef<Modalize>(null);
 
-  const [reports, setReports] = useState<ShuttleReport[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchReports = async () => {
     try {
       if (shuttleName === 'all') {
-        const allReports: ShuttleReport[] = [];
-        for (const name of ALL_SHUTTLES) {
-          try {
-            const r = await getShuttleReportsAdmin(name);
-            allReports.push(...r);
-          } catch (_e) {}
-        }
-        allReports.sort(
-          (a, b) =>
-            new Date(b.createdAt ?? 0).getTime() -
-            new Date(a.createdAt ?? 0).getTime()
-        );
+        // Fetch all reports from all shuttles
+        const allReports = await getAllReports();
         setReports(allReports);
       } else {
+        // Fetch reports for specific shuttle
         const r = await getShuttleReportsAdmin(shuttleName);
+        // Sort by newest first
         r.sort(
           (a, b) =>
             new Date(b.createdAt ?? 0).getTime() -
@@ -62,7 +49,8 @@ export default function ShuttleReportsScreen() {
         );
         setReports(r);
       }
-    } catch (_e) {
+    } catch (err) {
+      console.error('Failed to fetch reports:', err);
       setReports([]);
     }
   };
@@ -80,7 +68,6 @@ export default function ShuttleReportsScreen() {
     setRefreshing(false);
   };
 
-  // 20 semi-bold title
   const displayName =
     shuttleName === 'all'
       ? 'All Shuttle Reports'
@@ -107,15 +94,17 @@ export default function ShuttleReportsScreen() {
       </View>
 
       <View style={styles.content}>
-        {/* 20 semi-bold */}
         <Text style={styles.title}>{displayName}</Text>
 
         {/* Announcement Dropdown */}
         <View style={styles.announcementWrapper}>
           <AnnouncementDropDown
             onSelectOption={option => {
-              // TODO: handle announcement option
-              console.log('Selected:', option);
+              if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                announcementModalRef.current?.open();
+              } else {
+                console.log('Selected:', option);
+              }
             }}
           />
         </View>
@@ -137,7 +126,7 @@ export default function ShuttleReportsScreen() {
             }
             renderItem={({ item, index }) => (
               <ShuttleListItem
-                title="Shuttle Delay"
+                title={item.shuttleName}
                 subtitle={item.comment}
                 statusColor="grey"
                 rightText={formatTime(item.createdAt)}
@@ -147,6 +136,15 @@ export default function ShuttleReportsScreen() {
           />
         )}
       </View>
+
+      {/* Create Announcement Modal */}
+      <CreateNewAnnouncement
+        ref={announcementModalRef}
+        onSuccess={() => {
+          // Refresh reports after creating announcement
+          fetchReports();
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -170,7 +168,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  // 20 semi-bold
   title: {
     fontSize: 20,
     fontWeight: '600',

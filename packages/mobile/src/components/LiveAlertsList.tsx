@@ -18,9 +18,6 @@ export default function LiveAlertsList({
   alerts,
   loading,
 }: LiveAlertsListProps) {
-  // If no data provided, component could self-fetch, but for now we assume data is passed
-  // or we render empty.
-
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], {
       hour: 'numeric',

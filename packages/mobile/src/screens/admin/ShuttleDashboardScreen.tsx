@@ -1,6 +1,6 @@
 // packages/mobile/src/screens/admin/ShuttleDashboardScreen.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,33 +11,22 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Modalize } from 'react-native-modalize';
 import {
-  getShuttleReportsAdmin,
   getAnnouncements,
+  getAllReports,
 } from '../../services/shuttleAlerts';
 import ActionRequiredCard from '../../components/ActionRequiredCard';
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import LiveAlertCard from '../../components/LiveAlertCard';
 import StatBox from '../../components/StatBox';
+import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
 
 // Extracted Lists
 import ShuttleReportsList from '../../components/ShuttleReportsList';
 import LiveAlertsList from '../../components/LiveAlertsList';
 import ActiveShuttlesList from '../../components/ActiveShuttlesList';
-
-// ── Hardcoded data for summary view ─────────────────────────────────────────
-
-// TODO fetch from backend
-
-const HARDCODED_ALERTS_SUMMARY = [
-  {
-    id: '1',
-    shuttleName: 'Tesla HQ Deer Creek Shuttle A',
-    delayMinutes: 5,
-    createdAt: new Date(Date.now() - 3 * 60000).toISOString(),
-  },
-];
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -55,6 +44,7 @@ type DashboardTab = 'reports' | 'alerts' | 'active' | null;
 
 export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
+  const announcementModalRef = useRef<Modalize>(null);
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
@@ -78,7 +68,7 @@ export default function ShuttleDashboardScreen() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch live alerts
+      // Fetch live alerts (announcements)
       const alertsData = await getAnnouncements();
       setAlerts(alertsData);
     } catch (err) {
@@ -127,41 +117,9 @@ export default function ShuttleDashboardScreen() {
     }
 
     try {
-      const allReports: any[] = [];
+      // Fetch all reports from the backend
+      const allReports = await getAllReports();
       const results: ActionRequiredShuttle[] = [];
-
-      // TODO: Replace with real API call
-      // const allReportsData = await getAllShuttleReports();
-
-      // Mock API Response (Simulating a backend that returns all reports for all shuttles)
-      const MOCK_ALL_REPORTS_RESPONSE = [
-        {
-          id: '101',
-          shuttleName: 'Tesla HQ Deer Creek Shuttle A',
-          comment: 'Traffic delay on 280',
-          createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 mins ago
-        },
-        {
-          id: '102',
-          shuttleName: 'Tesla HQ Deer Creek Shuttle A',
-          comment: 'Passenger assistance required',
-          createdAt: new Date(Date.now() - 1000 * 60 * 20).toISOString(), // 20 mins ago
-        },
-        {
-          id: '103',
-          shuttleName: 'Tesla HQ Deer Creek Shuttle B',
-          comment: 'Routine maintenance check',
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-        },
-        {
-          id: '104',
-          shuttleName: 'Tesla HQ Deer Creek Shuttle C',
-          comment: 'Slight delay departing',
-          createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(), // 2 mins ago
-        },
-      ];
-
-      allReports.push(...MOCK_ALL_REPORTS_RESPONSE);
 
       const reportsByShuttle: Record<string, any[]> = {};
 
@@ -201,13 +159,6 @@ export default function ShuttleDashboardScreen() {
           });
         }
       }
-
-      // Sort all reports by date for the list
-      allReports.sort(
-        (a, b) =>
-          new Date(b.createdAt ?? 0).getTime() -
-          new Date(a.createdAt ?? 0).getTime()
-      );
 
       // Update states
       setReports(allReports);
@@ -316,7 +267,7 @@ export default function ShuttleDashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {HARDCODED_ALERTS_SUMMARY.map(alert => (
+        {alerts.slice(0, 3).map(alert => (
           <LiveAlertCard
             key={alert.id}
             shuttleName={alert.shuttleName}
@@ -400,7 +351,11 @@ export default function ShuttleDashboardScreen() {
           <View style={styles.announcementWrapper}>
             <AnnouncementDropDown
               onSelectOption={option => {
-                console.log('Selected:', option);
+                if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                  announcementModalRef.current?.open();
+                } else {
+                  console.log('Selected:', option);
+                }
               }}
             />
           </View>
@@ -436,7 +391,11 @@ export default function ShuttleDashboardScreen() {
           <View style={styles.announcementWrapper}>
             <AnnouncementDropDown
               onSelectOption={option => {
-                console.log('Selected:', option);
+                if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                  announcementModalRef.current?.open();
+                } else {
+                  console.log('Selected:', option);
+                }
               }}
             />
           </View>
@@ -445,6 +404,15 @@ export default function ShuttleDashboardScreen() {
           <View style={{ flex: 1 }}>{renderContent()}</View>
         </View>
       )}
+
+      {/* Create Announcement Modal */}
+      <CreateNewAnnouncement
+        ref={announcementModalRef}
+        onSuccess={() => {
+          // Refresh dashboard data after creating announcement
+          fetchDashboardData();
+        }}
+      />
     </SafeAreaView>
   );
 }

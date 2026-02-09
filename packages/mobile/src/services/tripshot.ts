@@ -2,9 +2,7 @@
 
 import { get, post } from './crud';
 
-// ============================================================================
 // Types
-// ============================================================================
 
 export type Location = {
   lg: number; // longitude
@@ -126,9 +124,7 @@ export type LiveStatusResponse = {
   timestamp: string;
 };
 
-// ============================================================================
 // API Functions
-// ============================================================================
 
 export async function getCommutePlan(params: {
   day: string; // YYYY-MM-DD
@@ -177,9 +173,7 @@ export async function getLiveStatus(
   );
 }
 
-// ============================================================================
 // Helper Functions
-// ============================================================================
 
 /**
  * Format a trip step for display (without context)

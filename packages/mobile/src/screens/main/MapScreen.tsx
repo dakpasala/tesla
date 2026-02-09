@@ -345,22 +345,35 @@ function MapScreen() {
 
   const modeTimes: ModeTimes = useMemo(() => {
     if (!fetchedRouteData?.routes)
-      return { car: '30m', shuttle: '50m', transit: '1hr5m', bike: '30m' };
-    const modeMap: Record<TransportMode, string> = {
-      car: 'driving',
-      shuttle: 'walking',
-      transit: 'transit',
-      bike: 'bicycling',
-    };
+      return { car: '30m', shuttle: '50m', transit: '1h 5m', bike: '30m' };
+    
     const times: ModeTimes = {};
-    (['car', 'shuttle', 'transit', 'bike'] as TransportMode[]).forEach(mode => {
-      const found = fetchedRouteData.routes?.find(
-        r => r.mode === modeMap[mode]
+    
+    // Map each transport mode to the corresponding route mode from API
+    const carRoute = fetchedRouteData.routes?.find(r => r.mode === 'driving');
+    if (carRoute) times.car = formatDuration(carRoute.duration_sec);
+    
+    const bikeRoute = fetchedRouteData.routes?.find(r => r.mode === 'bicycling');
+    if (bikeRoute) times.bike = formatDuration(bikeRoute.duration_sec);
+    
+    const transitRoute = fetchedRouteData.routes?.find(r => r.mode === 'transit');
+    if (transitRoute) times.transit = formatDuration(transitRoute.duration_sec);
+    
+    // For shuttle, use TripShot data if available, otherwise use walking route as fallback
+    if (tripshotData?.options?.[0]) {
+      const shuttleDuration = Math.round(
+        (new Date(tripshotData.options[0].travelEnd).getTime() -
+          new Date(tripshotData.options[0].travelStart).getTime()) /
+          60000
       );
-      if (found) times[mode] = formatDuration(found.duration_sec);
-    });
+      times.shuttle = formatDuration(shuttleDuration * 60);
+    } else {
+      const walkRoute = fetchedRouteData.routes?.find(r => r.mode === 'walking');
+      if (walkRoute) times.shuttle = formatDuration(walkRoute.duration_sec);
+    }
+    
     return times;
-  }, [fetchedRouteData]);
+  }, [fetchedRouteData, tripshotData]);
 
   const routeDuration = useMemo(() => {
     if (fetchedRouteData?.routes?.length) {
@@ -594,6 +607,7 @@ function MapScreen() {
         onReportIssue={handleReport}
         tripshotData={tripshotData}
         liveStatus={liveStatus}
+        googleMapsRoute={fetchedRouteData?.routes?.find(r => r.mode === 'transit')}
       />
     );
   };

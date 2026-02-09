@@ -25,6 +25,7 @@ interface RouteDetailViewProps {
   onReportIssue: () => void;
   tripshotData?: CommutePlanResponse | null;
   liveStatus?: LiveStatusResponse | null;
+  googleMapsRoute?: any; // Google Maps Directions API response for transit mode
 }
 
 export function RouteDetailView({
@@ -36,8 +37,9 @@ export function RouteDetailView({
   onReportIssue,
   tripshotData,
   liveStatus,
+  googleMapsRoute,
 }: RouteDetailViewProps) {
-  // Parse TripShot data if available
+  // Parse TripShot data if available (for shuttle)
   const firstOption = tripshotData?.options?.[0];
   const steps = firstOption?.steps || [];
   const routeInfo = tripshotData?.routes?.[0];
@@ -76,6 +78,434 @@ export function RouteDetailView({
 
   const etaTime = firstOption ? formatTime(firstOption.travelEnd) : '9:30 AM';
 
+  // Simple bike view - just show time
+  if (travelMode === 'bike') {
+    return (
+      <>
+        <GHTouchableOpacity
+          style={styles.routeCard}
+          activeOpacity={0.9}
+          onPress={onOpenInGoogleMaps}
+        >
+          <View style={styles.routeHeader}>
+            <View>
+              <Text style={styles.routeTitle}>Bike Route</Text>
+              <Text style={styles.routeSub}>Fastest option</Text>
+            </View>
+            <View style={styles.etaBadge}>
+              <Text style={styles.etaText}>{modeTimes.bike || '30 min'}</Text>
+              <Text style={styles.etaSub}>ETA</Text>
+            </View>
+          </View>
+
+          <View style={styles.actionRow}>
+            <GHTouchableOpacity
+              style={styles.startButton}
+              onPress={onOpenInGoogleMaps}
+            >
+              <Text style={styles.startButtonText}>Start</Text>
+            </GHTouchableOpacity>
+          </View>
+        </GHTouchableOpacity>
+
+        <View style={styles.footerLinks}>
+          <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
+          <GHTouchableOpacity
+            style={styles.altRow}
+            onPress={() => onSetTravelMode('shuttle')}
+          >
+            <Text style={styles.altText}>Tesla Shuttle</Text>
+            <Text style={styles.altTime}>{modeTimes.shuttle || '50 min'}</Text>
+          </GHTouchableOpacity>
+          <GHTouchableOpacity
+            style={styles.altRow}
+            onPress={() => onSetTravelMode('transit')}
+          >
+            <Text style={styles.altText}>Public Transit</Text>
+            <Text style={styles.altTime}>{modeTimes.transit || '1h 10m'}</Text>
+          </GHTouchableOpacity>
+          <GHTouchableOpacity
+            style={styles.altRow}
+            onPress={() => onSetTravelMode('car')}
+          >
+            <Text style={styles.altText}>Drive (view parking)</Text>
+            <Text style={styles.altTime}>{modeTimes.car || '30m'}</Text>
+          </GHTouchableOpacity>
+        </View>
+      </>
+    );
+  }
+
+  // Render shuttle steps using TripShot data
+  const renderShuttleSteps = () => {
+    if (steps.length === 0) return null;
+
+    return steps.map((step, index) => {
+      const formatted = formatTripStepWithContext(step, tripshotData || null);
+      const isFirst = index === 0;
+      const isLast = index === steps.length - 1;
+      const isShuttleStep = formatted.type === 'shuttle';
+      const isWalkStep = formatted.type === 'walk';
+
+      return (
+        <React.Fragment key={index}>
+          {/* Starting location */}
+          {isFirst && (
+            <View style={styles.stepRow}>
+              <View style={styles.stepIcon}>
+                <Svg width={12} height={40}>
+                  <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+                  <Line x1={6} y1={6} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />
+                </Svg>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepLocation}>{formatted.from}</Text>
+              </View>
+              <Text style={styles.stepTime}>
+                {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
+              </Text>
+            </View>
+          )}
+
+          {/* Walking step */}
+          {isWalkStep && (
+            <View style={styles.walkSection}>
+              <View style={styles.stepIcon}>
+                <Svg width={12} height={80}>
+                  <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
+                </Svg>
+                <View style={styles.walkIconContainer}>
+                  <Text style={styles.walkIcon}>🚶</Text>
+                </View>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.walkDuration}>{formatted.duration} min walk</Text>
+                <Text style={styles.otherOptionsLabel}>Other Options:</Text>
+                <View style={styles.altOptionsRow}>
+                  <View style={styles.altOption}>
+                    <Text style={styles.altOptionIcon}>🚗</Text>
+                    <Text style={styles.altOptionText}>2 min</Text>
+                  </View>
+                  <View style={styles.altOption}>
+                    <Text style={styles.altOptionIcon}>🚴</Text>
+                    <Text style={styles.altOptionText}>5 min</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Shuttle boarding stop */}
+          {isShuttleStep && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.shuttleStopRow}>
+                <View style={styles.stepIcon}>
+                  <Svg width={12} height={100}>
+                    <Line x1={6} y1={0} x2={6} y2={100} stroke="#BEDBFF" strokeWidth={2} />
+                  </Svg>
+                  <View style={styles.shuttleIconContainer}>
+                    <Text style={styles.shuttleIcon}>🚐</Text>
+                  </View>
+                </View>
+                <View style={styles.shuttleStopContent}>
+                  <Text style={styles.stopName}>{formatted.from}</Text>
+                  <Text style={styles.shuttleName}>
+                    {routeInfo?.shortName || 'Tesla Shuttle A'}
+                  </Text>
+                  <View style={styles.shuttleAmenities}>
+                    <View style={styles.amenityBadge}>
+                      <Text style={styles.amenityIcon}>👥</Text>
+                      <Text style={styles.amenityText}>
+                        {firstRide ? `${getOccupancyPercentage(firstRide)}% Full` : '65% Full'}
+                      </Text>
+                    </View>
+                    <View style={styles.amenityBadge}>
+                      <Text style={styles.amenityIcon}>📶</Text>
+                      <Text style={styles.amenityText}>Free Wifi</Text>
+                    </View>
+                  </View>
+                </View>
+                <Text style={styles.stepTime}>
+                  {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* Shuttle arrival stop (destination) */}
+          {isShuttleStep && (
+            <>
+              <View style={styles.divider} />
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}>
+                  <Svg width={12} height={12}>
+                    <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+                  </Svg>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepLocation}>{formatted.to}</Text>
+                </View>
+                <Text style={styles.stepTime}>
+                  {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* Final destination for walk-only routes */}
+          {isLast && !isShuttleStep && (
+            <View style={styles.stepRow}>
+              <View style={styles.stepIcon}>
+                <Svg width={12} height={12}>
+                  <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+                </Svg>
+              </View>
+              <View style={styles.stepContent}>
+                <Text style={styles.stepLocation}>{formatted.to}</Text>
+              </View>
+              <Text style={styles.stepTime}>
+                {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
+              </Text>
+            </View>
+          )}
+        </React.Fragment>
+      );
+    });
+  };
+
+  // Render transit steps - parse Google Maps API response
+  const renderTransitSteps = () => {
+    // Parse Google Maps transit route if available
+    if (googleMapsRoute?.steps && googleMapsRoute.steps.length > 0) {
+      return googleMapsRoute.steps.map((step: any, index: number) => {
+        const isFirst = index === 0;
+        const isLast = index === googleMapsRoute.steps.length - 1;
+        const isWalkStep = step.travel_mode === 'WALKING';
+        const isTransitStep = step.travel_mode === 'TRANSIT';
+        
+        // Parse times if available
+        const departureTime = step.departure_time?.text || '';
+        const arrivalTime = step.arrival_time?.text || '';
+        const duration = Math.round(step.duration?.value / 60) || 0;
+
+        return (
+          <React.Fragment key={index}>
+            {/* Starting location */}
+            {isFirst && (
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}>
+                  <Svg width={12} height={40}>
+                    <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+                    <Line x1={6} y1={6} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />
+                  </Svg>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepLocation}>Your Location</Text>
+                </View>
+                <Text style={styles.stepTime}>{departureTime}</Text>
+              </View>
+            )}
+
+            {/* Walk step */}
+            {isWalkStep && (
+              <View style={styles.walkSection}>
+                <View style={styles.stepIcon}>
+                  <Svg width={12} height={80}>
+                    <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
+                  </Svg>
+                  <View style={styles.walkIconContainer}>
+                    <Text style={styles.walkIcon}>🚶</Text>
+                  </View>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.walkDuration}>
+                    {duration} min walk{!isLast && ' to station'}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Transit step */}
+            {isTransitStep && (
+              <>
+                <View style={styles.divider} />
+                <View style={styles.shuttleStopRow}>
+                  <View style={styles.stepIcon}>
+                    <Svg width={12} height={100}>
+                      <Line x1={6} y1={0} x2={6} y2={100} stroke="#BEDBFF" strokeWidth={2} />
+                    </Svg>
+                    <View style={styles.shuttleIconContainer}>
+                      <Text style={styles.shuttleIcon}>
+                        {step.transit_details?.line?.vehicle?.type === 'BUS' ? '🚌' : '🚊'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.shuttleStopContent}>
+                    <Text style={styles.stopName}>
+                      {step.transit_details?.departure_stop?.name || 'Transit Stop'}
+                    </Text>
+                    <Text style={styles.shuttleName}>
+                      {step.transit_details?.line?.short_name || step.transit_details?.line?.name || 'Transit'}
+                      {step.transit_details?.headsign && ` - ${step.transit_details.headsign}`}
+                    </Text>
+                    <View style={styles.shuttleAmenities}>
+                      <View style={styles.amenityBadge}>
+                        <Text style={styles.amenityIcon}>🕐</Text>
+                        <Text style={styles.amenityText}>{duration} min ride</Text>
+                      </View>
+                      {step.transit_details?.num_stops && (
+                        <View style={styles.amenityBadge}>
+                          <Text style={styles.amenityIcon}>🛑</Text>
+                          <Text style={styles.amenityText}>
+                            {step.transit_details.num_stops} stops
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  <Text style={styles.stepTime}>{departureTime}</Text>
+                </View>
+                <View style={styles.divider} />
+                <View style={styles.stepRow}>
+                  <View style={styles.stepIcon}>
+                    <Svg width={12} height={40}>
+                      <Line x1={6} y1={0} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
+                      <Circle cx={6} cy={20} r={4} fill="#007AFF" />
+                      {!isLast && <Line x1={6} y1={20} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />}
+                    </Svg>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepLocation}>
+                      {step.transit_details?.arrival_stop?.name || 'Arrival Station'}
+                    </Text>
+                  </View>
+                  <Text style={styles.stepTime}>{arrivalTime}</Text>
+                </View>
+              </>
+            )}
+
+            {/* Final destination */}
+            {isLast && isWalkStep && (
+              <View style={styles.stepRow}>
+                <View style={styles.stepIcon}>
+                  <Svg width={12} height={12}>
+                    <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+                  </Svg>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepLocation}>{destinationName}</Text>
+                </View>
+                <Text style={styles.stepTime}>{arrivalTime}</Text>
+              </View>
+            )}
+          </React.Fragment>
+        );
+      });
+    }
+
+    // Fallback to placeholder data if no Google Maps data
+    return (
+      <>
+        <View style={styles.stepRow}>
+          <View style={styles.stepIcon}>
+            <Svg width={12} height={40}>
+              <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+              <Line x1={6} y1={6} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />
+            </Svg>
+          </View>
+          <View style={styles.stepContent}>
+            <Text style={styles.stepLocation}>Your Location</Text>
+          </View>
+          <Text style={styles.stepTime}>8:40 AM</Text>
+        </View>
+
+        {/* Walk to station */}
+        <View style={styles.walkSection}>
+          <View style={styles.stepIcon}>
+            <Svg width={12} height={60}>
+              <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
+            </Svg>
+            <View style={styles.walkIconContainer}>
+              <Text style={styles.walkIcon}>🚶</Text>
+            </View>
+          </View>
+          <View style={styles.stepContent}>
+            <Text style={styles.walkDuration}>5 min walk to station</Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Transit ride */}
+        <View style={styles.shuttleStopRow}>
+          <View style={styles.stepIcon}>
+            <Svg width={12} height={100}>
+              <Line x1={6} y1={0} x2={6} y2={100} stroke="#BEDBFF" strokeWidth={2} />
+            </Svg>
+            <View style={styles.shuttleIconContainer}>
+              <Text style={styles.shuttleIcon}>🚌</Text>
+            </View>
+          </View>
+          <View style={styles.shuttleStopContent}>
+            <Text style={styles.stopName}>Mountain View Station</Text>
+            <Text style={styles.shuttleName}>Caltrain Northbound</Text>
+            <View style={styles.shuttleAmenities}>
+              <View style={styles.amenityBadge}>
+                <Text style={styles.amenityIcon}>🕐</Text>
+                <Text style={styles.amenityText}>15 min ride</Text>
+              </View>
+            </View>
+          </View>
+          <Text style={styles.stepTime}>8:50 AM</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Arrival */}
+        <View style={styles.stepRow}>
+          <View style={styles.stepIcon}>
+            <Svg width={12} height={40}>
+              <Line x1={6} y1={0} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
+              <Circle cx={6} cy={20} r={4} fill="#007AFF" />
+            </Svg>
+          </View>
+          <View style={styles.stepContent}>
+            <Text style={styles.stepLocation}>Palo Alto Station</Text>
+          </View>
+          <Text style={styles.stepTime}>9:05 AM</Text>
+        </View>
+
+        {/* Walk to destination */}
+        <View style={styles.walkSection}>
+          <View style={styles.stepIcon}>
+            <Svg width={12} height={60}>
+              <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
+            </Svg>
+            <View style={styles.walkIconContainer}>
+              <Text style={styles.walkIcon}>🚶</Text>
+            </View>
+          </View>
+          <View style={styles.stepContent}>
+            <Text style={styles.walkDuration}>8 min walk</Text>
+          </View>
+        </View>
+
+        <View style={styles.stepRow}>
+          <View style={styles.stepIcon}>
+            <Svg width={12} height={12}>
+              <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+            </Svg>
+          </View>
+          <View style={styles.stepContent}>
+            <Text style={styles.stepLocation}>{destinationName}</Text>
+          </View>
+          <Text style={styles.stepTime}>9:15 AM</Text>
+        </View>
+      </>
+    );
+  };
+
   return (
     <>
       <GHTouchableOpacity
@@ -88,9 +518,7 @@ export function RouteDetailView({
             <Text style={styles.routeTitle}>
               {travelMode === 'shuttle'
                 ? routeInfo?.shortName || 'Tesla Shuttle A'
-                : travelMode === 'transit'
-                  ? 'Public Transit'
-                  : 'Bike Route'}
+                : 'Public Transit'}
             </Text>
             <Text
               style={[
@@ -102,8 +530,14 @@ export function RouteDetailView({
             </Text>
           </View>
           <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>{totalDuration} Min</Text>
-            <Text style={styles.etaSub}>{etaTime} ETA</Text>
+            <Text style={styles.etaText}>
+              {travelMode === 'shuttle' 
+                ? `${totalDuration} Min` 
+                : modeTimes.transit || '1h 10m'}
+            </Text>
+            <Text style={styles.etaSub}>
+              {travelMode === 'shuttle' ? `${etaTime} ETA` : 'ETA'}
+            </Text>
           </View>
         </View>
 
@@ -112,184 +546,14 @@ export function RouteDetailView({
         <View style={styles.routeDetails}>
           <Text style={styles.sectionTitle}>ROUTE DETAILS</Text>
 
-          {/* Render steps from TripShot data */}
-          {steps.length > 0 ? (
-            steps.map((step, index) => {
-              const formatted = formatTripStepWithContext(step, tripshotData || null);
-              const isFirst = index === 0;
-              const isLast = index === steps.length - 1;
-              const isShuttleStep = formatted.type === 'shuttle';
-              const isWalkStep = formatted.type === 'walk';
-
-              return (
-                <React.Fragment key={index}>
-                  {/* Starting location */}
-                  {isFirst && (
-                    <View style={styles.stepRow}>
-                      <Svg width={12} height={40}>
-                        <Circle cx={6} cy={6} r={3} fill="#007AFF" />
-                        <Line x1={6} y1={6} x2={6} y2={40} stroke="#E5E5E5" strokeWidth={2} />
-                      </Svg>
-                      <View style={styles.stepContent}>
-                        <Text style={styles.stepText}>{formatted.from}</Text>
-                      </View>
-                      <Text style={styles.stepTime}>
-                        {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Walking step */}
-                  {isWalkStep && (
-                    <View style={styles.stepRow}>
-                      <Svg width={12} height={60}>
-                        <Line x1={6} y1={0} x2={6} y2={60} stroke="#E5E5E5" strokeWidth={2} />
-                      </Svg>
-                      <View style={styles.stepContent}>
-                        <View style={styles.walkStepHeader}>
-                          <Text style={styles.stepIcon}>🚶</Text>
-                          <Text style={styles.stepText}>{formatted.duration} min walk</Text>
-                        </View>
-                        <Text style={styles.stepSubtext}>Other Options:</Text>
-                        <View style={styles.altOptionsRow}>
-                          <View style={styles.altOption}>
-                            <Text style={styles.altOptionIcon}>🚗</Text>
-                            <Text style={styles.altOptionText}>2 min</Text>
-                          </View>
-                          <View style={styles.altOption}>
-                            <Text style={styles.altOptionIcon}>🚴</Text>
-                            <Text style={styles.altOptionText}>5 min</Text>
-                          </View>
-                        </View>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* Shuttle boarding stop */}
-                  {isShuttleStep && (
-                    <View style={styles.shuttleStopContainer}>
-                      <View style={styles.stepRow}>
-                        <Svg width={12} height={80}>
-                          <Line x1={6} y1={0} x2={6} y2={80} stroke="#E5E5E5" strokeWidth={2} />
-                          <Circle cx={6} cy={40} r={5} fill="#FFF" stroke="#007AFF" strokeWidth={2} />
-                        </Svg>
-                        <View style={styles.stepContent}>
-                          <View style={styles.shuttleStopHeader}>
-                            <Text style={styles.shuttleStopIcon}>🚌</Text>
-                            <Text style={styles.stopName}>{formatted.from}</Text>
-                          </View>
-                          <Text style={styles.shuttleName}>
-                            {routeInfo?.shortName || 'Tesla Shuttle A'}
-                          </Text>
-                          <View style={styles.shuttleInfoRow}>
-                            <View style={styles.shuttleInfo}>
-                              <Text style={styles.shuttleInfoIcon}>👥</Text>
-                              <Text style={styles.shuttleInfoText}>
-                                {firstRide ? `${getOccupancyPercentage(firstRide)}% Full` : '65% Full'}
-                              </Text>
-                            </View>
-                            <View style={styles.shuttleInfo}>
-                              <Text style={styles.shuttleInfoIcon}>📶</Text>
-                              <Text style={styles.shuttleInfoText}>Free Wifi</Text>
-                            </View>
-                          </View>
-                        </View>
-                        <Text style={styles.stepTime}>
-                          {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
-                        </Text>
-                      </View>
-                    </View>
-                  )}
-
-                  {/* Shuttle arrival stop (destination) */}
-                  {isShuttleStep && (
-                    <View style={styles.stepRow}>
-                      <Svg width={12} height={40}>
-                        <Line x1={6} y1={0} x2={6} y2={20} stroke="#E5E5E5" strokeWidth={2} />
-                        <Circle cx={6} cy={20} r={3} fill="#007AFF" />
-                        {!isLast && <Line x1={6} y1={20} x2={6} y2={40} stroke="#E5E5E5" strokeWidth={2} />}
-                      </Svg>
-                      <View style={styles.stepContent}>
-                        <Text style={styles.stepText}>{formatted.to}</Text>
-                      </View>
-                      <Text style={styles.stepTime}>
-                        {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Final destination */}
-                  {isLast && !isShuttleStep && (
-                    <View style={styles.stepRow}>
-                      <Svg width={12} height={12}>
-                        <Circle cx={6} cy={6} r={3} fill="#000" />
-                      </Svg>
-                      <View style={styles.stepContent}>
-                        <Text style={styles.stepText}>{formatted.to}</Text>
-                      </View>
-                      <Text style={styles.stepTime}>
-                        {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
-                      </Text>
-                    </View>
-                  )}
-                </React.Fragment>
-              );
-            })
-          ) : (
-            // Fallback to hardcoded data when no TripShot data
-            <>
-              <View style={styles.stepRow}>
-                <Svg width={12} height={40}>
-                  <Circle cx={6} cy={6} r={3} fill="#007AFF" />
-                  <Line
-                    x1={6}
-                    y1={6}
-                    x2={6}
-                    y2={40}
-                    stroke="#E5E5E5"
-                    strokeWidth={2}
-                  />
-                </Svg>
-                <Text style={styles.stepText}>Your Location</Text>
-                <Text style={styles.stepTime}>8:40 AM</Text>
-              </View>
-              <View style={styles.stepRow}>
-                <Svg width={12} height={40}>
-                  <Line
-                    x1={6}
-                    y1={0}
-                    x2={6}
-                    y2={40}
-                    stroke="#E5E5E5"
-                    strokeWidth={2}
-                  />
-                  <Circle cx={6} cy={20} r={2} fill="#8E8E93" />
-                </Svg>
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepText}>
-                    {travelMode === 'shuttle'
-                      ? '10 min walk to shuttle stop'
-                      : travelMode === 'bike'
-                        ? '25 min bike ride'
-                        : '15 min bus ride'}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.stepRow}>
-                <Svg width={12} height={12}>
-                  <Circle cx={6} cy={6} r={3} fill="#000" />
-                </Svg>
-                <Text style={styles.stepText}>{destinationName}</Text>
-                <Text style={styles.stepTime}>9:30 AM</Text>
-              </View>
-            </>
-          )}
+          {/* Render appropriate steps based on travel mode */}
+          {travelMode === 'shuttle' ? renderShuttleSteps() : renderTransitSteps()}
         </View>
 
-        <View style={styles.seeMoreRow}>
-          <Text style={styles.seeMoreText}>See something off? </Text>
+        <View style={styles.reportRow}>
+          <Text style={styles.reportText}>See something off? </Text>
           <GHTouchableOpacity onPress={onReportIssue}>
-            <Text style={styles.reportLinkText}>Report it</Text>
+            <Text style={styles.reportLink}>Report it</Text>
           </GHTouchableOpacity>
         </View>
 
@@ -305,19 +569,21 @@ export function RouteDetailView({
 
       <View style={styles.footerLinks}>
         <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
-        <GHTouchableOpacity
-          style={styles.altRow}
-          onPress={() => onSetTravelMode('shuttle')}
-        >
-          <Text style={styles.altText}>Tesla Shuttle B</Text>
-          <Text style={styles.altTime}>55 min</Text>
-        </GHTouchableOpacity>
+        {travelMode === 'shuttle' && (
+          <GHTouchableOpacity
+            style={styles.altRow}
+            onPress={() => {}}
+          >
+            <Text style={styles.altText}>Tesla Shuttle B</Text>
+            <Text style={styles.altTime}>55 min</Text>
+          </GHTouchableOpacity>
+        )}
         <GHTouchableOpacity
           style={styles.altRow}
           onPress={() => onSetTravelMode('transit')}
         >
           <Text style={styles.altText}>Public Transit</Text>
-          <Text style={styles.altTime}>1h 10m</Text>
+          <Text style={styles.altTime}>{modeTimes.transit || '1h 10m'}</Text>
         </GHTouchableOpacity>
         <GHTouchableOpacity
           style={styles.altRow}
@@ -333,145 +599,236 @@ export function RouteDetailView({
 
 const styles = StyleSheet.create({
   routeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: '#FCFCFC',
+    borderRadius: 10,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    overflow: 'hidden',
   },
   routeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: 16,
-    paddingBottom: 12,
+    padding: 20,
+    paddingBottom: 16,
   },
-  routeTitle: { fontSize: 17, fontWeight: '600', color: '#000' },
-  routeSub: { fontSize: 13, color: '#34C759', marginTop: 2 },
-  routeSubDelayed: { color: '#FF9500' },
-  etaBadge: { alignItems: 'flex-end' },
-  etaText: { fontSize: 20, fontWeight: '700', color: '#000' },
-  etaSub: { fontSize: 12, color: '#8E8E93' },
-  divider: { height: 1, backgroundColor: '#F2F2F7', marginHorizontal: 16 },
-  routeDetails: { padding: 16, paddingVertical: 12 },
+  routeTitle: { 
+    fontSize: 16, 
+    fontWeight: '500', 
+    color: '#1C1C1C',
+    textTransform: 'capitalize',
+  },
+  routeSub: { 
+    fontSize: 12, 
+    color: '#1A9C30', 
+    marginTop: 6,
+  },
+  routeSubDelayed: { 
+    color: '#FF9500',
+  },
+  etaBadge: { 
+    alignItems: 'flex-end',
+  },
+  etaText: { 
+    fontSize: 20, 
+    fontWeight: '600', 
+    color: '#1C1C1C',
+    textTransform: 'capitalize',
+  },
+  etaSub: { 
+    fontSize: 12, 
+    color: '#1C1C1C', 
+    marginTop: 2,
+  },
+  divider: { 
+    height: 1, 
+    backgroundColor: '#D9D9D9', 
+    marginHorizontal: 20,
+  },
+  routeDetails: { 
+    padding: 20,
+    paddingTop: 16,
+  },
   sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#8E8E93',
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#6A6A6A',
     letterSpacing: 0.5,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: 12,
   },
-  stepText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#000',
-    flex: 1,
+  stepIcon: {
+    width: 26,
+    alignItems: 'center',
+    position: 'relative',
   },
   stepContent: { 
     flex: 1, 
+    marginLeft: 6,
+  },
+  stepLocation: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#1C1C1C',
+  },
+  stepTime: { 
+    fontSize: 12, 
+    color: '#1C1C1C',
     marginLeft: 8,
   },
-  stepTime: { fontSize: 12, color: '#8E8E93', marginLeft: 8 },
-  walkStepHeader: {
+  walkSection: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  stepIcon: { fontSize: 16, marginRight: 6 },
-  stepSubtext: { 
-    fontSize: 12, 
-    color: '#8E8E93', 
-    marginTop: 4,
+  walkIconContainer: {
+    position: 'absolute',
+    top: 20,
+    left: -7,
+    width: 26,
+    height: 26,
+    backgroundColor: '#FCFCFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walkIcon: {
+    fontSize: 16,
+  },
+  walkDuration: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#1C1C1C',
+    marginBottom: 8,
+  },
+  otherOptionsLabel: {
+    fontSize: 12,
+    color: '#1C1C1C',
     marginBottom: 6,
   },
   altOptionsRow: { 
     flexDirection: 'row', 
-    gap: 8,
+    gap: 15,
   },
   altOption: { 
     flexDirection: 'row', 
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
-    paddingHorizontal: 10,
+    backgroundColor: '#D9D9D9',
+    paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
   },
-  altOptionIcon: { fontSize: 14, marginRight: 4 },
-  altOptionText: { fontSize: 12, color: '#000' },
-  shuttleStopContainer: { 
-    marginVertical: 4,
+  altOptionIcon: { 
+    fontSize: 15,
+    marginRight: 8,
   },
-  shuttleStopHeader: {
+  altOptionText: { 
+    fontSize: 12, 
+    color: '#1C1C1C',
+  },
+  shuttleStopRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  shuttleIconContainer: {
+    position: 'absolute',
+    top: 40,
+    left: -7,
+    width: 26,
+    height: 26,
+    backgroundColor: '#FCFCFC',
     alignItems: 'center',
-    marginBottom: 4,
+    justifyContent: 'center',
   },
-  shuttleStopIcon: { fontSize: 16, marginRight: 6 },
-  stopName: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    color: '#000',
+  shuttleIcon: {
+    fontSize: 16,
+  },
+  shuttleStopContent: {
     flex: 1,
+    marginLeft: 6,
   },
-  shuttleName: { 
-    fontSize: 13, 
-    color: '#007AFF', 
+  stopName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1C1C1C',
+    textTransform: 'capitalize',
     marginBottom: 6,
   },
-  shuttleInfoRow: { 
-    flexDirection: 'row', 
-    gap: 16,
+  shuttleName: {
+    fontSize: 12,
+    color: '#1C1C1C',
+    marginBottom: 12,
   },
-  shuttleInfo: { 
-    flexDirection: 'row', 
+  shuttleAmenities: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  amenityBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    backgroundColor: '#FFFFFF',
   },
-  shuttleInfoIcon: { fontSize: 12, marginRight: 4 },
-  shuttleInfoText: { fontSize: 12, color: '#8E8E93' },
-  seeMoreRow: {
+  amenityIcon: {
+    fontSize: 14,
+    marginRight: 8,
+  },
+  amenityText: {
+    fontSize: 12,
+    color: '#1C1C1C',
+  },
+  reportRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
-  seeMoreText: { 
-    fontSize: 13, 
-    color: '#8E8E93',
+  reportText: { 
+    fontSize: 12, 
+    color: '#1C1C1C',
   },
-  reportLinkText: { 
-    fontSize: 13,
-    color: '#007AFF', 
-    fontWeight: '500',
+  reportLink: { 
+    fontSize: 12,
+    color: '#1C1C1C',
+    textDecorationLine: 'underline',
   },
-  actionRow: { padding: 16, paddingTop: 0 },
+  actionRow: { 
+    padding: 20, 
+    paddingTop: 0,
+  },
   startButton: {
     backgroundColor: '#007AFF',
-    borderRadius: 16,
+    borderRadius: 10,
     paddingVertical: 14,
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
   },
-  startButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  footerLinks: { marginBottom: 24 },
+  startButtonText: { 
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: '600',
+  },
+  footerLinks: { 
+    marginBottom: 24,
+  },
   footerTitle: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: '400',
+    color: '#6A6A6A',
     marginBottom: 12,
   },
   altRow: {
@@ -479,8 +836,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    borderBottomColor: '#D9D9D9',
   },
-  altText: { fontSize: 15, color: '#000' },
-  altTime: { fontSize: 15, color: '#8E8E93' },
+  altText: { 
+    fontSize: 12, 
+    color: '#1C1C1C',
+  },
+  altTime: { 
+    fontSize: 12, 
+    color: '#1C1C1C',
+  },
 });

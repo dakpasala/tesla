@@ -16,6 +16,7 @@ import {
   getAnnouncements,
   getAllReports,
 } from '../../services/shuttleAlerts';
+import { getLiveStatus } from '../../services/tripshot';
 import ActionRequiredCard from '../../components/ActionRequiredCard';
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
@@ -77,41 +78,47 @@ export default function ShuttleDashboardScreen() {
       setAlertsLoading(false);
     }
 
-    let fetchedShuttles: any[] = [];
     try {
-      // TODO: Fetch active shuttles
-      // const shuttlesData = await getActiveShuttles();
-
-      // Mock API response
-      fetchedShuttles = [
-        {
-          id: '1',
-          name: 'Tesla HQ Deer Creek Shuttle A',
-          route: 'Stevens Creek / Albany → Palo Alto BART',
-          color: 'red' as const,
-        },
-        {
-          id: '2',
-          name: 'Tesla HQ Deer Creek Shuttle B',
-          route: 'Stevens Creek / Albany → Palo Alto BART',
-          color: 'blue' as const,
-        },
-        {
-          id: '3',
-          name: 'Tesla HQ Deer Creek Shuttle C',
-          route: 'Stevens Creek / Albany → Palo Alto BART',
-          color: 'green' as const,
-        },
-        {
-          id: '4',
-          name: 'Tesla HQ Deer Creek Shuttle D',
-          route: 'Stevens Creek / Albany → Palo Alto BART',
-          color: 'orange' as const,
-        },
+      // Fetch active shuttles from Tripshot API
+      // TODO: In production, you would get actual ride IDs from another endpoint
+      // For now, using mock ride IDs to fetch shuttle data
+      const mockRideIds = [
+        '1ca7a65e-88f0-4505-a28e-fe7130c341a9:2026-02-08',
+        '2db8b76f-99g1-5616-b39f-gf8241d452b0:2026-02-08',
+        '3ec9c87g-00h2-6727-c40g-hg9352e563c1:2026-02-08',
+        '4fd0d98h-11i3-7838-d51h-ih0463f674d2:2026-02-08',
       ];
-      setActiveShuttles(fetchedShuttles);
+      
+      const liveStatus = await getLiveStatus(mockRideIds);
+      
+      // Transform the rides data into the format expected by the UI
+      const shuttlesData = liveStatus.rides.map((ride, index) => {
+        // Map color from API to component color options
+        const getColorName = (hexColor: string): 'red' | 'blue' | 'green' | 'orange' => {
+          // You can enhance this mapping based on your actual color codes
+          const colorMap: Record<string, 'red' | 'blue' | 'green' | 'orange'> = {
+            '#FF0000': 'red',
+            '#0000FF': 'blue',
+            '#00FF00': 'green',
+            '#FFA500': 'orange',
+            '#BF40BF': 'orange', // Purple maps to orange for now
+          };
+          return colorMap[hexColor] || (['red', 'blue', 'green', 'orange'] as const)[index % 4];
+        };
+
+        return {
+          id: ride.rideId,
+          name: ride.vehicleShortName || ride.vehicleName,
+          route: ride.routeName,
+          color: getColorName(ride.color),
+        };
+      });
+
+      setActiveShuttles(shuttlesData);
     } catch (err) {
       console.error('Failed to fetch shuttles', err);
+      // Optionally: fall back to empty array or show error state
+      setActiveShuttles([]);
     } finally {
       setShuttlesLoading(false);
     }

@@ -607,6 +607,7 @@ function MapScreen() {
         onReportIssue={handleReport}
         tripshotData={tripshotData}
         liveStatus={liveStatus}
+        googleMapsRoute={fetchedRouteData?.routes?.find(r => r.mode === 'transit')}
       />
     );
   };

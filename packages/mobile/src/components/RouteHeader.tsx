@@ -86,15 +86,15 @@ export function RouteHeader({
       </View>
 
       {/* Time Selector Row with Back Button */}
-      <View style={styles.timeSelector}>
-        <BackButton onPress={onBackPress} style={styles.backButton} />
-        <TouchableOpacity style={styles.timeButton}>
+      {/* <View style={styles.timeSelector}>
+        <BackButton onPress={onBackPress} style={styles.backButton} /> */}
+      {/* <TouchableOpacity style={styles.timeButton}>
           <Text style={styles.timeButtonText}>Now ▼</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.timeButton, styles.timeButtonSpacing]}>
           <Text style={styles.timeButtonText}>Leave at...</Text>
-        </TouchableOpacity>
-      </View>
+        </TouchableOpacity> */}
+      {/* </View> */}
     </View>
   );
 }
@@ -103,25 +103,26 @@ const styles = StyleSheet.create({
   container: {},
   tabContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
+    justifyContent: 'flex-start',
+    marginBottom: 25,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    paddingBottom: 0,
+    borderBottomColor: '#1C1C1C',
+    paddingBottom: 0.1,
   },
   tab: {
-    flex: 1,
+    flex: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
+    justifyContent: 'flex-start',
+    paddingVertical: 0,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
     // Push content slightly to ensure margin on small screens
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
+    marginRight: 5,
   },
   activeTabBorder: {
-    borderBottomColor: '#007AFF',
+    borderBottomColor: '#0761E0',
   },
   tabIconImage: {
     width: 32,
@@ -129,35 +130,15 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   tabTime: {
-    fontSize: 12, // Slightly smaller font to fit
+    fontSize: 12,
     fontWeight: '500',
-    color: '#8E8E93',
+    color: '#1C1C1C',
+    lineHeight: 14,
   },
   activeTabTime: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  timeSelector: {
-    flexDirection: 'row',
-    alignItems: 'center', // Align back button and time buttons vertically
-    marginBottom: 20,
-  },
-  backButton: {
-    marginRight: 12, // Space between back button and "Now"
-  },
-  timeButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#F2F2F7',
-    borderRadius: 8,
-  },
-  timeButtonSpacing: {
-    marginLeft: 10,
-  },
-  timeButtonText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
-    color: '#000',
+    color: '#0761E0',
   },
 });
 

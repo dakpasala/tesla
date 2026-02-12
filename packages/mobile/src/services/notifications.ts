@@ -20,7 +20,7 @@ export async function showParkingNotification({
   type: 'BELOW' | 'RECOVERY';
 }) {
   await notifee.displayNotification({
-    title: type === 'BELOW' ? '⚠️ Low Parking' : '✅ Parking Available',
+    title: type === 'BELOW' ? 'Low Parking' : 'Parking Available',
     body: `${locationName} - ${lot}: ${available} spots available`,
     ios: {
       sound: 'default',
@@ -44,7 +44,7 @@ export async function showShuttleNotification({
   etaMinutes: number;
 }) {
   await notifee.displayNotification({
-    title: '🚌 Shuttle Update',
+    title: 'Shuttle Update',
     body: `Shuttle ${shuttleId}: ${event} (${etaMinutes} min)`,
     ios: {
       sound: 'default',
@@ -120,7 +120,7 @@ export async function startShuttleTracking(
 
       await notifee.displayNotification({
         id: 'shuttle-arrival-tracking',
-        title: `🚌 Arriving in ${status.etaMinutes} min`,
+        title: `Arriving in ${status.etaMinutes} min`,
         body: `${stopName}\n${statusText}`,
         android: {
           channelId: notificationChannelId!,
@@ -170,7 +170,7 @@ export async function startShuttleTracking(
   // Update notification every 30 seconds regardless of app state to ensure persistence
   backgroundInterval = setInterval(async () => {
     console.log(
-      '[Shuttle Tracking] ⏰ 30-second interval tick - checking for updates...'
+      '[Shuttle Tracking] 30-second interval tick - checking for updates...'
     );
     await updateNotification();
   }, 30000);

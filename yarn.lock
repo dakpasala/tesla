@@ -7581,11 +7581,6 @@ react-native-background-geolocation@^5.0.1:
     "@transistorsoft/background-geolocation-types" "^5.0.1"
     tslib "^2.6.3"
 
-react-native-date-picker@^5.0.13:
-  version "5.0.13"
-  resolved "https://registry.yarnpkg.com/react-native-date-picker/-/react-native-date-picker-5.0.13.tgz#fe05f58652aaeee9e67f73cf7436c32a623ff3a4"
-  integrity sha512-qCLUODZVsJetO5zuoXjw1D39K527XWqBG8sOfhWdHyPzf13h8RXR1/RSKd1N0fdRDi5GdyizYmB0lPAK12/hbw==
-
 react-native-drawer-layout@^4.2.0:
   version "4.2.0"
   resolved "https://registry.npmjs.org/react-native-drawer-layout/-/react-native-drawer-layout-4.2.0.tgz"

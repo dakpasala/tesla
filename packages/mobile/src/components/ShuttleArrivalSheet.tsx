@@ -1,6 +1,8 @@
 // packages/mobile/src/components/ShuttleArrivalSheet.tsx
 
 import React, { useEffect, useState } from 'react';
+import { Image } from 'react-native';
+
 import {
   View,
   Text,
@@ -12,6 +14,8 @@ import {
   LiveStatusResponse,
   getOccupancyPercentage,
 } from '../services/tripshot';
+
+const newShuttleIcon = require('../assets/icons/new/newShuttle.png');
 
 interface ShuttleArrivalSheetProps {
   stopName: string;
@@ -56,7 +60,7 @@ export function ShuttleArrivalSheet({
    * ======================================================
    */
 
-  const MOCK_MODE = false;
+  const MOCK_MODE = true;
 
   const mockLiveStatus: LiveStatusResponse = {
     rides: [
@@ -78,7 +82,7 @@ export function ShuttleArrivalSheet({
             Awaiting: {
               stopId: '1',
               expectedArrivalTime: new Date(
-                Date.now() + 12 * 60000
+                Date.now() + 2 * 60000
               ).toISOString(),
               scheduledDepartureTime: new Date(
                 Date.now() - 2 * 60000
@@ -90,7 +94,7 @@ export function ShuttleArrivalSheet({
             Awaiting: {
               stopId: '2',
               expectedArrivalTime: new Date(
-                Date.now() + 15 * 60000
+                Date.now() + 10 * 60000
               ).toISOString(),
               scheduledDepartureTime: new Date(
                 Date.now() + 10 * 60000
@@ -307,7 +311,11 @@ export function ShuttleArrivalSheet({
             {reachedCorner && <View style={styles.progressCurve} />}
 
             <View style={[styles.car, { right: carRight, top: carTop }]}>
-              <Text style={styles.carIcon}>🚐</Text>
+              <Image
+                source={newShuttleIcon}
+                style={styles.carImage}
+                resizeMode="contain"
+              />
             </View>
 
             {/* DOTS */}
@@ -501,7 +509,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 2,
+    padding: 0,
   },
   carIcon: { fontSize: 14 },
   dot: {
@@ -526,5 +534,9 @@ const styles = StyleSheet.create({
   reportContainer: {
     alignSelf: 'flex-start',
     marginTop: 8,
+  },
+  carImage: {
+    width: 25,
+    height: 25,
   },
 });

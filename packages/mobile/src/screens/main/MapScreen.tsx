@@ -19,6 +19,7 @@ import {
   Platform,
   Alert,
   AppState,
+  Pressable,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -80,8 +81,9 @@ function MapScreen() {
   const { setDestination, travelMode, setTravelMode } = useRideContext();
 
   const handleOtherLots = useCallback(() => {
+    setPendingParkingId(null);
     setViewMode('options');
-    bottomSheetRef.current?.snapToIndex(2); // optional: open it more
+    bottomSheetRef.current?.snapToIndex(2);
   }, []);
 
   // ============ MAIN HOME STATE ============
@@ -147,6 +149,8 @@ function MapScreen() {
   const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
     null
   );
+  const [pendingParkingId, setPendingParkingId] = useState<string | null>(null);
+
   const [selectedSublot, setSelectedSublot] = useState<string>('');
   const [selectedRouteId] = useState<string | null>(null);
 
@@ -535,7 +539,7 @@ function MapScreen() {
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    bottomSheetRef.current?.snapToIndex(3); // Highest snap
+    bottomSheetRef.current?.snapToIndex(3);
     setSearchExpanded(true);
   }, []);
 
@@ -583,24 +587,47 @@ function MapScreen() {
         id: lot.id,
         title: lot.name,
         subtitle: `${lot.fullness}% full`,
-        rightText: '', // optional
+        rightText: '',
+
+        // highlight the one you tapped
+        selected: pendingParkingId === lot.id,
       }));
 
+      const selectedLotName =
+        parkingLots.find(l => l.id === pendingParkingId)?.name ?? '';
+
       return (
-        <OptionsCard
-          items={items}
-          onSelect={item => {
-            setSelectedParkingId(item.id);
-            setViewMode('detail');
-          }}
-        />
+        <View>
+          <OptionsCard
+            items={items}
+            onSelect={item => {
+              // ONLY highlight (do NOT leave this screen yet)
+              setPendingParkingId(item.id);
+            }}
+          />
+
+          {pendingParkingId && (
+            <Pressable
+              style={styles.routeButton}
+              onPress={() => {
+                // confirm selection, THEN leave options
+                setSelectedParkingId(pendingParkingId);
+                setViewMode('detail');
+              }}
+            >
+              <Text style={styles.routeButtonText}>
+                Route to {selectedLotName}
+              </Text>
+            </Pressable>
+          )}
+        </View>
       );
     }
 
     if (parkingLoading || routesLoading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#0761E0" />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       );
@@ -669,7 +696,7 @@ function MapScreen() {
           {mode === 'quickstart' && activePolyline.length > 0 && (
             <Polyline
               coordinates={activePolyline}
-              strokeColor="#007AFF"
+              strokeColor="#0761E0"
               strokeWidth={4}
               lineCap="round"
               lineJoin="round"
@@ -695,7 +722,7 @@ function MapScreen() {
                 <View
                   style={{
                     backgroundColor:
-                      lot.id === selectedParkingId ? '#007AFF' : '#FF3B30',
+                      lot.id === selectedParkingId ? '#0761E0' : '#FF3B30',
                     borderRadius: 12,
                     paddingHorizontal: 8,
                     paddingVertical: 4,
@@ -916,7 +943,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0761E0',
   },
   loadingContainer: {
     alignItems: 'center',
@@ -929,5 +956,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 40,
   },
+  routeButton: {
+    marginTop: 18,
+    backgroundColor: '#0761E0',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+
+  routeButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
 });

@@ -47,6 +47,9 @@ export function ParkingDetailView({
     return styles.dotGreen;
   };
 
+  const short = (s: string, max = 18) =>
+    s.length > max ? s.slice(0, max - 1) + '…' : s;
+
   const currentFullness = lot?.fullness ?? 0;
   const forecastFullness = Math.min(currentFullness + 15, 95);
 
@@ -109,11 +112,22 @@ export function ParkingDetailView({
                  * Logic: Use status_override if present, otherwise calculate percentage
                  */
                 const hasOverride = !!sublot.status_override;
-                const capacity = sublot.capacity ?? 500;
-                const available = sublot.availability ?? 0;
-                const fullness = Math.round(
-                  ((capacity - available) / capacity) * 100
-                );
+                const capacity = sublot.capacity;
+                const available = sublot.availability;
+
+                let fullness = 0;
+
+                if (
+                  typeof capacity === 'number' &&
+                  typeof available === 'number' &&
+                  capacity > 0
+                ) {
+                  fullness = Math.round(
+                    ((capacity - available) / capacity) * 100
+                  );
+                } else {
+                  fullness = lot?.fullness ?? 0;
+                }
 
                 const displayText = hasOverride
                   ? sublot.status_override
@@ -203,7 +217,7 @@ export function ParkingDetailView({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              Route to {selectedSublot || 'Lot'}
+              Route to {short(selectedSublot || 'Lot')}
             </Text>
           </GHTouchableOpacity>
         </View>
@@ -341,10 +355,13 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 16,
     flex: 2,
+    minHeight: 54,
+    elevation: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
+    overflow: 'hidden',
   },
+
   shuttleTextContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -381,7 +398,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F1F1',
     borderRadius: 16,
     paddingVertical: 15,
-    paddingHorizontal: 15,
+    paddingHorizontal: 35,
     gap: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -395,5 +412,12 @@ const styles = StyleSheet.create({
     color: '#1C1C1C',
   },
 
-  startButtonText: { color: '#FCFCFC', fontSize: 17, fontWeight: '600' },
+  startButtonText: {
+    color: '#FCFCFC',
+    fontSize: 17,
+    fontWeight: '600',
+    flexShrink: 1,
+    maxWidth: '100%',
+    textAlign: 'center',
+  },
 });

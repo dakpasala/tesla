@@ -1792,34 +1792,6 @@ PODS:
     - React-RCTFBReactNativeSpec
     - ReactCommon/turbomodule/core
     - SocketRocket
-  - react-native-date-picker (5.0.13):
-    - boost
-    - DoubleConversion
-    - fast_float
-    - fmt
-    - glog
-    - hermes-engine
-    - RCT-Folly
-    - RCT-Folly/Fabric
-    - RCTRequired
-    - RCTTypeSafety
-    - React-Core
-    - React-debug
-    - React-Fabric
-    - React-featureflags
-    - React-graphics
-    - React-ImageManager
-    - React-jsi
-    - React-NativeModulesApple
-    - React-RCTFabric
-    - React-renderercss
-    - React-rendererdebug
-    - React-utils
-    - ReactCodegen
-    - ReactCommon/turbomodule/bridging
-    - ReactCommon/turbomodule/core
-    - SocketRocket
-    - Yoga
   - react-native-geolocation (3.4.0):
     - boost
     - DoubleConversion
@@ -2986,7 +2958,7 @@ PODS:
     - Yoga
   - SocketRocket (0.7.1)
   - TSBackgroundFetch (4.0.6)
-  - TSLocationManager (4.0.12):
+  - TSLocationManager (4.0.14):
     - TSBackgroundFetch (~> 4.0.6)
   - Yoga (0.0.0)
 
@@ -3035,7 +3007,6 @@ DEPENDENCIES:
   - React-logger (from `../../../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../../../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../../../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
-  - react-native-date-picker (from `../../../node_modules/react-native-date-picker`)
   - "react-native-geolocation (from `../../../node_modules/@react-native-community/geolocation`)"
   - react-native-geolocation-service (from `../../../node_modules/react-native-geolocation-service`)
   - react-native-maps (from `../../../node_modules/react-native-maps`)
@@ -3178,8 +3149,6 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../../../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
-  react-native-date-picker:
-    :path: "../../../node_modules/react-native-date-picker"
   react-native-geolocation:
     :path: "../../../node_modules/@react-native-community/geolocation"
   react-native-geolocation-service:
@@ -3318,7 +3287,6 @@ SPEC CHECKSUMS:
   React-logger: 2021eb67660b673cc654635832136fbbf2c79103
   React-Mapbuffer: 349db7cc6b26b0261bacfc3f7f82f9da2875bea8
   React-microtasksnativemodule: 3e19d1d9e3e93e21d12ab87de29109a4c4eb6717
-  react-native-date-picker: d1d607499ff9f2e1231f902b4bda70595d71253e
   react-native-geolocation: 6a788ce9bd63469be6b9d181f403ddec235234eb
   react-native-geolocation-service: 608e1da71a1ac31b4de64d9ef2815f697978c55b
   react-native-maps: e91876977e36d95cf8ff5858a9554f762907d286
@@ -3366,9 +3334,9 @@ SPEC CHECKSUMS:
   RNWorklets: 089683f4a4564f30393d32352d41d9e92c3e5a55
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   TSBackgroundFetch: 0afbeaae4e1132866e1d4b6e55265af26b5958ae
-  TSLocationManager: a5d0a9b4049471db59a667f2c855ba9ad45066e4
-  Yoga: ce55ebb197c21e22b6700cd36e3f36b7ec26e6f8
+  TSLocationManager: 6b8551c21b6faa56513cbb6ae4d62676ac395f34
+  Yoga: 8ffc9fd0e354220664ef70f61ca792977cfb35e3
 
 PODFILE CHECKSUM: 236516c37af12cdfbf7324b460be41f27fa9a9ba
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.15.2

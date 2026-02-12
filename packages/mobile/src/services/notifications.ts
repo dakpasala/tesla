@@ -20,7 +20,7 @@ export async function showParkingNotification({
   type: 'BELOW' | 'RECOVERY';
 }) {
   await notifee.displayNotification({
-    title: type === 'BELOW' ? '⚠️ Low Parking' : '✅ Parking Available',
+    title: type === 'BELOW' ? 'Low Parking' : 'Parking Available',
     body: `${locationName} - ${lot}: ${available} spots available`,
     ios: {
       sound: 'default',
@@ -44,7 +44,7 @@ export async function showShuttleNotification({
   etaMinutes: number;
 }) {
   await notifee.displayNotification({
-    title: '🚌 Shuttle Update',
+    title: 'Shuttle Update',
     body: `Shuttle ${shuttleId}: ${event} (${etaMinutes} min)`,
     ios: {
       sound: 'default',
@@ -57,6 +57,9 @@ export async function showShuttleNotification({
 let backgroundInterval: NodeJS.Timeout | null = null;
 let notificationChannelId: string | null = null;
 
+// Track state per shuttle tracking session to avoid stale closures
+const shuttleTrackingState: { [key: string]: string | null } = {};
+
 export async function startShuttleTracking(
   rideId: string,
   stopName: string,
@@ -67,6 +70,16 @@ export async function startShuttleTracking(
     occupancy: number;
   }>
 ) {
+  console.log(
+    '[Shuttle Tracking] Starting tracking for rideId:',
+    rideId,
+    'stopName:',
+    stopName
+  );
+
+  // Initialize state for this shuttle
+  shuttleTrackingState[rideId] = null;
+
   await requestNotificationPermission();
 
   if (!notificationChannelId) {
@@ -81,15 +94,38 @@ export async function startShuttleTracking(
   const updateNotification = async () => {
     try {
       const status = await getLiveStatusFn(rideId);
+      console.log(
+        '[Shuttle Tracking] Fetched fresh status at',
+        new Date().toLocaleTimeString(),
+        ':',
+        status
+      );
+
+      // Only update notification if data actually changed
+      // This prevents unnecessary banner displays
+      const statusString = JSON.stringify(status);
+      if (shuttleTrackingState[rideId] === statusString) {
+        console.log(
+          '[Shuttle Tracking] Data unchanged from previous update - notification already reflects current status'
+        );
+        return;
+      }
+
+      console.log('[Shuttle Tracking] Data changed! Updating notification...');
+      shuttleTrackingState[rideId] = statusString;
+
+      const statusText = status.isDelayed
+        ? `${status.delayMinutes} min delay`
+        : 'On Time';
 
       await notifee.displayNotification({
         id: 'shuttle-arrival-tracking',
-        title: `🚌 Arriving in ${status.etaMinutes} min`,
-        body: `${stopName} • ${status.isDelayed ? `${status.delayMinutes} min delay` : 'On Time'} • ${status.occupancy}% Full`,
+        title: `Arriving in ${status.etaMinutes} min`,
+        body: `${stopName}\n${statusText}`,
         android: {
           channelId: notificationChannelId!,
           importance: AndroidImportance.HIGH,
-          ongoing: true, 
+          ongoing: true,
           autoCancel: false,
           smallIcon: 'ic_notification',
           color: '#007AFF',
@@ -109,10 +145,11 @@ export async function startShuttleTracking(
         ios: {
           sound: 'default',
           categoryId: 'shuttle-tracking',
+          badge: 0,
           foregroundPresentationOptions: {
-            alert: true,
-            badge: true,
-            sound: false, 
+            alert: false,
+            badge: false,
+            sound: false,
           },
         },
       });
@@ -121,47 +158,55 @@ export async function startShuttleTracking(
     }
   };
 
-  await updateNotification();
-
-  if (backgroundInterval) {
-    clearInterval(backgroundInterval);
-  }
-
-  backgroundInterval = setInterval(async () => {
-    const appState = AppState.currentState;
-
-    if (appState === 'background' || appState === 'inactive') {
-      await updateNotification();
-    }
-  }, 30000);
-}
-
-
-export async function stopShuttleTracking() {
+  // Clear any existing interval
   if (backgroundInterval) {
     clearInterval(backgroundInterval);
     backgroundInterval = null;
   }
 
-  await notifee.cancelNotification('shuttle-arrival-tracking');
+  // Do initial update
+  await updateNotification();
+
+  // Update notification every 30 seconds regardless of app state to ensure persistence
+  backgroundInterval = setInterval(async () => {
+    console.log(
+      '[Shuttle Tracking] 30-second interval tick - checking for updates...'
+    );
+    await updateNotification();
+  }, 30000);
 }
 
+export async function stopShuttleTracking(rideId?: string) {
+  if (backgroundInterval) {
+    clearInterval(backgroundInterval);
+    backgroundInterval = null;
+  }
+
+  // Clean up state for this shuttle
+  if (rideId && shuttleTrackingState[rideId] !== undefined) {
+    delete shuttleTrackingState[rideId];
+  }
+
+  await notifee.cancelNotification('shuttle-arrival-tracking');
+}
 
 export function setupShuttleNotificationHandlers(
   onNotificationTap: () => void,
   onStopTracking: () => void
 ) {
-  const unsubscribeForeground = notifee.onForegroundEvent(({ type, detail }) => {
-    if (type === EventType.PRESS) {
-      onNotificationTap();
-    } else if (
-      type === EventType.ACTION_PRESS &&
-      detail.pressAction?.id === 'stop-tracking'
-    ) {
-      onStopTracking();
-      stopShuttleTracking();
+  const unsubscribeForeground = notifee.onForegroundEvent(
+    ({ type, detail }) => {
+      if (type === EventType.PRESS) {
+        onNotificationTap();
+      } else if (
+        type === EventType.ACTION_PRESS &&
+        detail.pressAction?.id === 'stop-tracking'
+      ) {
+        onStopTracking();
+        stopShuttleTracking();
+      }
     }
-  });
+  );
 
   notifee.onBackgroundEvent(async ({ type, detail }) => {
     if (

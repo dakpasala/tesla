@@ -119,7 +119,7 @@ export async function startShuttleTracking(
         : 'On Time';
 
       await notifee.displayNotification({
-        id: 'shuttle-arrival-tracking',
+        id: 'shuttle-arrival-tracking-${rideId}',
         title: `Arriving in ${status.etaMinutes} min`,
         body: `${stopName}\n${statusText}`,
         android: {
@@ -145,9 +145,8 @@ export async function startShuttleTracking(
         ios: {
           sound: 'default',
           categoryId: 'shuttle-tracking',
-          badge: 0,
           foregroundPresentationOptions: {
-            alert: false,
+            alert: true,
             badge: false,
             sound: false,
           },

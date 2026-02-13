@@ -1,7 +1,7 @@
 // packages/mobile/src/components/RouteDetailView.tsx
 
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { TravelMode } from '../context/RideContext';
@@ -151,61 +151,77 @@ export function RouteDetailView({
         <React.Fragment key={index}>
           {/* Starting location */}
           {isFirst && (
-            <View style={styles.stepRow}>
-              <View style={styles.stepIcon}>
-                <Svg width={12} height={40}>
-                  <Circle cx={6} cy={6} r={4} fill="#007AFF" />
-                  <Line x1={6} y1={6} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />
-                </Svg>
+            <>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIconColumn}>
+                  <Svg width={12} height={20} style={styles.svgLine}>
+                    <Circle cx={6} cy={6} r={5} fill="#007AFF" />
+                    <Line x1={6} y1={11} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
+                  </Svg>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepLocation}>{formatted.from}</Text>
+                </View>
+                <Text style={styles.stepTime}>
+                  {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
+                </Text>
               </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepLocation}>{formatted.from}</Text>
-              </View>
-              <Text style={styles.stepTime}>
-                {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
-              </Text>
-            </View>
+            </>
           )}
 
           {/* Walking step */}
           {isWalkStep && (
-            <View style={styles.walkSection}>
-              <View style={styles.stepIcon}>
-                <Svg width={12} height={80}>
-                  <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
-                </Svg>
-                <View style={styles.walkIconContainer}>
-                  <Text style={styles.walkIcon}>🚶</Text>
-                </View>
-              </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.walkDuration}>{formatted.duration} min walk</Text>
-                <Text style={styles.otherOptionsLabel}>Other Options:</Text>
-                <View style={styles.altOptionsRow}>
-                  <View style={styles.altOption}>
-                    <Text style={styles.altOptionIcon}>🚗</Text>
-                    <Text style={styles.altOptionText}>2 min</Text>
-                  </View>
-                  <View style={styles.altOption}>
-                    <Text style={styles.altOptionIcon}>🚴</Text>
-                    <Text style={styles.altOptionText}>5 min</Text>
+            <>
+              <View style={styles.stepRow}>
+                <View style={styles.stepIconColumn}>
+                  <Svg width={12} height={80} style={styles.svgLine}>
+                    <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
+                  </Svg>
+                  <View style={styles.iconContainer}>
+                    <Image 
+                      source={require('../assets/icons/new/PersonSimpleWalk.png')} 
+                      style={styles.stepIconImage}
+                    />
                   </View>
                 </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.walkDuration}>{formatted.duration} min walk</Text>
+                  <Text style={styles.otherOptionsLabel}>Other Options:</Text>
+                  <View style={styles.altOptionsRow}>
+                    <View style={styles.altOption}>
+                      <Image 
+                        source={require('../assets/icons/new/newCar.png')} 
+                        style={styles.altOptionIcon}
+                      />
+                      <Text style={styles.altOptionText}>2 min</Text>
+                    </View>
+                    <View style={styles.altOption}>
+                      <Image 
+                        source={require('../assets/icons/new/newBike.png')} 
+                        style={styles.altOptionIcon}
+                      />
+                      <Text style={styles.altOptionText}>5 min</Text>
+                    </View>
+                  </View>
+                </View>
               </View>
-            </View>
+              <View style={styles.sectionDivider} />
+            </>
           )}
 
           {/* Shuttle boarding stop */}
           {isShuttleStep && (
             <>
-              <View style={styles.divider} />
-              <View style={styles.shuttleStopRow}>
-                <View style={styles.stepIcon}>
-                  <Svg width={12} height={100}>
-                    <Line x1={6} y1={0} x2={6} y2={100} stroke="#BEDBFF" strokeWidth={2} />
+              <View style={styles.stepRow}>
+                <View style={styles.stepIconColumn}>
+                  <Svg width={12} height={140} style={styles.svgLine}>
+                    <Line x1={6} y1={0} x2={6} y2={140} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
-                  <View style={styles.shuttleIconContainer}>
-                    <Text style={styles.shuttleIcon}>🚐</Text>
+                  <View style={styles.iconContainer}>
+                    <Image 
+                      source={require('../assets/icons/new/newShuttle.png')} 
+                      style={styles.stepIconImage}
+                    />
                   </View>
                 </View>
                 <View style={styles.shuttleStopContent}>
@@ -215,13 +231,19 @@ export function RouteDetailView({
                   </Text>
                   <View style={styles.shuttleAmenities}>
                     <View style={styles.amenityBadge}>
-                      <Text style={styles.amenityIcon}>👥</Text>
+                      <Image 
+                        source={require('../assets/icons/new/double.png')} 
+                        style={styles.amenityIconImage}
+                      />
                       <Text style={styles.amenityText}>
                         {firstRide ? `${getOccupancyPercentage(firstRide)}% Full` : '65% Full'}
                       </Text>
                     </View>
                     <View style={styles.amenityBadge}>
-                      <Text style={styles.amenityIcon}>📶</Text>
+                      <Image 
+                        source={require('../assets/icons/new/Wifi.png')} 
+                        style={styles.amenityIconImage}
+                      />
                       <Text style={styles.amenityText}>Free Wifi</Text>
                     </View>
                   </View>
@@ -230,17 +252,19 @@ export function RouteDetailView({
                   {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
                 </Text>
               </View>
+              <View style={styles.sectionDivider} />
             </>
           )}
 
           {/* Shuttle arrival stop (destination) */}
           {isShuttleStep && (
             <>
-              <View style={styles.divider} />
               <View style={styles.stepRow}>
-                <View style={styles.stepIcon}>
-                  <Svg width={12} height={12}>
-                    <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+                <View style={styles.stepIconColumn}>
+                  <Svg width={12} height={20} style={styles.svgLine}>
+                    <Line x1={6} y1={0} x2={6} y2={9} stroke="#BEDBFF" strokeWidth={2} />
+                    <Circle cx={6} cy={14} r={5} fill="#007AFF" />
+                    <Line x1={6} y1={19} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
                 </View>
                 <View style={styles.stepContent}>
@@ -255,19 +279,23 @@ export function RouteDetailView({
 
           {/* Final destination for walk-only routes */}
           {isLast && !isShuttleStep && (
-            <View style={styles.stepRow}>
-              <View style={styles.stepIcon}>
-                <Svg width={12} height={12}>
-                  <Circle cx={6} cy={6} r={4} fill="#007AFF" />
-                </Svg>
+            <>
+              <View style={styles.sectionDivider} />
+              <View style={styles.stepRow}>
+                <View style={styles.stepIconColumn}>
+                  <Svg width={12} height={20} style={styles.svgLine}>
+                    <Line x1={6} y1={0} x2={6} y2={9} stroke="#BEDBFF" strokeWidth={2} />
+                    <Circle cx={6} cy={14} r={5} fill="#007AFF" />
+                  </Svg>
+                </View>
+                <View style={styles.stepContent}>
+                  <Text style={styles.stepLocation}>{formatted.to}</Text>
+                </View>
+                <Text style={styles.stepTime}>
+                  {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
+                </Text>
               </View>
-              <View style={styles.stepContent}>
-                <Text style={styles.stepLocation}>{formatted.to}</Text>
-              </View>
-              <Text style={styles.stepTime}>
-                {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
-              </Text>
-            </View>
+            </>
           )}
         </React.Fragment>
       );
@@ -294,10 +322,10 @@ export function RouteDetailView({
             {/* Starting location */}
             {isFirst && (
               <View style={styles.stepRow}>
-                <View style={styles.stepIcon}>
-                  <Svg width={12} height={40}>
-                    <Circle cx={6} cy={6} r={4} fill="#007AFF" />
-                    <Line x1={6} y1={6} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />
+                <View style={styles.stepIconColumn}>
+                  <Svg width={12} height={20} style={styles.svgLine}>
+                    <Circle cx={6} cy={6} r={5} fill="#007AFF" />
+                    <Line x1={6} y1={11} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
                 </View>
                 <View style={styles.stepContent}>
@@ -309,36 +337,44 @@ export function RouteDetailView({
 
             {/* Walk step */}
             {isWalkStep && (
-              <View style={styles.walkSection}>
-                <View style={styles.stepIcon}>
-                  <Svg width={12} height={80}>
-                    <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
-                  </Svg>
-                  <View style={styles.walkIconContainer}>
-                    <Text style={styles.walkIcon}>🚶</Text>
+              <>
+                <View style={styles.stepRow}>
+                  <View style={styles.stepIconColumn}>
+                    <Svg width={12} height={60} style={styles.svgLine}>
+                      <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
+                    </Svg>
+                    <View style={styles.iconContainer}>
+                      <Image 
+                        source={require('../assets/icons/new/PersonSimpleWalk.png')} 
+                        style={styles.stepIconImage}
+                      />
+                    </View>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.walkDuration}>
+                      {duration} min walk{!isLast && ' to station'}
+                    </Text>
                   </View>
                 </View>
-                <View style={styles.stepContent}>
-                  <Text style={styles.walkDuration}>
-                    {duration} min walk{!isLast && ' to station'}
-                  </Text>
-                </View>
-              </View>
+                {!isLast && <View style={styles.sectionDivider} />}
+              </>
             )}
 
             {/* Transit step */}
             {isTransitStep && (
               <>
-                <View style={styles.divider} />
-                <View style={styles.shuttleStopRow}>
-                  <View style={styles.stepIcon}>
-                    <Svg width={12} height={100}>
-                      <Line x1={6} y1={0} x2={6} y2={100} stroke="#BEDBFF" strokeWidth={2} />
+                <View style={styles.stepRow}>
+                  <View style={styles.stepIconColumn}>
+                    <Svg width={12} height={140} style={styles.svgLine}>
+                      <Line x1={6} y1={0} x2={6} y2={140} stroke="#BEDBFF" strokeWidth={2} />
                     </Svg>
-                    <View style={styles.shuttleIconContainer}>
-                      <Text style={styles.shuttleIcon}>
-                        {step.transit_details?.line?.vehicle?.type === 'BUS' ? '🚌' : '🚊'}
-                      </Text>
+                    <View style={styles.iconContainer}>
+                      <Image 
+                        source={step.transit_details?.line?.vehicle?.type === 'BUS' 
+                          ? require('../assets/icons/new/newBus.png')
+                          : require('../assets/icons/new/newShuttle.png')} 
+                        style={styles.stepIconImage}
+                      />
                     </View>
                   </View>
                   <View style={styles.shuttleStopContent}>
@@ -366,13 +402,13 @@ export function RouteDetailView({
                   </View>
                   <Text style={styles.stepTime}>{departureTime}</Text>
                 </View>
-                <View style={styles.divider} />
+                <View style={styles.sectionDivider} />
                 <View style={styles.stepRow}>
-                  <View style={styles.stepIcon}>
-                    <Svg width={12} height={40}>
-                      <Line x1={6} y1={0} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
-                      <Circle cx={6} cy={20} r={4} fill="#007AFF" />
-                      {!isLast && <Line x1={6} y1={20} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />}
+                  <View style={styles.stepIconColumn}>
+                    <Svg width={12} height={20} style={styles.svgLine}>
+                      <Line x1={6} y1={0} x2={6} y2={9} stroke="#BEDBFF" strokeWidth={2} />
+                      <Circle cx={6} cy={14} r={5} fill="#007AFF" />
+                      {!isLast && <Line x1={6} y1={19} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />}
                     </Svg>
                   </View>
                   <View style={styles.stepContent}>
@@ -387,17 +423,21 @@ export function RouteDetailView({
 
             {/* Final destination */}
             {isLast && isWalkStep && (
-              <View style={styles.stepRow}>
-                <View style={styles.stepIcon}>
-                  <Svg width={12} height={12}>
-                    <Circle cx={6} cy={6} r={4} fill="#007AFF" />
-                  </Svg>
+              <>
+                <View style={styles.sectionDivider} />
+                <View style={styles.stepRow}>
+                  <View style={styles.stepIconColumn}>
+                    <Svg width={12} height={20} style={styles.svgLine}>
+                      <Line x1={6} y1={0} x2={6} y2={9} stroke="#BEDBFF" strokeWidth={2} />
+                      <Circle cx={6} cy={14} r={5} fill="#007AFF" />
+                    </Svg>
+                  </View>
+                  <View style={styles.stepContent}>
+                    <Text style={styles.stepLocation}>{destinationName}</Text>
+                  </View>
+                  <Text style={styles.stepTime}>{arrivalTime}</Text>
                 </View>
-                <View style={styles.stepContent}>
-                  <Text style={styles.stepLocation}>{destinationName}</Text>
-                </View>
-                <Text style={styles.stepTime}>{arrivalTime}</Text>
-              </View>
+              </>
             )}
           </React.Fragment>
         );
@@ -408,10 +448,10 @@ export function RouteDetailView({
     return (
       <>
         <View style={styles.stepRow}>
-          <View style={styles.stepIcon}>
-            <Svg width={12} height={40}>
-              <Circle cx={6} cy={6} r={4} fill="#007AFF" />
-              <Line x1={6} y1={6} x2={6} y2={40} stroke="#BEDBFF" strokeWidth={2} />
+          <View style={styles.stepIconColumn}>
+            <Svg width={12} height={20} style={styles.svgLine}>
+              <Circle cx={6} cy={6} r={5} fill="#007AFF" />
+              <Line x1={6} y1={11} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
           </View>
           <View style={styles.stepContent}>
@@ -421,13 +461,16 @@ export function RouteDetailView({
         </View>
 
         {/* Walk to station */}
-        <View style={styles.walkSection}>
-          <View style={styles.stepIcon}>
-            <Svg width={12} height={60}>
+        <View style={styles.stepRow}>
+          <View style={styles.stepIconColumn}>
+            <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={styles.walkIconContainer}>
-              <Text style={styles.walkIcon}>🚶</Text>
+            <View style={styles.iconContainer}>
+              <Image 
+                source={require('../assets/icons/new/PersonSimpleWalk.png')} 
+                style={styles.stepIconImage}
+              />
             </View>
           </View>
           <View style={styles.stepContent}>
@@ -435,16 +478,19 @@ export function RouteDetailView({
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={styles.sectionDivider} />
 
         {/* Transit ride */}
-        <View style={styles.shuttleStopRow}>
-          <View style={styles.stepIcon}>
-            <Svg width={12} height={100}>
-              <Line x1={6} y1={0} x2={6} y2={100} stroke="#BEDBFF" strokeWidth={2} />
+        <View style={styles.stepRow}>
+          <View style={styles.stepIconColumn}>
+            <Svg width={12} height={140} style={styles.svgLine}>
+              <Line x1={6} y1={0} x2={6} y2={140} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={styles.shuttleIconContainer}>
-              <Text style={styles.shuttleIcon}>🚌</Text>
+            <View style={styles.iconContainer}>
+              <Image 
+                source={require('../assets/icons/new/newBus.png')} 
+                style={styles.stepIconImage}
+              />
             </View>
           </View>
           <View style={styles.shuttleStopContent}>
@@ -460,14 +506,15 @@ export function RouteDetailView({
           <Text style={styles.stepTime}>8:50 AM</Text>
         </View>
 
-        <View style={styles.divider} />
+        <View style={styles.sectionDivider} />
 
         {/* Arrival */}
         <View style={styles.stepRow}>
-          <View style={styles.stepIcon}>
-            <Svg width={12} height={40}>
-              <Line x1={6} y1={0} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
-              <Circle cx={6} cy={20} r={4} fill="#007AFF" />
+          <View style={styles.stepIconColumn}>
+            <Svg width={12} height={20} style={styles.svgLine}>
+              <Line x1={6} y1={0} x2={6} y2={9} stroke="#BEDBFF" strokeWidth={2} />
+              <Circle cx={6} cy={14} r={5} fill="#007AFF" />
+              <Line x1={6} y1={19} x2={6} y2={20} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
           </View>
           <View style={styles.stepContent}>
@@ -477,13 +524,16 @@ export function RouteDetailView({
         </View>
 
         {/* Walk to destination */}
-        <View style={styles.walkSection}>
-          <View style={styles.stepIcon}>
-            <Svg width={12} height={60}>
+        <View style={styles.stepRow}>
+          <View style={styles.stepIconColumn}>
+            <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={styles.walkIconContainer}>
-              <Text style={styles.walkIcon}>🚶</Text>
+            <View style={styles.iconContainer}>
+              <Image 
+                source={require('../assets/icons/new/PersonSimpleWalk.png')} 
+                style={styles.stepIconImage}
+              />
             </View>
           </View>
           <View style={styles.stepContent}>
@@ -491,10 +541,13 @@ export function RouteDetailView({
           </View>
         </View>
 
+        <View style={styles.sectionDivider} />
+
         <View style={styles.stepRow}>
-          <View style={styles.stepIcon}>
-            <Svg width={12} height={12}>
-              <Circle cx={6} cy={6} r={4} fill="#007AFF" />
+          <View style={styles.stepIconColumn}>
+            <Svg width={12} height={20} style={styles.svgLine}>
+              <Line x1={6} y1={0} x2={6} y2={9} stroke="#BEDBFF" strokeWidth={2} />
+              <Circle cx={6} cy={14} r={5} fill="#007AFF" />
             </Svg>
           </View>
           <View style={styles.stepContent}>
@@ -646,6 +699,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#D9D9D9', 
     marginHorizontal: 20,
   },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: '#D9D9D9',
+    marginLeft: 46,
+    marginRight: 20,
+    marginVertical: 12,
+  },
   routeDetails: { 
     padding: 20,
     paddingTop: 16,
@@ -660,12 +720,31 @@ const styles = StyleSheet.create({
   stepRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 12,
   },
-  stepIcon: {
+  stepIconColumn: {
     width: 26,
     alignItems: 'center',
     position: 'relative',
+  },
+  svgLine: {
+    position: 'absolute',
+    top: 0,
+    left: 7,
+  },
+  iconContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 0,
+    width: 26,
+    height: 26,
+    backgroundColor: '#FCFCFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepIconImage: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
   },
   stepContent: { 
     flex: 1, 
@@ -680,24 +759,6 @@ const styles = StyleSheet.create({
     fontSize: 12, 
     color: '#1C1C1C',
     marginLeft: 8,
-  },
-  walkSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  walkIconContainer: {
-    position: 'absolute',
-    top: 20,
-    left: -7,
-    width: 26,
-    height: 26,
-    backgroundColor: '#FCFCFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  walkIcon: {
-    fontSize: 16,
   },
   walkDuration: {
     fontSize: 12,
@@ -725,31 +786,14 @@ const styles = StyleSheet.create({
     borderColor: '#D9D9D9',
   },
   altOptionIcon: { 
-    fontSize: 15,
+    width: 16,
+    height: 16,
     marginRight: 8,
+    resizeMode: 'contain',
   },
   altOptionText: { 
     fontSize: 12, 
     color: '#1C1C1C',
-  },
-  shuttleStopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  shuttleIconContainer: {
-    position: 'absolute',
-    top: 40,
-    left: -7,
-    width: 26,
-    height: 26,
-    backgroundColor: '#FCFCFC',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shuttleIcon: {
-    fontSize: 16,
   },
   shuttleStopContent: {
     flex: 1,
@@ -784,6 +828,12 @@ const styles = StyleSheet.create({
   amenityIcon: {
     fontSize: 14,
     marginRight: 8,
+  },
+  amenityIconImage: {
+    width: 16,
+    height: 16,
+    marginRight: 8,
+    resizeMode: 'contain',
   },
   amenityText: {
     fontSize: 12,

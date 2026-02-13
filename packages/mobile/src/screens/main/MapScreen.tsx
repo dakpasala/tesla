@@ -853,15 +853,24 @@ function MapScreen() {
             </View>
           ) : (
             // Quickstart Content (RouteDetailView)
-            <View style={styles.quickstartContainer}>
-              <RouteHeader
-                onBackPress={handleBackToSearch}
-                activeMode={travelMode as TransportMode}
-                onModeChange={mode => setTravelMode(mode as TravelMode)}
-                modeTimes={modeTimes}
-              />
-              {renderAvailabilityContent()}
-            </View>
+            // Quickstart Content (RouteDetailView)
+              <View style={styles.quickstartContainer}>
+                {/* Temporary back button */}
+                <TouchableOpacity 
+                  style={styles.tempBackButton}
+                  onPress={handleBackToSearch}
+                >
+                  <Text style={styles.tempBackText}>← Back</Text>
+                </TouchableOpacity>
+
+                <RouteHeader
+                  onBackPress={handleBackToSearch}
+                  activeMode={travelMode as TransportMode}
+                  onModeChange={mode => setTravelMode(mode as TravelMode)}
+                  modeTimes={modeTimes}
+                />
+                {renderAvailabilityContent()}
+              </View>
           )}
         </BottomSheetScrollView>
       </BottomSheet>
@@ -969,6 +978,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+    tempBackButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+    marginBottom: 8,
+  },
+  tempBackText: {
+    fontSize: 16,
+    color: '#0761E0',
+    fontWeight: '500',
+  },
 
+  
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
 });

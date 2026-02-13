@@ -47,6 +47,7 @@ import { ShuttleArrivalSheet } from '../../components/ShuttleArrivalSheet';
 
 // Import services
 import { getUserLocation } from '../../services/location';
+import { getRoutesGoHome, getRoutesToOfficeQuickStart } from '../../services/maps';
 import {
   getMinutesUntil,
   isRideDelayed,
@@ -106,6 +107,9 @@ function MapScreen() {
 
   // Navigation State
   const [isNavigating, setIsNavigating] = useState(false);
+
+  // Pre-check loading state (for validating Home/Work before navigating)
+  const [preCheckLoading, setPreCheckLoading] = useState(false);
 
   // Snap points
   const searchSnapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
@@ -433,43 +437,93 @@ function MapScreen() {
   );
 
   const handleHomePress = useCallback(
-    (homeAddress: string | null) => {
+    async (homeAddress: string | null) => {
       if (!homeAddress) {
         navigation.navigate('Favorites');
         return;
       }
-      setDestinationName('Home');
-      setDestinationAddress(homeAddress);
-      setIsHomeRoute(true);
-      setMode('quickstart');
-      setPhase('availability');
-      setViewMode('detail');
-      setFetchedRouteData(null);
-      setTripshotData(null);
-      setSelectedParkingId(null);
-      setIsNavigating(false);
-      bottomSheetRef.current?.snapToIndex(1);
+
+      // Show loading state
+      setPreCheckLoading(true);
+
+      try {
+        const origin = await getUserLocation();
+        
+        // Try to get routes first to validate
+        await getRoutesGoHome({ origin, destination: homeAddress });
+
+        // If successful, navigate to quickstart
+        setDestinationName('Home');
+        setDestinationAddress(homeAddress);
+        setIsHomeRoute(true);
+        setMode('quickstart');
+        setPhase('availability');
+        setViewMode('detail');
+        setFetchedRouteData(null);
+        setTripshotData(null);
+        setSelectedParkingId(null);
+        setIsNavigating(false);
+        bottomSheetRef.current?.snapToIndex(1);
+      } catch (err: any) {
+        // Handle 403 error
+        if (err?.status === 403 || err?.response?.status === 403) {
+          Alert.alert(
+            'Routing Unavailable',
+            'Routing is only available when you are near a Tesla office.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert('Error', 'Failed to load routes. Please try again.');
+        }
+      } finally {
+        setPreCheckLoading(false);
+      }
     },
     [navigation, setFetchedRouteData, setTripshotData]
   );
 
   const handleWorkPress = useCallback(
-    (workAddress: string | null) => {
+    async (workAddress: string | null) => {
       if (!workAddress) {
         navigation.navigate('Favorites');
         return;
       }
-      setDestinationName('Work');
-      setDestinationAddress(workAddress);
-      setIsHomeRoute(false);
-      setMode('quickstart');
-      setPhase('availability');
-      setViewMode('detail');
-      setFetchedRouteData(null);
-      setTripshotData(null);
-      setSelectedParkingId(null);
-      setIsNavigating(false);
-      bottomSheetRef.current?.snapToIndex(1);
+
+      // Show loading state
+      setPreCheckLoading(true);
+
+      try {
+        const origin = await getUserLocation();
+        
+        // Try to get routes first to validate
+        await getRoutesToOfficeQuickStart({ origin, destinationAddress: workAddress });
+
+        // If successful, navigate to quickstart
+        setDestinationName('Work');
+        setDestinationAddress(workAddress);
+        setIsHomeRoute(false);
+        setMode('quickstart');
+        setPhase('availability');
+        setViewMode('detail');
+        setFetchedRouteData(null);
+        setTripshotData(null);
+        setSelectedParkingId(null);
+        setIsNavigating(false);
+        bottomSheetRef.current?.snapToIndex(1);
+      } catch (err: any) {
+        // Handle 403 error
+        if (err?.status === 403 || err?.response?.status === 403) {
+          Alert.alert(
+            'Routing Unavailable',
+            'You are at Tesla Office. Routing is not needed here.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert('Error', 'Failed to load routes. Please try again.');
+        }
+      } finally {
+        setPreCheckLoading(false);
+      }
     },
     [navigation, setFetchedRouteData, setTripshotData]
   );
@@ -790,6 +844,16 @@ function MapScreen() {
         {mode === 'quickstart' && !isNavigating && (
           <LocationBox destination={destinationName} />
         )}
+
+        {/* Loading overlay for pre-check */}
+        {preCheckLoading && (
+          <View style={styles.preCheckLoadingOverlay}>
+            <View style={styles.preCheckLoadingBox}>
+              <ActivityIndicator size="large" color="#0761E0" />
+              <Text style={styles.preCheckLoadingText}>Checking routes...</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Bottom Sheet - Unified */}
@@ -853,24 +917,23 @@ function MapScreen() {
             </View>
           ) : (
             // Quickstart Content (RouteDetailView)
-            // Quickstart Content (RouteDetailView)
-              <View style={styles.quickstartContainer}>
-                {/* Temporary back button */}
-                <TouchableOpacity 
-                  style={styles.tempBackButton}
-                  onPress={handleBackToSearch}
-                >
-                  <Text style={styles.tempBackText}>← Back</Text>
-                </TouchableOpacity>
+            <View style={styles.quickstartContainer}>
+              {/* Temporary back button */}
+              <TouchableOpacity 
+                style={styles.tempBackButton}
+                onPress={handleBackToSearch}
+              >
+                <Text style={styles.tempBackText}>← Back</Text>
+              </TouchableOpacity>
 
-                <RouteHeader
-                  onBackPress={handleBackToSearch}
-                  activeMode={travelMode as TransportMode}
-                  onModeChange={mode => setTravelMode(mode as TravelMode)}
-                  modeTimes={modeTimes}
-                />
-                {renderAvailabilityContent()}
-              </View>
+              <RouteHeader
+                onBackPress={handleBackToSearch}
+                activeMode={travelMode as TransportMode}
+                onModeChange={mode => setTravelMode(mode as TravelMode)}
+                modeTimes={modeTimes}
+              />
+              {renderAvailabilityContent()}
+            </View>
           )}
         </BottomSheetScrollView>
       </BottomSheet>
@@ -911,6 +974,30 @@ const styles = StyleSheet.create({
   settingsIcon: {
     fontSize: 20,
     color: theme.components.icon,
+  },
+  preCheckLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  preCheckLoadingBox: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  preCheckLoadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#1C1C1C',
+    fontWeight: '500',
   },
   bottomSheetBackground: {
     backgroundColor: theme.colors.background,
@@ -972,13 +1059,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
   },
-
   routeButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: '600',
   },
-    tempBackButton: {
+  tempBackButton: {
     paddingVertical: 12,
     paddingHorizontal: 0,
     marginBottom: 8,
@@ -988,7 +1074,5 @@ const styles = StyleSheet.create({
     color: '#0761E0',
     fontWeight: '500',
   },
-
-  
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
 });

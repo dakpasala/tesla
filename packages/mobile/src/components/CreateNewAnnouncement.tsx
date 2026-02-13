@@ -1,3 +1,5 @@
+// packages/mobile/src/components/CreateNewAnnoucement.tsx
+
 import React, { forwardRef, useState } from 'react';
 import {
   View,
@@ -6,27 +8,79 @@ import {
   Pressable,
   TextInput,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Modalize } from 'react-native-modalize';
 import Svg, { Path } from 'react-native-svg';
+import { createShuttleAlertAdmin } from '../services/shuttleAlerts';
 
-const SHUTTLE_OPTIONS = ['DC Shuttle A', 'DC Shuttle B', 'DC Shuttle C'];
-const ANNOUNCEMENT_TYPES = [
-  { id: 'bad-weather', label: 'Bad Weather' },
-  { id: 'road-closure', label: 'Road Closure' },
-  { id: 'traffic', label: 'Traffic' },
-  { id: 'shuttle-full', label: 'Shuttle Full' },
+const SHUTTLE_OPTIONS = [
+  'Tesla HQ Deer Creek Shuttle A',
+  'Tesla HQ Deer Creek Shuttle B',
+  'Tesla HQ Deer Creek Shuttle C',
+  'Tesla HQ Deer Creek Shuttle D',
 ];
 
-interface CreateNewAnnouncementProps {}
+const ANNOUNCEMENT_TYPES = [
+  { id: 'bad-weather', label: 'Bad Weather', reason: 'weather' },
+  { id: 'road-closure', label: 'Road Closure', reason: 'road_closure' },
+  { id: 'traffic', label: 'Traffic', reason: 'traffic' },
+  { id: 'shuttle-full', label: 'Shuttle Full', reason: 'capacity' },
+];
+
+interface CreateNewAnnouncementProps {
+  onSuccess?: () => void;
+}
 
 const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
-  (props, ref) => {
+  ({ onSuccess }, ref) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [selectedShuttle, setSelectedShuttle] = useState('DC Shuttle A');
+    const [selectedShuttle, setSelectedShuttle] = useState(SHUTTLE_OPTIONS[0]);
     const [selectedType, setSelectedType] = useState<string | null>(null);
     const [details, setDetails] = useState('');
     const [delay, setDelay] = useState(15);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (clearReports: boolean) => {
+      if (!selectedType) {
+        Alert.alert('Error', 'Please select an announcement type');
+        return;
+      }
+
+      const selectedTypeObj = ANNOUNCEMENT_TYPES.find(t => t.id === selectedType);
+      if (!selectedTypeObj) return;
+
+      setSubmitting(true);
+
+      try {
+        await createShuttleAlertAdmin(selectedShuttle, {
+          type: 'delay',
+          reason: selectedTypeObj.reason,
+          delayMinutes: delay,
+          clearReports,
+        });
+
+        Alert.alert('Success', 'Alert created successfully!');
+        
+        // Reset form
+        setSelectedType(null);
+        setDetails('');
+        setDelay(15);
+        
+        // Close modal
+        if (ref && 'current' in ref && ref.current) {
+          ref.current.close();
+        }
+
+        // Trigger refresh in parent
+        onSuccess?.();
+      } catch (err) {
+        console.error('Failed to create alert:', err);
+        Alert.alert('Error', 'Failed to create alert. Please try again.');
+      } finally {
+        setSubmitting(false);
+      }
+    };
 
     return (
       <Modalize ref={ref} modalHeight={538} modalStyle={styles.modalScreen}>
@@ -38,12 +92,14 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
               <Text style={styles.mainTitle}>Create Announcement</Text>
 
               {/* Shuttle Dropdown */}
-              <View style={styles.dropdownWrapper}>
+              <View style={styles.dropdownWrapper}> 
                 <Pressable
                   style={styles.dropdownButton}
                   onPress={() => setDropdownOpen(v => !v)}
                 >
-                  <Text style={styles.dropdownText}>{selectedShuttle}</Text>
+                  <Text style={styles.dropdownText}>
+                    {selectedShuttle.replace('Tesla HQ Deer Creek ', '')}
+                  </Text>
                   <Svg
                     width={20}
                     height={20}
@@ -74,7 +130,9 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
                           setDropdownOpen(false);
                         }}
                       >
-                        <Text style={styles.dropdownItemText}>{shuttle}</Text>
+                        <Text style={styles.dropdownItemText}>
+                          {shuttle.replace('Tesla HQ Deer Creek ', '')}
+                        </Text>
                       </Pressable>
                     ))}
                   </ScrollView>
@@ -108,7 +166,7 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
             <View style={styles.section}>
               <TextInput
                 style={styles.textArea}
-                placeholder="Add more details"
+                placeholder="Add more details (optional)"
                 placeholderTextColor="#C7C7C7"
                 multiline
                 value={details}
@@ -142,14 +200,24 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              <Pressable style={styles.primaryButton}>
+              <Pressable
+                style={[styles.primaryButton, submitting && styles.buttonDisabled]}
+                onPress={() => handleSubmit(true)}
+                disabled={submitting}
+              >
                 <Text style={styles.primaryButtonText}>
-                  Push Alert & Resolve Reports
+                  {submitting ? 'Sending...' : 'Push Alert & Resolve Reports'}
                 </Text>
               </Pressable>
 
-              <Pressable style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonText}>Push Alert Only</Text>
+              <Pressable
+                style={[styles.secondaryButton, submitting && styles.buttonDisabled]}
+                onPress={() => handleSubmit(false)}
+                disabled={submitting}
+              >
+                <Text style={styles.secondaryButtonText}>
+                  {submitting ? 'Sending...' : 'Push Alert Only'}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -165,34 +233,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
-  handleBar: {
-    width: 150,
-    height: 5,
-    backgroundColor: '#D1D1D1',
-    borderRadius: 3,
-    marginTop: -20,
-    alignSelf: 'center',
-  },
   container: {
     flex: 1,
     paddingBottom: 40,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 8,
-    backgroundColor: '#FFFFFF',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 16,
-    color: '#8B5CF6',
-    fontWeight: '500',
-    fontFamily: 'Inter',
   },
   content: {
     backgroundColor: '#FFFFFF',
@@ -229,15 +272,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
     fontFamily: 'Inter',
-    fontWeight: 400,
+    fontWeight: '400',
   },
   dropdownMenu: {
     position: 'absolute',
     top: '100%',
-    right: undefined,
+    right: 0,
     marginTop: 4,
     backgroundColor: '#FFFFFF',
     borderColor: '#E5E5E5',
+    borderWidth: 1,
+    borderRadius: 8,
     maxHeight: 120,
     minWidth: 150,
     shadowColor: '#000',
@@ -291,7 +336,6 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: '#007AFF',
-    fontWeight: 400,
   },
   radioLabel: {
     fontSize: 14,
@@ -368,6 +412,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#D1D1D1',
     fontFamily: 'Inter',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
 });
 

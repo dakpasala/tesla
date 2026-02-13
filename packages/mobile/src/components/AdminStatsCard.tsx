@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/admin/AdminStatsCard.tsx
+
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 

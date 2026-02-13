@@ -2,11 +2,11 @@
 
 import { get, post } from './crud';
 
-export type ShuttleReport = {
-  id?: string;
+export type Report = {
+  id: string;
   shuttleName: string;
   comment: string;
-  createdAt?: string;
+  createdAt: string;
 };
 
 export type ShuttleAlert = {
@@ -23,8 +23,8 @@ export type ShuttleAlert = {
 export async function submitShuttleReport(
   shuttleName: string,
   comment: string
-): Promise<ShuttleReport> {
-  return post<ShuttleReport>(
+): Promise<Report> {
+  return post<Report>(
     `shuttles/${encodeURIComponent(shuttleName)}/reports`,
     { comment }
   );
@@ -41,11 +41,17 @@ export async function getShuttleAlerts(
 
 // ADMIN ROUTES
 
-// fetch reports
+// get total count
+export async function getShuttleReportsCount(): Promise<number> {
+  const response = await get<{ count: number }>('shuttles/admin/count');
+  return response.count;
+}
+
+// fetch reports for a specific shuttle
 export async function getShuttleReportsAdmin(
   shuttleName: string
-): Promise<ShuttleReport[]> {
-  return get<ShuttleReport[]>(
+): Promise<Report[]> {
+  return get<Report[]>(
     `shuttles/admin/${encodeURIComponent(shuttleName)}/reports`
   );
 }
@@ -64,4 +70,31 @@ export async function createShuttleAlertAdmin(
     `shuttles/admin/${encodeURIComponent(shuttleName)}/alerts`,
     alert
   );
+}
+
+export type Announcement = {
+  id: string;
+  shuttleName: string;
+  delayMinutes: number;
+  createdAt: string;
+};
+
+export type AnnouncementsResponse = {
+  announcements: Announcement[];
+};
+
+// alerts = announcements
+export async function getAnnouncements(): Promise<Announcement[]> {
+  const response = await get<AnnouncementsResponse>('shuttles/admin/announcements');
+  return response.announcements;
+}
+
+export type ReportsResponse = {
+  reports: Report[];
+};
+
+// fetch all reports across all shuttles
+export async function getAllReports(): Promise<Report[]> {
+  const response = await get<ReportsResponse>('shuttles/admin/reports');
+  return response.reports;
 }

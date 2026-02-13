@@ -1,195 +1,153 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { PARKING_STATS } from '../../helpers/AdminHelper';
-import AdminStatsCard from './AdminStatsCard';
+import { getAllParkingAvailability, updateParkingAvailability, ParkingRow } from '../../services/parkings';
+import ParkingUtilizationCard from '../../components/ParkingUtilizationCard';
+import ParkingEditModal from '../../components/ParkingEditModal';
 
 export default function ParkingManagementScreen() {
   const navigation = useNavigation();
 
+  const [loading, setLoading] = useState(true);
+  const [groupedData, setGroupedData] = useState<Record<string, ParkingRow[]>>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeLot, setActiveLot] = useState<ParkingRow | null>(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllParkingAvailability();
+      const dataArray = Array.isArray(data) ? data : [];
+      
+      const grouped = dataArray.reduce((acc, lot) => {
+        const locName = lot.location_name || 'Unknown Location';
+        if (!acc[locName]) acc[locName] = [];
+        acc[locName].push(lot);
+        return acc;
+      }, {} as Record<string, ParkingRow[]>);
+
+      setGroupedData(grouped);
+    } catch (error) {
+      console.error('Failed to fetch parking data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenModal = (lot: ParkingRow) => {
+    setActiveLot(lot);
+    setIsEditing(true);
+  };
+
+  const handleSaveParking = async (availability: number, statusOverride: string | null) => {
+    if (!activeLot) return;
+    try {
+
+      console.log('--- DEBUG SAVE ---');
+      console.log('Lot Name:', activeLot.lot_name);
+      console.log('Database Capacity:', activeLot.capacity); 
+      console.log('Calculated Availability to Send:', availability);
+      console.log('Status Override:', statusOverride);
+      console.log('------------------');
+      
+      await updateParkingAvailability({
+        location_name: activeLot.location_name,
+        lot_name: activeLot.lot_name,
+        availability,
+        status_override: statusOverride
+      });
+      setIsEditing(false);
+      fetchData(); 
+    } catch (e: any) { 
+      console.error("Save failed:", e.response?.data?.error || e.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}><ActivityIndicator size="large" color="#FF3B30" /></View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>←</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backText}>{'< '}Home</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Parking Lots Management</Text>
-        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.statsRow}>
-          {PARKING_STATS.map(stat => (
-            <AdminStatsCard
-              key={stat.id}
-              title={stat.title}
-              value={stat.value}
-              trend={stat.trend}
-              trendValue={stat.trendValue}
-              style={{ marginRight: 10, marginBottom: 10 }}
-            />
-          ))}
-        </View>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {Object.entries(groupedData).map(([locationName, lots]) => (
+          <View key={locationName} style={styles.locationSection}>
+            <Text style={styles.locationTitle}>{locationName}</Text>
+            <View style={styles.grid}>
+              {lots.map((lot) => {
+                // Calculation using dynamic capacity
+                const capacity = lot.capacity || 1; 
+                const available = lot.availability ?? 0;
+                const percentage = Math.round(((capacity - available) / capacity) * 100);
+                
+                const isManualOverride = 
+                  lot.status_override === 'Reserved for event' || 
+                  lot.status_override === 'Lot closed';
 
-        {/* Deer Creek */}
-        <View style={styles.lotCard}>
-          <View style={styles.lotHeader}>
-            <Text style={styles.lotName}>Deer Creek</Text>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>Almost Full</Text>
-            </View>
-          </View>
+                const displayPercentage = lot.status_override === 'FULL' ? 100 : percentage;
+                const displayLabel = lot.status_override || (percentage >= 90 ? 'Almost Full' : 'Available');
 
-          {/* Sublots */}
-          <View style={styles.sublotRow}>
-            <View style={styles.sublotInfo}>
-              <Text style={styles.sublotName}>Sublot A</Text>
-              <Text style={styles.sublotOcc}>95% Full</Text>
-            </View>
-            <View style={styles.donut} />
-          </View>
-          <View style={styles.sublotRow}>
-            <View style={styles.sublotInfo}>
-              <Text style={styles.sublotName}>Sublot B</Text>
-              <Text style={styles.sublotOcc}>72% Full</Text>
-            </View>
-            <View style={styles.donut} />
-          </View>
-          <View style={styles.sublotRow}>
-            <View style={styles.sublotInfo}>
-              <Text style={styles.sublotName}>Sublot C</Text>
-              <Text style={styles.sublotOcc}>45% Full</Text>
-            </View>
-            <View style={styles.donut} />
-          </View>
-        </View>
-
-        {/* Page Mill */}
-        <View style={styles.lotCard}>
-          <View style={styles.lotHeader}>
-            <Text style={styles.lotName}>Page Mill</Text>
-            <View style={[styles.statusBadge, { backgroundColor: '#E8F5E9' }]}>
-              <Text style={[styles.statusText, { color: '#2E7D32' }]}>
-                Available
-              </Text>
+                return (
+                  <View key={`${lot.location_id}-${lot.lot_name}`} style={styles.cardWrapper}>
+                    <ParkingUtilizationCard
+                      title={lot.lot_name}
+                      percentage={displayPercentage}
+                      statusLabel={displayLabel}
+                      isStatusOnly={isManualOverride} // Hides ring for Reserved/Closed
+                      onEditPress={() => handleOpenModal(lot)}
+                    />
+                  </View>
+                );
+              })}
+              <View style={{ width: 97 }} />
             </View>
           </View>
-          <View style={styles.sublotRow}>
-            <View style={styles.sublotInfo}>
-              <Text style={styles.sublotName}>Main Lot</Text>
-              <Text style={styles.sublotOcc}>30% Full</Text>
-            </View>
-            <View style={styles.donut} />
-          </View>
-        </View>
+        ))}
       </ScrollView>
+
+      <ParkingEditModal 
+        visible={isEditing}
+        lot={activeLot}
+        // Pass the REAL capacity here to fix the math!
+        totalCapacity={activeLot?.capacity || 1} 
+        onClose={() => setIsEditing(false)}
+        onSave={handleSaveParking}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F7',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  backButton: {
-    padding: 8,
-  },
-  backText: {
-    fontSize: 24,
-    color: '#007AFF',
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#000',
-  },
-  content: {
-    padding: 20,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 20,
-  },
-  lotCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    elevation: 2,
-  },
-  lotHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  lotName: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  statusBadge: {
-    backgroundColor: '#FFEBEE',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
-    color: '#D32F2F',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  sublotRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-  },
-  sublotInfo: {
-    flex: 1,
-  },
-  sublotName: {
-    fontSize: 14,
-    color: '#666',
-  },
-  sublotOcc: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  donut: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 4,
-    borderColor: '#4285F4',
-    opacity: 0.3, // easy placeholder for donut chart
-  },
+  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { paddingHorizontal: 24, paddingVertical: 12 },
+  backButton: { marginBottom: 4, width: 80 },
+  backText: { fontSize: 16, color: '#FF3B30', fontWeight: '500' },
+  headerTitle: { fontSize: 22, fontWeight: '700', color: '#000' },
+  content: { paddingHorizontal: 24, paddingBottom: 40 },
+  locationSection: { marginTop: 32 },
+  locationTitle: { fontSize: 14, fontWeight: '500', color: '#1C1C1E', marginBottom: 16 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  cardWrapper: { width: 97, marginBottom: 16 },
 });

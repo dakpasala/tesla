@@ -97,7 +97,7 @@ export default function FavoritesScreen() {
   // Opens the edit modal for home or work
   const openEditor = (type: 'home' | 'work') => {
     setEditingType(type);
-    setInputValue(type === 'home' ? homeAddress ?? '' : workAddress ?? '');
+    setInputValue(type === 'home' ? (homeAddress ?? '') : (workAddress ?? ''));
     setModalVisible(true);
   };
 
@@ -134,7 +134,12 @@ export default function FavoritesScreen() {
   const renderFavorite = ({ item }: { item: FavoriteLocation }) => (
     <TouchableOpacity
       style={styles.favoriteCard}
-      onPress={() => navigation.navigate('Routes')}
+      onPress={() =>
+        navigation.navigate('Map', {
+          destinationName: item.name,
+          destinationAddress: item.address,
+        })
+      }
     >
       <TouchableOpacity
         style={styles.starButton}

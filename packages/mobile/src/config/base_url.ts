@@ -9,7 +9,8 @@ import { Platform } from 'react-native';
 
 // If testing on a PHYSICAL device (not simulator),
 // replace 'null' with your computer's LAN IP (e.g., '192.168.1.5')
-const LAN_IP = null;
+// use local host if tunneling and connected via usb
+const LAN_IP = 'localhost';
 
 const SERVER_HOST =
   LAN_IP ||

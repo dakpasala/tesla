@@ -3,10 +3,14 @@
 import { get, patch } from './crud';
 
 export type ParkingRow = {
-  id?: number;
-  loc_name: string;
+  location_id: number;
+  location_name: string;
+  lot_id: number;
   lot_name: string;
-  availability: number;
+  availability: number;     
+  capacity: number;        
+  status_override: string | null; 
+  current_available?: number; 
   error?: string;
 };
 
@@ -20,36 +24,55 @@ export type Location = {
   lng: number;
 };
 
+export interface ParkingLot {
+  id: string;
+  name: string;
+  status: string;
+  fullness: number;
+  coordinate: { latitude: number; longitude: number };
+}
+
 
 export async function getParkingForLocation(
-  locName: string
+  locationName: string
 ): Promise<ParkingRow[]> {
-  const endpoint = `parkings?loc_name=${encodeURIComponent(locName)}`;
+  // Use location_name to match backend query param
+  const endpoint = `parkings?loc_name=${encodeURIComponent(locationName)}`;
   return get<ParkingRow[]>(endpoint);
 }
 
 export async function updateParkingAvailability(params: {
-  loc_name: string;
+  location_name: string;
   lot_name: string;
   availability: number;
+  status_override?: string | null; // Accept the new string override
 }): Promise<{
   success: boolean;
-  loc_name: string;
+  location_name: string;
   lot_name: string;
   availability: number;
+  status_override?: string | null;
 }> {
   return patch<{
     success: boolean;
-    loc_name: string;
+    location_name: string;
     lot_name: string;
     availability: number;
+    status_override?: string | null;
   }>('parkings', params);
 }
+
 
 export async function getAllLocations(): Promise<Location[]> {
   return get<Location[]>('parkings/locations');
 }
 
+
 export async function getAllParkingAvailability(): Promise<ParkingRow[]> {
   return get<ParkingRow[]>('parkings/all');
+}
+
+export async function getFullLotsCount(): Promise<number> {
+  const response = await get<{ count: number }>('parkings/full-count');
+  return response.count;
 }

@@ -114,7 +114,7 @@ export default function AnnouncementDropDown({
 
 const styles = StyleSheet.create({
   container: {
-    width: 328,
+    width: '100%',
     alignItems: 'center',
   },
 

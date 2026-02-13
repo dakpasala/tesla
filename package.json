@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -17,7 +19,8 @@
     "mobile:android": "yarn workspace mobile android",
     "mobile:ios": "yarn workspace mobile ios",
     "server:dev": "yarn workspace server dev",
-    "server:start": "yarn workspace server start"
+    "server:start": "yarn workspace server start",
+    "tunnel": "adb reverse tcp:3000 tcp:3000"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -44,9 +47,6 @@
   },
   "engines": {
     "node": ">=20"
-  },
-  "dependencies": {
-    "react-native-worklets": "^0.6.1"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

@@ -75,12 +75,14 @@ export async function getAllLocations({ activeOnly = true } = {}) {
 export async function fetchParkingAvailability() {
   const pool = await getPool();
   const result = await pool.request().query(`
-  SELECT
-    l.id AS location_id,
-    l.name AS location_name,
-    p.id AS lot_id,
-    p.name AS lot_name,
-    p.current_available AS availability
+    SELECT
+      l.id AS location_id,
+      l.name AS location_name,
+      p.id AS lot_id,
+      p.name AS lot_name,
+      p.current_available AS availability, 
+      p.capacity AS capacity,
+      p.status_override
     FROM parking_lots p
     JOIN locations l ON l.id = p.location_id
     WHERE p.is_active = 1
@@ -111,10 +113,7 @@ export async function getParkingAvailabilityByLocationName(locationName) {
     .request()
     .input('locationName', sql.VarChar, locationName)
     .query(`
-      -- Check if location exists
-      IF NOT EXISTS (
-        SELECT 1 FROM locations WHERE name = @locationName
-      )
+      IF NOT EXISTS (SELECT 1 FROM locations WHERE name = @locationName)
       BEGIN
         SELECT 'LOCATION_NOT_FOUND' AS error;
         RETURN;
@@ -124,18 +123,18 @@ export async function getParkingAvailabilityByLocationName(locationName) {
         p.id,
         p.name AS lot_name,
         p.current_available,
-        p.capacity
+        p.capacity,
+        p.status_override -- New field for "Reserved", "Closed", etc.
       FROM parking_lots p
       JOIN locations l ON l.id = p.location_id
-      WHERE l.name = @locationName
-        AND p.is_active = 1
+      WHERE l.name = @locationName AND p.is_active = 1
       ORDER BY p.name;
     `);
 
   return result.recordset;
 }
 
-export async function updateParkingAvailability(locationName, lotName, availability) {
+export async function updateParkingAvailability(locationName, lotName, availability, statusOverride = null) {
   const pool = await getPool();
 
   const result = await pool
@@ -143,13 +142,15 @@ export async function updateParkingAvailability(locationName, lotName, availabil
     .input('locationName', sql.VarChar, locationName)
     .input('lotName', sql.VarChar, lotName)
     .input('availability', sql.Int, availability)
+    .input('statusOverride', sql.VarChar, statusOverride) // Can be "Lot closed", "Reserved for event", or null
     .query(`
       UPDATE p
-      SET p.current_available = @availability
+      SET 
+        p.current_available = @availability,
+        p.status_override = @statusOverride
       FROM parking_lots p
       JOIN locations l ON l.id = p.location_id
-      WHERE l.name = @locationName
-        AND p.name = @lotName;
+      WHERE l.name = @locationName AND p.name = @lotName;
 
       SELECT @@ROWCOUNT AS rowsAffected;
     `);
@@ -189,13 +190,11 @@ export async function addAdmin(username, email) {
 
 export async function getParkingLotByOfficeAndName(
   officeName,
-  parkingLotName
 ) {
   const pool = await getPool();
 
   const result = await pool.request()
     .input('officeName', sql.VarChar, officeName)
-    .input('parkingLotName', sql.VarChar, parkingLotName)
     .query(`
       SELECT
         p.id,
@@ -208,7 +207,6 @@ export async function getParkingLotByOfficeAndName(
       FROM parking_lots p
       JOIN locations l ON l.id = p.location_id
       WHERE l.name = @officeName
-        AND p.name = @parkingLotName
         AND l.is_active = 1
         AND p.is_active = 1
     `);

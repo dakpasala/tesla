@@ -44,6 +44,7 @@ import { LocationBox } from '../../components/LocationBox';
 import { ParkingDetailView } from '../../components/ParkingDetailView';
 import { RouteDetailView } from '../../components/RouteDetailView';
 import { ShuttleArrivalSheet } from '../../components/ShuttleArrivalSheet';
+import { ReportSheet } from '../../components/ReportSheet';
 
 // Import services
 import { getUserLocation } from '../../services/location';
@@ -59,6 +60,8 @@ import {
   stopShuttleTracking,
   setupShuttleNotificationHandlers,
 } from '../../services/notifications';
+
+import { submitShuttleReport } from '../../services/shuttleAlerts';
 
 // Hooks
 import { useMapAlerts } from '../../hooks/useMapAlerts';
@@ -107,6 +110,9 @@ function MapScreen() {
 
   // Navigation State
   const [isNavigating, setIsNavigating] = useState(false);
+
+  // Report State
+  const [showingReport, setShowingReport] = useState(false);
 
   // Pre-check loading state (for validating Home/Work before navigating)
   const [preCheckLoading, setPreCheckLoading] = useState(false);
@@ -555,16 +561,45 @@ function MapScreen() {
   }, [parkingLots, selectedParkingId, travelMode]);
 
   const handleReport = useCallback(() => {
-    Alert.alert(
-      'Report Issue',
-      'Thank you! Your feedback helps improve our service.'
-    );
+    setShowingReport(true);
   }, []);
 
   const handleBackFromNavigation = useCallback(() => {
     setIsNavigating(false);
     stopShuttleTracking(); // Stop background notifications
   }, []);
+
+  const handleBackFromReport = useCallback(() => {
+    setShowingReport(false);
+  }, []);
+
+  const handleSubmitReport = useCallback(async (issue: string, details: string) => {
+    try {
+      // Get the shuttle short name from tripshot routes data
+      const shuttleName = tripshotData?.routes?.[0]?.shortName || 'Tesla Shuttle';
+
+      // Format the comment: "Issue: Additional details"
+      const comment = details.trim() 
+        ? `${issue}: ${details}` 
+        : issue;
+
+      // Call the API
+      await submitShuttleReport(shuttleName, comment);
+
+      Alert.alert(
+        'Report Submitted',
+        'Thank you! Your feedback helps improve our service.'
+      );
+      setShowingReport(false);
+      setIsNavigating(false);
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      Alert.alert(
+        'Error',
+        'Failed to submit report. Please try again.'
+      );
+    }
+  }, [tripshotData]);
 
   // Callback to refresh shuttle status (for polling)
   const handleRefreshStatus = useCallback(() => {
@@ -884,7 +919,15 @@ function MapScreen() {
                 onWorkLongPress={handleWorkLongPress}
               />
             </View>
-          )  : isNavigating && travelMode === 'shuttle' ? (
+          ) : showingReport ? (
+            // Show ReportSheet when reporting an issue
+            <View style={styles.shuttleNavigationContainer}>
+              <ReportSheet
+                onBack={handleBackFromReport}
+                onSubmit={handleSubmitReport}
+              />
+            </View>
+          ) : isNavigating && travelMode === 'shuttle' ? (
             // Show ShuttleArrivalSheet inside bottom sheet when navigating
             <View style={styles.quickstartContainer}>
               <ShuttleArrivalSheet
@@ -1073,6 +1116,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#0761E0',
     fontWeight: '500',
+  },
+
+  shuttleNavigationContainer: {
+    paddingHorizontal: 0,
   },
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
 });

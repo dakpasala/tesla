@@ -15,10 +15,11 @@ import LinearGradient from 'react-native-linear-gradient';
 
 import { getUserIncentives, getUserBalance } from '../../services/users';
 import { useAuth } from '../../context/AuthContext';
-import newBike from '../../assets/icons/new/newBike.png';
-import newBus from '../../assets/icons/new/newBus.png';
-import newCar from '../../assets/icons/new/newCar.png';
-import newShuttle from '../../assets/icons/new/newShuttle.png';
+
+const newBike = require('../../assets/icons/new/newBike.png');
+const newBus = require('../../assets/icons/new/newBus.png');
+const newCar = require('../../assets/icons/new/newCar.png');
+const newShuttle = require('../../assets/icons/new/newShuttle.png');
 
 export default function RewardsScreen() {
   const navigation = useNavigation();

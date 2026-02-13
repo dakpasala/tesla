@@ -884,7 +884,7 @@ function MapScreen() {
                 onWorkLongPress={handleWorkLongPress}
               />
             </View>
-          ) : isNavigating && travelMode === 'shuttle' ? (
+          )  : isNavigating && travelMode === 'shuttle' ? (
             // Show ShuttleArrivalSheet inside bottom sheet when navigating
             <View style={styles.quickstartContainer}>
               <ShuttleArrivalSheet

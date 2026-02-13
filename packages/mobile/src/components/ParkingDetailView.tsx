@@ -47,7 +47,7 @@ export function ParkingDetailView({
     return styles.dotGreen;
   };
 
-  const short = (s: string, max = 18) =>
+  const short = (s: string, max = 14) =>
     s.length > max ? s.slice(0, max - 1) + '…' : s;
 
   const currentFullness = lot?.fullness ?? 0;
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0761E0',
     borderRadius: 16,
     paddingVertical: 15,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     flex: 2,
     minHeight: 54,
     elevation: 6,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F1F1',
     borderRadius: 16,
     paddingVertical: 15,
-    paddingHorizontal: 35,
+    paddingHorizontal: 20,
     gap: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -414,10 +414,8 @@ const styles = StyleSheet.create({
 
   startButtonText: {
     color: '#FCFCFC',
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '600',
-    flexShrink: 1,
-    maxWidth: '100%',
     textAlign: 'center',
   },
 });

@@ -110,9 +110,17 @@ export default function FavoritesScreen() {
         setWorkAddress(address);
       }
       setModalVisible(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('SAVE ADDRESS ERROR:', err);
-      Alert.alert('Error', 'Something went wrong. Try again.');
+      
+      // Show the error message from the backend
+      const errorMessage = err?.response?.data?.error || err?.message || 'Something went wrong. Try again.';
+      
+      Alert.alert(
+        'Error',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
     }
   };
 

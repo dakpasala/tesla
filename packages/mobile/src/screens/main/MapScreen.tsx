@@ -19,6 +19,7 @@ import {
   Platform,
   Alert,
   AppState,
+  Pressable,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -64,11 +65,12 @@ import { useRoutePlanning } from '../../hooks/useRoutePlanning';
 import { useParkingData } from '../../hooks/useParkingData';
 
 import { decodePolyline, formatDuration } from '../../helpers/mapUtils';
+import OptionsCard from '../../components/OptionsCard';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type MapScreenRouteProp = RouteProp<RootStackParamList, 'Map'>;
 type ScreenPhase = 'routes' | 'availability';
-type ViewMode = 'list' | 'detail';
+type ViewMode = 'list' | 'detail' | 'options';
 
 function MapScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -77,6 +79,12 @@ function MapScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { userId } = useAuth();
   const { setDestination, travelMode, setTravelMode } = useRideContext();
+
+  const handleOtherLots = useCallback(() => {
+    setPendingParkingId(null);
+    setViewMode('options');
+    bottomSheetRef.current?.snapToIndex(2);
+  }, []);
 
   // ============ MAIN HOME STATE ============
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -141,6 +149,8 @@ function MapScreen() {
   const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
     null
   );
+  const [pendingParkingId, setPendingParkingId] = useState<string | null>(null);
+
   const [selectedSublot, setSelectedSublot] = useState<string>('');
   const [selectedRouteId] = useState<string | null>(null);
 
@@ -154,7 +164,11 @@ function MapScreen() {
 
   // ============ SHUTTLE TRACKING & NOTIFICATIONS ============
   useEffect(() => {
-    if (isNavigating && travelMode === 'shuttle' && tripshotData?.options?.[0]) {
+    if (
+      isNavigating &&
+      travelMode === 'shuttle' &&
+      tripshotData?.options?.[0]
+    ) {
       // Get the ride ID from first option
       const firstStep = tripshotData.options[0].steps.find(
         s => 'OnRouteScheduledStep' in s
@@ -346,19 +360,23 @@ function MapScreen() {
   const modeTimes: ModeTimes = useMemo(() => {
     if (!fetchedRouteData?.routes)
       return { car: '30m', shuttle: '50m', transit: '1h 5m', bike: '30m' };
-    
+
     const times: ModeTimes = {};
-    
+
     // Map each transport mode to the corresponding route mode from API
     const carRoute = fetchedRouteData.routes?.find(r => r.mode === 'driving');
     if (carRoute) times.car = formatDuration(carRoute.duration_sec);
-    
-    const bikeRoute = fetchedRouteData.routes?.find(r => r.mode === 'bicycling');
+
+    const bikeRoute = fetchedRouteData.routes?.find(
+      r => r.mode === 'bicycling'
+    );
     if (bikeRoute) times.bike = formatDuration(bikeRoute.duration_sec);
-    
-    const transitRoute = fetchedRouteData.routes?.find(r => r.mode === 'transit');
+
+    const transitRoute = fetchedRouteData.routes?.find(
+      r => r.mode === 'transit'
+    );
     if (transitRoute) times.transit = formatDuration(transitRoute.duration_sec);
-    
+
     // For shuttle, use TripShot data if available, otherwise use walking route as fallback
     if (tripshotData?.options?.[0]) {
       const shuttleDuration = Math.round(
@@ -368,10 +386,12 @@ function MapScreen() {
       );
       times.shuttle = formatDuration(shuttleDuration * 60);
     } else {
-      const walkRoute = fetchedRouteData.routes?.find(r => r.mode === 'walking');
+      const walkRoute = fetchedRouteData.routes?.find(
+        r => r.mode === 'walking'
+      );
       if (walkRoute) times.shuttle = formatDuration(walkRoute.duration_sec);
     }
-    
+
     return times;
   }, [fetchedRouteData, tripshotData]);
 
@@ -519,7 +539,7 @@ function MapScreen() {
   }, []);
 
   const handleSearchFocus = useCallback(() => {
-    bottomSheetRef.current?.snapToIndex(3); // Highest snap
+    bottomSheetRef.current?.snapToIndex(3);
     setSearchExpanded(true);
   }, []);
 
@@ -543,14 +563,12 @@ function MapScreen() {
     if (!tripshotData?.stops || !liveStatus?.rides?.[0])
       return ['Stevens Creek', 'Sunnyvale', 'Mountain View'];
 
-    const stops = liveStatus.rides[0].stopStatus
-      .slice(0, 3)
-      .map(status => {
-        const stop = tripshotData.stops?.find(
-          s => s.stopId === status.Awaiting.stopId
-        );
-        return stop?.name || 'Stop';
-      });
+    const stops = liveStatus.rides[0].stopStatus.slice(0, 3).map(status => {
+      const stop = tripshotData.stops?.find(
+        s => s.stopId === status.Awaiting.stopId
+      );
+      return stop?.name || 'Stop';
+    });
 
     return stops.length > 0
       ? stops
@@ -564,10 +582,52 @@ function MapScreen() {
       return null;
     }
 
+    if (viewMode === 'options') {
+      const items = parkingLots.map(lot => ({
+        id: lot.id,
+        title: lot.name,
+        subtitle: `${lot.fullness}% full`,
+        rightText: '',
+
+        // highlight the one you tapped
+        selected: pendingParkingId === lot.id,
+      }));
+
+      const selectedLotName =
+        parkingLots.find(l => l.id === pendingParkingId)?.name ?? '';
+
+      return (
+        <View>
+          <OptionsCard
+            items={items}
+            onSelect={item => {
+              // ONLY highlight (do NOT leave this screen yet)
+              setPendingParkingId(item.id);
+            }}
+          />
+
+          {pendingParkingId && (
+            <Pressable
+              style={styles.routeButton}
+              onPress={() => {
+                // confirm selection, THEN leave options
+                setSelectedParkingId(pendingParkingId);
+                setViewMode('detail');
+              }}
+            >
+              <Text style={styles.routeButtonText}>
+                Route to {selectedLotName}
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      );
+    }
+
     if (parkingLoading || routesLoading) {
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#0761E0" />
           <Text style={styles.loadingText}>Loading...</Text>
         </View>
       );
@@ -593,6 +653,7 @@ function MapScreen() {
           onSetTravelMode={setTravelMode}
           modeTimes={modeTimes}
           onOpenInGoogleMaps={openInGoogleMaps}
+          onPressOtherLots={handleOtherLots}
         />
       );
     }
@@ -607,7 +668,9 @@ function MapScreen() {
         onReportIssue={handleReport}
         tripshotData={tripshotData}
         liveStatus={liveStatus}
-        googleMapsRoute={fetchedRouteData?.routes?.find(r => r.mode === 'transit')}
+        googleMapsRoute={fetchedRouteData?.routes?.find(
+          r => r.mode === 'transit'
+        )}
       />
     );
   };
@@ -633,7 +696,7 @@ function MapScreen() {
           {mode === 'quickstart' && activePolyline.length > 0 && (
             <Polyline
               coordinates={activePolyline}
-              strokeColor="#007AFF"
+              strokeColor="#0761E0"
               strokeWidth={4}
               lineCap="round"
               lineJoin="round"
@@ -659,7 +722,7 @@ function MapScreen() {
                 <View
                   style={{
                     backgroundColor:
-                      lot.id === selectedParkingId ? '#007AFF' : '#FF3B30',
+                      lot.id === selectedParkingId ? '#0761E0' : '#FF3B30',
                     borderRadius: 12,
                     paddingHorizontal: 8,
                     paddingVertical: 4,
@@ -850,14 +913,14 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   bottomSheetHandle: {
-    backgroundColor: theme.colors.border,
-    width: 40,
+    backgroundColor: '#D9D9D9',
+    width: 73,
     height: 4,
-    borderRadius: 2,
-    marginTop: theme.spacing.s,
+    borderRadius: 5,
+    marginTop: 10,
   },
   sheetContent: {
-    paddingTop: 10,
+    paddingTop: 0,
     paddingBottom: 40,
     paddingHorizontal: 0,
   },
@@ -880,7 +943,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#0761E0',
   },
   loadingContainer: {
     alignItems: 'center',
@@ -893,5 +956,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 40,
   },
+  routeButton: {
+    marginTop: 18,
+    backgroundColor: '#0761E0',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+
+  routeButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
 });

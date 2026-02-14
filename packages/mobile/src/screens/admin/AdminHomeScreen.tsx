@@ -13,7 +13,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../navigation/types';
-import { BackButton } from '../../components/BackButton';
 import { getShuttleReportsCount } from '../../services/shuttleAlerts';
 import { getFullLotsCount } from '../../services/parkings';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
@@ -87,7 +86,6 @@ export default function AdminHomeScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <BackButton style={styles.backButton} />
           <Text style={styles.welcomeText}>Welcome Back</Text>
           <Text style={styles.userName}>Amanda</Text>
           <Text style={styles.locationText}>Tesla HQ Deer Creek</Text>
@@ -134,7 +132,9 @@ export default function AdminHomeScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+                {item.subtitle ? (
+                  <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+                ) : null}
               </View>
               {item.badge && (
                 <View style={styles.countBadge}>
@@ -166,9 +166,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'column',
     alignItems: 'flex-start',
-  },
-  backButton: {
-    marginBottom: 8,
   },
   welcomeText: {
     fontSize: 16,

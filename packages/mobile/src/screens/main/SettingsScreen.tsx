@@ -62,7 +62,6 @@ export default function SettingsScreen() {
             <Text style={styles.arrow}>›</Text>
           </View>
         </TouchableOpacity>
-        <View style={styles.divider} />
 
         {/* Live Activity Notifications */}
         <View style={styles.settingRow}>
@@ -85,6 +84,23 @@ export default function SettingsScreen() {
         >
           <Text style={styles.settingText}>Rewards</Text>
           <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+
+        {/* Admin View */}
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => navigation.navigate('Admin' as any)}
+        >
+          <Text style={styles.settingText}>Admin View</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+
+        {/* Log Out */}
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -143,9 +159,9 @@ const styles = StyleSheet.create({
     color: '#C7C7CC',
     fontWeight: '300',
   },
-  divider: {
-    height: 0.5,
-    backgroundColor: '#E5E5EA',
-    marginLeft: 20,
+  logoutText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FF3B30',
   },
 });

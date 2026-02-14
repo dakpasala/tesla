@@ -66,6 +66,9 @@ export default function ShuttleDashboardScreen() {
 
   // Filter State
   const [selectedTab, setSelectedTab] = useState<DashboardTab>(null);
+  
+  // Announcement Type State
+  const [announcementType, setAnnouncementType] = useState<'single' | 'all'>('single');
 
   const fetchDashboardData = async () => {
     try {
@@ -108,7 +111,7 @@ export default function ShuttleDashboardScreen() {
 
         return {
           id: ride.rideId,
-          name: ride.vehicleShortName || ride.vehicleName,
+          name: ride.shortName || ride.routeName,
           route: ride.routeName,
           color: getColorName(ride.color),
         };
@@ -358,7 +361,11 @@ export default function ShuttleDashboardScreen() {
           <View style={styles.announcementWrapper}>
             <AnnouncementDropDown
               onSelectOption={option => {
-                if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                if (option === 'Single Shuttle Route') {
+                  setAnnouncementType('single');
+                  announcementModalRef.current?.open();
+                } else if (option === 'All Shuttle Routes') {
+                  setAnnouncementType('all');
                   announcementModalRef.current?.open();
                 } else {
                   console.log('Selected:', option);
@@ -398,7 +405,11 @@ export default function ShuttleDashboardScreen() {
           <View style={styles.announcementWrapper}>
             <AnnouncementDropDown
               onSelectOption={option => {
-                if (option === 'Single Shuttle Route' || option === 'All Shuttle Routes') {
+                if (option === 'Single Shuttle Route') {
+                  setAnnouncementType('single');
+                  announcementModalRef.current?.open();
+                } else if (option === 'All Shuttle Routes') {
+                  setAnnouncementType('all');
                   announcementModalRef.current?.open();
                 } else {
                   console.log('Selected:', option);
@@ -415,6 +426,7 @@ export default function ShuttleDashboardScreen() {
       {/* Create Announcement Modal */}
       <CreateNewAnnouncement
         ref={announcementModalRef}
+        announcementType={announcementType}
         onSuccess={() => {
           // Refresh dashboard data after creating announcement
           fetchDashboardData();

@@ -6,7 +6,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Switch,
   Alert,
 } from 'react-native';
@@ -14,17 +13,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
-import { theme } from '../../theme/theme';
-import { BackButton } from '../../components/BackButton';
 import { useAuth } from '../../context/AuthContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { logout } = useAuth();
-
-  const [liveActivity, setLiveActivity] = useState(true);
+  const { logout, isAdmin } = useAuth();
+  const [liveActivityEnabled, setLiveActivityEnabled] = useState(true);
 
   const handleLogout = () => {
     Alert.alert(
@@ -37,115 +33,78 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            // AppNavigator will automatically show LoginScreen
           },
         },
-      ]
+      ],
+      { cancelable: true }
     );
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
       <View style={styles.header}>
-        <BackButton />
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backButton}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Settings</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Location Services */}
-        <TouchableOpacity style={styles.settingRow}>
-          <Text style={styles.settingText}>Location Services</Text>
-          <View style={styles.rightContent}>
-            <Text style={styles.statusText}>ON</Text>
-            <Text style={styles.arrow}>›</Text>
-          </View>
+      <View style={styles.content}>
+        <TouchableOpacity style={styles.item}>
+          <Text style={styles.itemText}>Location Services</Text>
+          <Text style={styles.statusText}>ON</Text>
+          <Text style={styles.chevron}>›</Text>
         </TouchableOpacity>
-        <View style={styles.divider} />
 
-        {/* Live Activity Notifications */}
-        <View style={styles.settingRow}>
-          <Text style={styles.settingText}>Live Activity Notifications</Text>
+        <View style={styles.item}>
+          <Text style={styles.itemText}>Live Activity Notifications</Text>
           <Switch
-            value={liveActivity}
-            onValueChange={setLiveActivity}
-            trackColor={{
-              false: '#E5E5EA',
-              true: '#FF3B30',
-            }}
+            value={liveActivityEnabled}
+            onValueChange={setLiveActivityEnabled}
+            trackColor={{ false: '#E5E5E5', true: '#FF3B30' }}
             thumbColor="#FFFFFF"
+            ios_backgroundColor="#E5E5E5"
           />
         </View>
 
-        {/* Rewards */}
-        <TouchableOpacity
-          style={styles.settingRow}
-          onPress={() => navigation.navigate('Rewards' as any)}
-        >
-          <Text style={styles.settingText}>Rewards</Text>
-          <Text style={styles.arrow}>›</Text>
-        </TouchableOpacity>
-      </ScrollView>
+        {!isAdmin && (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => navigation.navigate('Rewards')}
+          >
+            <Text style={styles.itemText}>Rewards</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+        )}
+
+        <View style={styles.logoutSection}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
+  container: { flex: 1, backgroundColor: '#FCFCFC' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#000000',
-    marginLeft: 12,
-  },
-  headerSpacer: {
-    width: 24,
-  },
-  content: {
-    paddingTop: 20,
-    paddingLeft: 12,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  settingText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000000',
-  },
-  rightContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000000',
-  },
-  arrow: {
-    fontSize: 20,
-    color: '#C7C7CC',
-    fontWeight: '300',
-  },
-  divider: {
-    height: 0.5,
-    backgroundColor: '#E5E5EA',
-    marginLeft: 20,
-  },
+  backButton: { fontSize: 28, color: '#007AFF', fontWeight: '400' },
+  title: { fontSize: 20, fontWeight: '600', color: '#1C1C1C' },
+  content: { paddingHorizontal: 20, paddingTop: 20 },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  itemText: { flex: 1, fontSize: 14, fontWeight: '500', color: '#1C1C1C' },
+  statusText: { fontSize: 14, color: '#8E8E93', marginRight: 8 },
+  chevron: { fontSize: 20, color: '#C7C7CC' },
+  logoutSection: { marginTop: 40 },
+  logoutButton: { paddingVertical: 12 },
+  logoutText: { fontSize: 14, fontWeight: '500', color: '#FF3B30' },
 });

@@ -361,6 +361,12 @@ function MapScreen() {
     }
   }, [mode, activePolyline, routeMapRegion]);
 
+  useEffect(() => {
+    if (mode === 'quickstart') {
+      setTravelMode('car');
+    }
+  }, [mode, setTravelMode]);
+
   const destCoord = useMemo(() => {
     if (activePolyline.length > 0)
       return activePolyline[activePolyline.length - 1];

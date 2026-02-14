@@ -30,10 +30,11 @@ const ANNOUNCEMENT_TYPES = [
 
 interface CreateNewAnnouncementProps {
   onSuccess?: () => void;
+  announcementType?: 'single' | 'all';
 }
 
 const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
-  ({ onSuccess }, ref) => {
+  ({ onSuccess, announcementType = 'single' }, ref) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedShuttle, setSelectedShuttle] = useState(SHUTTLE_OPTIONS[0]);
     const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -53,12 +54,28 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
       setSubmitting(true);
 
       try {
-        await createShuttleAlertAdmin(selectedShuttle, {
-          type: 'delay',
-          reason: selectedTypeObj.reason,
-          delayMinutes: delay,
-          clearReports,
-        });
+        // If "all shuttles", send alert to all shuttles
+        if (announcementType === 'all') {
+          // Send to all shuttles
+          await Promise.all(
+            SHUTTLE_OPTIONS.map(shuttle =>
+              createShuttleAlertAdmin(shuttle, {
+                type: 'delay',
+                reason: selectedTypeObj.reason,
+                delayMinutes: delay,
+                clearReports,
+              })
+            )
+          );
+        } else {
+          // Send to selected shuttle only
+          await createShuttleAlertAdmin(selectedShuttle, {
+            type: 'delay',
+            reason: selectedTypeObj.reason,
+            delayMinutes: delay,
+            clearReports,
+          });
+        }
 
         Alert.alert('Success', 'Alert created successfully!');
         
@@ -91,53 +108,55 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
             <View style={styles.titleRow}>
               <Text style={styles.mainTitle}>Create Announcement</Text>
 
-              {/* Shuttle Dropdown */}
-              <View style={styles.dropdownWrapper}> 
-                <Pressable
-                  style={styles.dropdownButton}
-                  onPress={() => setDropdownOpen(v => !v)}
-                >
-                  <Text style={styles.dropdownText}>
-                    {selectedShuttle.replace('Tesla HQ Deer Creek ', '')}
-                  </Text>
-                  <Svg
-                    width={20}
-                    height={20}
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#666"
+              {/* Shuttle Dropdown - Only show for single shuttle */}
+              {announcementType === 'single' && (
+                <View style={styles.dropdownWrapper}> 
+                  <Pressable
+                    style={styles.dropdownButton}
+                    onPress={() => setDropdownOpen(v => !v)}
                   >
-                    <Path
-                      d={dropdownOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </Svg>
-                </Pressable>
+                    <Text style={styles.dropdownText}>
+                      {selectedShuttle.replace('Tesla HQ Deer Creek ', '')}
+                    </Text>
+                    <Svg
+                      width={20}
+                      height={20}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#666"
+                    >
+                      <Path
+                        d={dropdownOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </Svg>
+                  </Pressable>
 
-                {dropdownOpen && (
-                  <ScrollView
-                    style={styles.dropdownMenu}
-                    nestedScrollEnabled={true}
-                  >
-                    {SHUTTLE_OPTIONS.map(shuttle => (
-                      <Pressable
-                        key={shuttle}
-                        style={styles.dropdownItem}
-                        onPress={() => {
-                          setSelectedShuttle(shuttle);
-                          setDropdownOpen(false);
-                        }}
-                      >
-                        <Text style={styles.dropdownItemText}>
-                          {shuttle.replace('Tesla HQ Deer Creek ', '')}
-                        </Text>
-                      </Pressable>
-                    ))}
-                  </ScrollView>
-                )}
-              </View>
+                  {dropdownOpen && (
+                    <ScrollView
+                      style={styles.dropdownMenu}
+                      nestedScrollEnabled={true}
+                    >
+                      {SHUTTLE_OPTIONS.map(shuttle => (
+                        <Pressable
+                          key={shuttle}
+                          style={styles.dropdownItem}
+                          onPress={() => {
+                            setSelectedShuttle(shuttle);
+                            setDropdownOpen(false);
+                          }}
+                        >
+                          <Text style={styles.dropdownItemText}>
+                            {shuttle.replace('Tesla HQ Deer Creek ', '')}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  )}
+                </View>
+              )}
             </View>
 
             {/* Announcement Type Section */}

@@ -1,50 +1,82 @@
 // packages/mobile/src/context/AuthContext.tsx
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type AuthContextType = {
+interface AuthContextType {
   userId: number | null;
-  login: (id: number) => Promise<void>;
+  isAdmin: boolean;
+  isAuthenticated: boolean;
+  login: (id: number, admin: boolean) => Promise<void>;
   logout: () => Promise<void>;
-  isLoading: boolean;
-};
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<number | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in on mount
+  // Load auth state on mount
   useEffect(() => {
-    async function loadUser() {
-      try {
-        const stored = await AsyncStorage.getItem('userId');
-        if (stored) {
-          setUserId(parseInt(stored, 10));
-        }
-      } catch (err) {
-        console.error('Failed to load user', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadUser();
+    loadAuthState();
   }, []);
 
-  const login = async (id: number) => {
-    await AsyncStorage.setItem('userId', String(id));
-    setUserId(id);
+  const loadAuthState = async () => {
+    try {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      const storedIsAdmin = await AsyncStorage.getItem('isAdmin');
+      
+      if (storedUserId) {
+        setUserId(Number(storedUserId));
+        setIsAdmin(storedIsAdmin === 'true');
+      }
+    } catch (error) {
+      console.error('Failed to load auth state:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login = async (id: number, admin: boolean = false) => {
+    try {
+      await AsyncStorage.setItem('userId', id.toString());
+      await AsyncStorage.setItem('isAdmin', admin.toString());
+      setUserId(id);
+      setIsAdmin(admin);
+    } catch (error) {
+      console.error('Failed to save auth state:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('userId');
-    setUserId(null);
+    try {
+      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem('isAdmin');
+      setUserId(null);
+      setIsAdmin(false);
+    } catch (error) {
+      console.error('Failed to clear auth state:', error);
+      throw error;
+    }
   };
 
+  if (isLoading) {
+    return null; // Or a loading screen
+  }
+
   return (
-    <AuthContext.Provider value={{ userId, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        userId,
+        isAdmin,
+        isAuthenticated: userId !== null,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

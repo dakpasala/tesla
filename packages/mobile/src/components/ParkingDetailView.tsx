@@ -85,15 +85,53 @@ export function ParkingDetailView({
           <View style={styles.statusRow}>
             <Text style={styles.statusLabel}>CURRENTLY</Text>
             <View style={getDotStyle(currentFullness)} />
-            <Text style={styles.statusValue}>{currentFullness}% full</Text>
-          </View>
-          <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>FORECAST</Text>
-            <View style={getDotStyle(forecastFullness)} />
             <Text style={styles.statusValue}>
-              {getForecastText(currentFullness)}
+              {sublots.length > 0 && selectedSublot
+                ? (() => {
+                    const selected = sublots.find(s => s.lot_name === selectedSublot);
+                    if (selected?.status_override) {
+                      return selected.status_override;
+                    }
+                    const capacity = Number(selected?.capacity);
+                    const available = Number(selected?.current_available);
+                    if (!isNaN(capacity) && !isNaN(available) && capacity > 0) {
+                      const fullness = Math.round(((capacity - available) / capacity) * 100);
+                      return `${fullness}% full`;
+                    }
+                    return `${currentFullness}% full`;
+                  })()
+                : `${currentFullness}% full`}
             </Text>
           </View>
+          {(() => {
+            // Don't show forecast if lot is closed or at 100%
+            const selected = sublots.find(s => s.lot_name === selectedSublot);
+            const isClosed = selected?.status_override?.toLowerCase().includes('closed');
+            
+            const capacity = Number(selected?.capacity);
+            const available = Number(selected?.current_available);
+            let currentPercent = currentFullness;
+            
+            if (!isNaN(capacity) && !isNaN(available) && capacity > 0) {
+              currentPercent = Math.round(((capacity - available) / capacity) * 100);
+            }
+            
+            if (isClosed || currentPercent >= 100) {
+              return null;
+            }
+            
+            const futurePercent = Math.min(currentPercent + 15, 100);
+            
+            return (
+              <View style={styles.statusRow}>
+                <Text style={styles.statusLabel}>FORECAST</Text>
+                <View style={getDotStyle(futurePercent)} />
+                <Text style={styles.statusValue}>
+                  {currentPercent}% → {futurePercent}%
+                </Text>
+              </View>
+            );
+          })()}
         </View>
 
         {sublotsLoading ? (
@@ -112,14 +150,14 @@ export function ParkingDetailView({
                  * Logic: Use status_override if present, otherwise calculate percentage
                  */
                 const hasOverride = !!sublot.status_override;
-                const capacity = sublot.capacity;
-                const available = sublot.availability;
+                const capacity = Number(sublot.capacity);
+                const available = Number(sublot.current_available);
 
                 let fullness = 0;
 
                 if (
-                  typeof capacity === 'number' &&
-                  typeof available === 'number' &&
+                  !isNaN(capacity) &&
+                  !isNaN(available) &&
                   capacity > 0
                 ) {
                   fullness = Math.round(
@@ -131,7 +169,13 @@ export function ParkingDetailView({
 
                 const displayText = hasOverride
                   ? sublot.status_override
-                  : `${fullness}% full`;
+                  : (() => {
+                      if (fullness >= 100) {
+                        return '100% full';
+                      }
+                      const futureFullness = Math.min(fullness + 15, 100);
+                      return `${fullness}% → ${futureFullness}%`;
+                    })();
 
                 const dotStyle = getDotStyle(fullness, sublot.status_override);
 
@@ -320,13 +364,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93',
     marginRight: 8,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   sublotStatsSelected: {
     fontSize: 13,
     color: '#007AFF',
     marginRight: 8,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   shuttleSuggestionCard: {
     flexDirection: 'row',

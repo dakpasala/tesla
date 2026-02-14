@@ -25,14 +25,39 @@ import ParkingManagementScreen from '../screens/admin/ParkingManagementScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-  const { userId } = useAuth();
+  const { userId, isAdmin } = useAuth();
 
   // Show login screen if not authenticated
   if (!userId) {
     return <LoginScreen />;
   }
 
-  // Show main app if authenticated
+  // Admin users see ONLY admin screens
+  if (isAdmin) {
+    return (
+      <Stack.Navigator
+        initialRouteName="Admin"
+        screenOptions={{
+          headerShown: false,
+          animation: 'slide_from_right',
+        }}
+      >
+        <Stack.Screen name="Admin" component={AdminHomeScreen} />
+        <Stack.Screen
+          name="ShuttleDashboard"
+          component={ShuttleDashboardScreen}
+        />
+        <Stack.Screen name="ShuttleReports" component={ShuttleReportsScreen} />
+        <Stack.Screen
+          name="ParkingManagement"
+          component={ParkingManagementScreen}
+        />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+      </Stack.Navigator>
+    );
+  }
+
+  // Regular users see ONLY user screens (no Admin option)
   return (
     <Stack.Navigator
       initialRouteName="Map"
@@ -41,23 +66,10 @@ export default function AppNavigator() {
         animation: 'slide_from_right',
       }}
     >
-      {/* Main App Screens */}
       <Stack.Screen name="Map" component={MapScreen} />
       <Stack.Screen name="Favorites" component={FavoritesScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Rewards" component={RewardsScreen} />
-
-      {/* Admin Screens (Unprotected for now) */}
-      <Stack.Screen name="Admin" component={AdminHomeScreen} />
-      <Stack.Screen
-        name="ShuttleDashboard"
-        component={ShuttleDashboardScreen}
-      />
-      <Stack.Screen name="ShuttleReports" component={ShuttleReportsScreen} />
-      <Stack.Screen
-        name="ParkingManagement"
-        component={ParkingManagementScreen}
-      />
     </Stack.Navigator>
   );
 }

@@ -114,6 +114,7 @@ router.post('/liveStatus', (req, res) => {
       rideId,
       routeId: '4ddaeeb4-0fff-446e-9e3a-85a11c2f4ec4',
       routeName: 'Palo Alto - Deer Creek | 3000 Hanover | Page Mill',
+      shortName: 'Tesla HQ Deer Creek Shuttle A',  
       vehicleName: '24039 / 8751045',
       vehicleShortName: '24039',
       color: '#BF40BF',

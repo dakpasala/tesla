@@ -108,7 +108,7 @@ export default function ShuttleDashboardScreen() {
 
         return {
           id: ride.rideId,
-          name: ride.vehicleShortName || ride.vehicleName,
+          name: ride.shortName || ride.routeName,
           route: ride.routeName,
           color: getColorName(ride.color),
         };

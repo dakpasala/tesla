@@ -12,7 +12,7 @@ Test the DB:
         -d '{
             "location_name": "Fremont Factory",
             "lot_name": "North Lot",
-            "availability": 10
+            "availability": 10 
         }'
 
     Get admins: curl http://localhost:3000/api/admins/

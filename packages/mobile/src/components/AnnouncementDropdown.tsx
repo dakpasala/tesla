@@ -84,28 +84,6 @@ export default function AnnouncementDropDown({
           </Pressable>
 
           <View style={styles.dropdownDivider} />
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.dropdownItem,
-              pressed && styles.dropdownItemPressed,
-            ]}
-            onPress={() => handleOptionSelect('All Parking Lots')}
-          >
-            <Text style={styles.dropdownItemText}>All Parking Lots</Text>
-          </Pressable>
-
-          <View style={styles.dropdownDivider} />
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.dropdownItem,
-              pressed && styles.dropdownItemPressed,
-            ]}
-            onPress={() => handleOptionSelect('Single Parking Lot')}
-          >
-            <Text style={styles.dropdownItemText}>Single Parking Lot</Text>
-          </Pressable>
         </View>
       )}
     </View>

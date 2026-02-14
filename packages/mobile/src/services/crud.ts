@@ -27,14 +27,28 @@ export async function get<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
-
 export async function post<T>(endpoint: string, data: any): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('POST request failed');
+
+  if (!response.ok) {
+    let errorMessage = 'POST request failed';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // If JSON parse fails, use default message
+    }
+
+    const error: any = new Error(errorMessage);
+    error.status = response.status;
+    error.response = { status: response.status, data: { error: errorMessage } };
+    throw error;
+  }
+
   return response.json();
 }
 
@@ -44,7 +58,22 @@ export async function put<T>(endpoint: string, data: any): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('PUT request failed');
+
+  if (!response.ok) {
+    let errorMessage = 'PUT request failed';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // If JSON parse fails, use default message
+    }
+
+    const error: any = new Error(errorMessage);
+    error.status = response.status;
+    error.response = { status: response.status, data: { error: errorMessage } };
+    throw error;
+  }
+
   return response.json();
 }
 
@@ -52,7 +81,22 @@ export async function del<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error('DELETE request failed');
+
+  if (!response.ok) {
+    let errorMessage = 'DELETE request failed';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // If JSON parse fails, use default message
+    }
+
+    const error: any = new Error(errorMessage);
+    error.status = response.status;
+    error.response = { status: response.status, data: { error: errorMessage } };
+    throw error;
+  }
+
   return response.json();
 }
 
@@ -62,6 +106,21 @@ export async function patch<T>(endpoint: string, data: any): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('PATCH request failed');
+
+  if (!response.ok) {
+    let errorMessage = 'PATCH request failed';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // If JSON parse fails, use default message
+    }
+
+    const error: any = new Error(errorMessage);
+    error.status = response.status;
+    error.response = { status: response.status, data: { error: errorMessage } };
+    throw error;
+  }
+
   return response.json();
 }

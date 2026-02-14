@@ -79,6 +79,7 @@ export function ShuttleArrivalSheet({
         rideId: 'mock',
         routeId: 'mock',
         routeName: 'Mock Route',
+        shortName: 'Tesla HQ Deer Creek Shuttle A',
         vehicleName: 'Mock Vehicle',
         vehicleShortName: 'M1',
         color: '#BF40BF',

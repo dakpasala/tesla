@@ -21,6 +21,8 @@ import {
   unsuppressUserNotifications,
 } from '../services/redis/cache.js';
 
+import { isValidAddress } from '../services/maps/validation.js'
+
 const router = express.Router();
 
 // --------------------
@@ -135,6 +137,14 @@ router.put('/:id/home_address', async (req, res) => {
     return res.status(400).json({ error: 'homeAddress is required' });
   }
 
+  // Validate it's a real address (can be anywhere, not just Tesla offices)
+  const isValid = await isValidAddress(homeAddress);
+  if (!isValid) {
+    return res.status(400).json({ 
+      error: 'Invalid address. Please enter a valid address.' 
+    });
+  }
+
   try {
     const success = await setUserHomeAddress(userId, homeAddress);
 
@@ -151,7 +161,6 @@ router.put('/:id/home_address', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // --------------------
 // work address

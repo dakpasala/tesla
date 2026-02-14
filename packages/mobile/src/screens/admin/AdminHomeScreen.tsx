@@ -74,6 +74,13 @@ export default function AdminHomeScreen() {
       image: require('../../assets/icons/new/newCar.png'),
       route: 'ParkingManagement',
     },
+    {
+      id: 'settings',
+      title: 'Settings',
+      subtitle: '',
+      image: require('../../assets/icons/new/settings.png'), // Use settings icon
+      route: 'Settings',
+    },
   ];
 
   return (

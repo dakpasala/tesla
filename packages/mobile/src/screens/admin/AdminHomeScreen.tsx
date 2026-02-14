@@ -1,6 +1,6 @@
 // packages/mobile/src/screens/admin/AdminHomeScreen.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,17 +13,21 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../navigation/types';
+import { Modalize } from 'react-native-modalize';
 import { getShuttleReportsCount } from '../../services/shuttleAlerts';
 import { getFullLotsCount } from '../../services/parkings';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
+import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AdminHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const announcementModalRef = useRef<Modalize>(null);
 
   const [shuttleReportsCount, setShuttleReportsCount] = useState(0);
   const [fullLotsCount, setFullLotsCount] = useState(0);
+  const [announcementType, setAnnouncementType] = useState<'single' | 'all'>('single');
 
   // Fetch shuttle reports count
   useEffect(() => {
@@ -98,7 +102,17 @@ export default function AdminHomeScreen() {
 
       <View style={{ paddingHorizontal: 20, marginBottom: 24, zIndex: 100 }}>
         <AnnouncementDropDown
-          onSelectOption={opt => console.log('Selected', opt)}
+          onSelectOption={option => {
+            if (option === 'Single Shuttle Route') {
+              setAnnouncementType('single');
+              announcementModalRef.current?.open();
+            } else if (option === 'All Shuttle Routes') {
+              setAnnouncementType('all');
+              announcementModalRef.current?.open();
+            } else {
+              console.log('Selected:', option);
+            }
+          }}
         />
       </View>
 
@@ -146,6 +160,16 @@ export default function AdminHomeScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Create Announcement Modal */}
+      <CreateNewAnnouncement
+        ref={announcementModalRef}
+        announcementType={announcementType}
+        onSuccess={() => {
+          // Refresh counts after creating announcement (optional)
+          console.log('Announcement created successfully');
+        }}
+      />
     </SafeAreaView>
   );
 }

@@ -364,13 +364,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#8E8E93',
     marginRight: 8,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   sublotStatsSelected: {
     fontSize: 13,
     color: '#007AFF',
     marginRight: 8,
-    textAlign: 'center',
+    textAlign: 'right',
   },
   shuttleSuggestionCard: {
     flexDirection: 'row',

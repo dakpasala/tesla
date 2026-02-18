@@ -6,15 +6,35 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RideProvider } from './src/context/RideContext';
 import { AuthProvider } from './src/context/AuthContext';
 import SplashScreen from './src/components/SplashScreen';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { Button } from 'react-native';
+import { View } from 'react-native';
+
+function DevThemeToggle() {
+  const { theme, preference, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    console.log('Current theme:', theme, 'Preference:', preference);
+  }, [theme, preference]);
+
+  return (
+    <Button
+      title="Toggle Theme (Dev)"
+      onPress={() => {
+        console.log('DEV BUTTON PRESSED');
+        toggleTheme();
+      }}
+    />
+  );
+}
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Simulate app initialization (fonts, assets, etc.)
     setTimeout(() => {
       setIsReady(true);
-    }, 2000); // Show splash for 2 seconds
+    }, 2000);
   }, []);
 
   if (!isReady) {
@@ -23,13 +43,18 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <RideProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </RideProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <View style={{ position: 'absolute', top: 60, right: 20, zIndex: 999 }}>
+          <DevThemeToggle />
+        </View>
+        <AuthProvider>
+          <RideProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </RideProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

@@ -15,7 +15,6 @@ const ShuttleNotificationBanner: React.FC = () => {
   const { visible, etaMinutes, stopName, isDelayed, stopStatus, nextStops } =
     notification;
 
-  // Extract short stop name (e.g., "Stevens Creek" from "Stevens Creek & Albany Bus Stop")
   const shortStopName = stopName
     ? stopName.split(' & ')[0] || stopName
     : 'Stop';
@@ -312,7 +311,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 16,
     color: '#000000',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   stopName: {
     fontFamily: 'Inter',
@@ -320,7 +319,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 12,
     color: '#666666',
-    marginBottom: 6,
+    marginBottom: 10,
   },
   stopNamePrimary: {
     color: '#000000',
@@ -331,7 +330,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     fontSize: 12,
     lineHeight: 12,
-    marginBottom: 6,
+    marginBottom: 0,
   },
   /* Route Component Styles - Copied from ShuttleArrivalSheet */
   routeContainer: {

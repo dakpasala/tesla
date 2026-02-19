@@ -395,9 +395,11 @@ const styles = StyleSheet.create({
     right: 73,
   },
   labelsCol: {
-    paddingLeft: 0,
+    // position labels so they sit inside the L-path:
+    // placed below the horizontal/curve and to the right of the vertical line
+    marginLeft: -48,
     paddingTop: 12,
-    width: 100,
+    width: 130,
   },
   stopLabel: {
     fontFamily: 'Inter',

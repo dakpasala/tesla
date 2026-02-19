@@ -64,6 +64,7 @@ interface ShuttleNotificationState {
   isBoardingNow: boolean;
   previousExpectedArrivalTime: string; // Track actual arrival time from server, not calculated ETA
   previousThresholdCrossed5Min: boolean; // Track if we've already alerted at 5 min
+  isFirstUpdate: boolean; // Track if this is the first update after starting tracking
 }
 
 const shuttleNotificationState: { [key: string]: ShuttleNotificationState } =
@@ -92,16 +93,19 @@ export async function startShuttleTracking(
     stopName
   );
 
-  // Initialize state for this shuttle
-  if (!shuttleNotificationState[rideId]) {
-    shuttleNotificationState[rideId] = {
-      previousStatus: '',
-      previousTitle: '',
-      isBoardingNow: false,
-      previousExpectedArrivalTime: '',
-      previousThresholdCrossed5Min: false,
-    };
-  }
+  // Cancel any existing shuttle notification from previous route
+  // This ensures a fresh notification will "pop" for the new route
+  await notifee.cancelNotification('shuttle-arrival-tracking');
+
+  // Initialize state for this shuttle (reset if starting tracking again)
+  shuttleNotificationState[rideId] = {
+    previousStatus: '',
+    previousTitle: '',
+    isBoardingNow: false,
+    previousExpectedArrivalTime: '',
+    previousThresholdCrossed5Min: false,
+    isFirstUpdate: true,
+  };
 
   await requestNotificationPermission();
 
@@ -160,9 +164,12 @@ export async function startShuttleTracking(
       const shouldAlert5Minutes =
         status.etaMinutes <= 5 && !prevState.previousThresholdCrossed5Min;
 
-      // Only display on meaningful user-facing changes, not on every data refresh
+      // Display on first update or on meaningful user-facing changes
       const shouldDisplayNotification =
-        statusChanged || transitionToBoarding || shouldAlert5Minutes;
+        prevState.isFirstUpdate ||
+        statusChanged ||
+        transitionToBoarding ||
+        shouldAlert5Minutes;
 
       if (shouldDisplayNotification) {
         console.log(
@@ -183,6 +190,7 @@ export async function startShuttleTracking(
           previousExpectedArrivalTime: status.expectedArrivalTime || '',
           previousThresholdCrossed5Min:
             shouldAlert5Minutes || prevState.previousThresholdCrossed5Min,
+          isFirstUpdate: false,
         };
 
         // Trigger in-app notification

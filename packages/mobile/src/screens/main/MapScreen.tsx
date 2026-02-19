@@ -188,6 +188,7 @@ function MapScreen() {
                 isDelayed: false,
                 delayMinutes: 0,
                 occupancy: 0,
+                stopStatus: undefined,
               };
             }
 
@@ -202,6 +203,7 @@ function MapScreen() {
               delayMinutes: Math.round(ride.lateBySec / 60),
               occupancy: getOccupancyPercentage(ride),
               expectedArrivalTime: nextStop?.Awaiting?.expectedArrivalTime,
+              stopStatus: ride.stopStatus,
             };
           } catch (error) {
             console.error('Failed to get live status:', error);
@@ -211,6 +213,7 @@ function MapScreen() {
               delayMinutes: 0,
               occupancy: 0,
               expectedArrivalTime: undefined,
+              stopStatus: undefined,
             };
           }
         };
@@ -219,6 +222,7 @@ function MapScreen() {
         startShuttleTracking(
           rideId,
           stopName,
+          nextStops || ['Stevens Creek', 'Sunnyvale', 'Mountain View'],
           getLiveStatusForNotification,
           data => {
             // Show in-app notification banner
@@ -226,6 +230,8 @@ function MapScreen() {
               etaMinutes: data.etaMinutes,
               stopName: data.stopName,
               isDelayed: data.isDelayed,
+              stopStatus: data.stopStatus,
+              nextStops: data.nextStops,
             });
           }
         );

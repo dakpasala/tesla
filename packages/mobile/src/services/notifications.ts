@@ -73,17 +73,21 @@ const shuttleNotificationState: { [key: string]: ShuttleNotificationState } =
 export async function startShuttleTracking(
   rideId: string,
   stopName: string,
+  nextStops: string[], // Add next stops list
   getLiveStatusFn: (rideId: string) => Promise<{
     etaMinutes: number;
     isDelayed: boolean;
     delayMinutes: number;
     occupancy: number;
     expectedArrivalTime?: string; // ISO timestamp from server
+    stopStatus?: any[]; // Stop status array for progress calculation
   }>,
   onNotificationUpdate?: (data: {
     etaMinutes: number;
     stopName: string;
     isDelayed: boolean;
+    stopStatus?: any[]; // For progress visualization
+    nextStops?: string[];
   }) => void
 ) {
   console.log(
@@ -199,6 +203,8 @@ export async function startShuttleTracking(
             etaMinutes: status.etaMinutes,
             stopName: shortStopName,
             isDelayed: status.isDelayed,
+            stopStatus: status.stopStatus,
+            nextStops: nextStops,
           });
         }
 

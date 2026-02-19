@@ -5,6 +5,8 @@ export interface ShuttleNotificationState {
   etaMinutes: number;
   stopName: string;
   isDelayed: boolean;
+  stopStatus?: any[];
+  nextStops?: string[];
 }
 
 interface ShuttleNotificationContextType {
@@ -25,6 +27,8 @@ export const ShuttleNotificationProvider: React.FC<{ children: ReactNode }> = ({
     etaMinutes: 0,
     stopName: '',
     isDelayed: false,
+    stopStatus: undefined,
+    nextStops: undefined,
   });
 
   const showNotification = useCallback(

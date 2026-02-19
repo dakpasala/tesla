@@ -183,9 +183,12 @@ const ShuttleNotificationBanner: React.FC = () => {
           {/* Title */}
           <Text style={styles.title}>{title}</Text>
 
-          {/* Stop Name */}
-          <Text style={styles.stopName} numberOfLines={1}>
-            {shortStopName}
+          {/* Stop Name (full) */}
+          <Text
+            style={[styles.stopName, styles.stopNamePrimary]}
+            numberOfLines={1}
+          >
+            {stopName || ''}
           </Text>
 
           {/* Status */}
@@ -318,6 +321,10 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     color: '#666666',
     marginBottom: 6,
+  },
+  stopNamePrimary: {
+    color: '#000000',
+    fontWeight: '300',
   },
   statusText: {
     fontFamily: 'Inter',

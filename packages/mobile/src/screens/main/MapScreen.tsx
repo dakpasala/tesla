@@ -173,7 +173,7 @@ function MapScreen() {
         const stopName =
           tripshotData.stops?.find(
             s => s.stopId === tripshotData.options[0].departureStopId
-          )?.name || 'Shuttle Stop';
+          )?.name || 'Stevens Creek & Albany Bus Stop';
 
         // Function to get live status for notifications
         const getLiveStatusForNotification = async (id: string) => {

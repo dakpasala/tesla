@@ -54,6 +54,58 @@ const ShuttleNotificationBanner: React.FC = () => {
     return reachedStops[index]?.reached ?? false;
   };
 
+  /**
+   * ROUTE PROGRESS (copied logic from ShuttleArrivalSheet)
+   */
+  const totalStops = stopStatus?.length || 0;
+  const totalSegments = Math.max(totalStops - 1, 1);
+
+  const currentStopIndex = stopStatus
+    ? stopStatus.findIndex((s: any) => getStopState(s) === 'Awaiting')
+    : -1;
+
+  const previousIndex = currentStopIndex > 0 ? currentStopIndex - 1 : 0;
+
+  let SEGMENT_PROGRESS = 0;
+
+  if (
+    currentStopIndex >= 0 &&
+    stopStatus &&
+    stopStatus[currentStopIndex] &&
+    'Awaiting' in stopStatus[currentStopIndex]
+  ) {
+    const awaiting = stopStatus[currentStopIndex].Awaiting;
+
+    const now = Date.now();
+    const departure = new Date(awaiting.scheduledDepartureTime).getTime();
+    const arrival = new Date(awaiting.expectedArrivalTime).getTime();
+
+    if (arrival > departure) {
+      SEGMENT_PROGRESS = Math.max(
+        0,
+        Math.min(1, (now - departure) / (arrival - departure))
+      );
+    }
+  }
+
+  const ROUTE_PROGRESS = (previousIndex + SEGMENT_PROGRESS) / totalSegments;
+
+  const APPROACH_RATIO = 0.2;
+
+  // Animated progress value (0..1)
+  const [routeProgressAnim] = useState(
+    () => new Animated.Value(ROUTE_PROGRESS)
+  );
+
+  useEffect(() => {
+    // animate to new route progress whenever stopStatus changes
+    Animated.timing(routeProgressAnim, {
+      toValue: ROUTE_PROGRESS,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
+  }, [stopStatus]);
+
   useEffect(() => {
     if (visible) {
       // Slide in
@@ -84,6 +136,33 @@ const ShuttleNotificationBanner: React.FC = () => {
   }, [visible, slideAnim, hideNotification]);
 
   if (!visible) return null;
+
+  // L-shape geometry (matches ShuttleArrivalSheet scaled for banner)
+  const HORIZONTAL_START_RIGHT = -20;
+  const HORIZONTAL_LENGTH = 85;
+  const VERTICAL_START_TOP = 22;
+  const VERTICAL_LENGTH = 65;
+
+  // Animated car position along the L-shaped path
+  const carRightAnim = routeProgressAnim.interpolate({
+    inputRange: [0, APPROACH_RATIO, 1],
+    outputRange: [
+      HORIZONTAL_START_RIGHT,
+      HORIZONTAL_START_RIGHT + HORIZONTAL_LENGTH,
+      HORIZONTAL_START_RIGHT + HORIZONTAL_LENGTH,
+    ],
+    extrapolate: 'clamp',
+  });
+
+  const carTopAnim = routeProgressAnim.interpolate({
+    inputRange: [0, APPROACH_RATIO, 1],
+    outputRange: [
+      VERTICAL_START_TOP - 22,
+      VERTICAL_START_TOP - 22,
+      VERTICAL_START_TOP - 22 + VERTICAL_LENGTH,
+    ],
+    extrapolate: 'clamp',
+  });
 
   return (
     <Animated.View
@@ -119,15 +198,17 @@ const ShuttleNotificationBanner: React.FC = () => {
         {stopStatus && stopStatus.length > 0 && nextStops && (
           <View style={styles.routeContainer}>
             <View style={styles.routeCol}>
-              {/* Static background path */}
+              {/* Static background path: horizontal -> curve -> vertical */}
               <View style={styles.horizontalLine} />
               <View style={styles.curve} />
               <View style={styles.verticalLine} />
 
-              {/* Shuttle icon */}
-              <View style={styles.car}>
+              {/* Shuttle icon (animated along L-path) */}
+              <Animated.View
+                style={[styles.car, { right: carRightAnim, top: carTopAnim }]}
+              >
                 <Text style={styles.carIcon}>🚐</Text>
-              </View>
+              </Animated.View>
 
               {/* DOTS */}
               <View
@@ -260,14 +341,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: -20,
-    width: 55,
+    width: 85,
     height: 2,
     backgroundColor: '#D1D1D6',
   },
   curve: {
     position: 'absolute',
     top: 8,
-    right: 12,
+    right: 64,
     width: 14,
     height: 14,
     borderTopWidth: 2,
@@ -278,7 +359,7 @@ const styles = StyleSheet.create({
   verticalLine: {
     position: 'absolute',
     top: 22,
-    right: 24,
+    right: 76,
     width: 2,
     height: 65,
     backgroundColor: '#D1D1D6',
@@ -289,7 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 2,
     top: -2,
-    right: 25,
+    right: 65,
     zIndex: 10,
   },
   carIcon: {
@@ -303,15 +384,15 @@ const styles = StyleSheet.create({
   },
   dotTop: {
     top: 12,
-    right: 21,
+    right: 73,
   },
   dotMiddle: {
     top: 40,
-    right: 21,
+    right: 73,
   },
   dotBottom: {
     top: 68,
-    right: 21,
+    right: 73,
   },
   labelsCol: {
     paddingLeft: 0,

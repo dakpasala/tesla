@@ -119,17 +119,19 @@ const ShuttleNotificationBanner: React.FC = () => {
         {stopStatus && stopStatus.length > 0 && nextStops && (
           <View style={styles.routeContainer}>
             <View style={styles.routeColumn}>
-              {/* Horizontal line */}
-              <View style={styles.horizontalLine} />
-
-              {/* Dots for each stop */}
+              {/* Dot 1 - Current Stop */}
               <View
                 style={[
                   styles.dot,
                   styles.dot1,
-                  { backgroundColor: isStopReached(0) ? '#007AFF' : '#D1D1D6' },
+                  { backgroundColor: '#007AFF' },
                 ]}
               />
+
+              {/* Vertical line 1-2 */}
+              <View style={styles.verticalLine12} />
+
+              {/* Dot 2 */}
               <View
                 style={[
                   styles.dot,
@@ -137,6 +139,11 @@ const ShuttleNotificationBanner: React.FC = () => {
                   { backgroundColor: isStopReached(1) ? '#007AFF' : '#D1D1D6' },
                 ]}
               />
+
+              {/* Vertical line 2-3 */}
+              <View style={styles.verticalLine23} />
+
+              {/* Dot 3 */}
               <View
                 style={[
                   styles.dot,
@@ -148,12 +155,7 @@ const ShuttleNotificationBanner: React.FC = () => {
 
             {/* Stop labels */}
             <View style={styles.labelsContainer}>
-              <Text
-                style={[
-                  styles.stopLabel,
-                  isStopReached(0) && styles.stopLabelActive,
-                ]}
-              >
+              <Text style={[styles.stopLabel, styles.stopLabel1Active]}>
                 {stops[0] || ''}
               </Text>
               <Text
@@ -234,51 +236,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginLeft: 8,
-    width: 100,
-    height: 85,
+    width: 110,
   },
   routeColumn: {
     position: 'relative',
-    width: 20,
-    height: 85,
+    width: 12,
+    height: 90,
     alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  horizontalLine: {
-    position: 'absolute',
-    top: 4,
-    left: 10,
-    width: 10,
-    height: 2,
-    backgroundColor: '#007AFF',
+    justifyContent: 'flex-start',
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     position: 'absolute',
+    zIndex: 10,
   },
   dot1: {
     top: 0,
   },
   dot2: {
-    top: 37,
+    top: 39,
   },
   dot3: {
-    top: 74,
+    top: 78,
+  },
+  verticalLine12: {
+    position: 'absolute',
+    top: 6,
+    left: 5,
+    width: 2,
+    height: 33,
+    backgroundColor: '#D1D1D6',
+  },
+  verticalLine23: {
+    position: 'absolute',
+    top: 45,
+    left: 5,
+    width: 2,
+    height: 33,
+    backgroundColor: '#D1D1D6',
   },
   labelsContainer: {
     flex: 1,
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     paddingLeft: 12,
-    height: 85,
+    height: 90,
+    flexDirection: 'column',
   },
   stopLabel: {
     fontFamily: 'Inter',
     fontWeight: '400',
-    fontSize: 11,
+    fontSize: 10,
     color: '#999999',
-    maxWidth: 60,
+    maxWidth: 70,
+    lineHeight: 12,
+  },
+  stopLabel1Active: {
+    color: '#007AFF',
+    fontWeight: '600',
   },
   stopLabelActive: {
     color: '#007AFF',

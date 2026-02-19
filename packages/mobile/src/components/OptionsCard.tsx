@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -27,38 +27,79 @@ export type OptionItem = {
 
 interface OptionsCardProps {
   items: OptionItem[];
+
+  // when user taps a card (select/highlight)
   onSelect?: (item: OptionItem) => void;
 
-  style?: ViewStyle;
+  // when user taps the bottom button (route/confirm)
+  onConfirm?: (item: OptionItem) => void;
 
+  // if true: card tap only highlights, button confirms
+  showConfirmButton?: boolean;
+
+  // button label override
+  confirmText?: (item: OptionItem) => string;
+
+  style?: ViewStyle;
   itemStyle?: ViewStyle;
+  buttonStyle?: ViewStyle;
 }
 
 export default function OptionsCard({
   items,
   onSelect,
+  onConfirm,
+  showConfirmButton = false,
+  confirmText,
   style,
   itemStyle,
+  buttonStyle,
 }: OptionsCardProps) {
+  // internal selected state (so you don't *have* to manage it in parent)
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // if parent passes selected on items, respect that first
+  const externallySelected = useMemo(
+    () => items.find(i => i.selected)?.id ?? null,
+    [items]
+  );
+
+  const activeSelectedId = externallySelected ?? selectedId;
+  const selectedItem = useMemo(
+    () => items.find(i => i.id === activeSelectedId) ?? null,
+    [items, activeSelectedId]
+  );
+
   return (
-    <View style={[styles.wrapper, style]}>
+    <View style={[style]}>
       {items.map((item, idx) => {
         const isPressable = Boolean(onSelect) && !item.disabled;
+
+        const isSelected = activeSelectedId === item.id || !!item.selected;
 
         return (
           <Pressable
             key={item.id}
-            onPress={() => onSelect?.(item)}
+            onPress={() => {
+              // select/highlight
+              setSelectedId(item.id);
+              onSelect?.(item);
+
+              // old behavior (auto action) ONLY if confirm mode is off
+              if (!showConfirmButton && onConfirm) {
+                onConfirm(item);
+              }
+            }}
             disabled={!isPressable}
             accessibilityRole={isPressable ? 'button' : undefined}
             accessibilityState={{
               disabled: !!item.disabled,
-              selected: !!item.selected,
+              selected: isSelected,
             }}
             style={[
               styles.optionRow,
               itemStyle,
-              item.selected && styles.optionRowSelected,
+              isSelected && styles.optionRowSelected,
               item.disabled && styles.optionRowDisabled,
               idx !== items.length - 1 ? styles.optionRowSpacer : null,
             ]}
@@ -91,19 +132,25 @@ export default function OptionsCard({
           </Pressable>
         );
       })}
+
+      {/* Bottom confirm button */}
+      {showConfirmButton && selectedItem && onConfirm ? (
+        <View style={styles.buttonWrap}>
+          <Pressable
+            style={[styles.confirmButton, buttonStyle]}
+            onPress={() => onConfirm(selectedItem)}
+          >
+            <Text style={styles.confirmText}>
+              {confirmText?.(selectedItem) ?? `Route to ${selectedItem.title}`}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    borderWidth: 1,
-    borderColor: '#000',
-    borderRadius: 5,
-    padding: 20,
-    backgroundColor: 'transparent',
-  },
-
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -111,7 +158,7 @@ const styles = StyleSheet.create({
     padding: 20,
 
     borderWidth: 1,
-    borderColor: '#E3E3E3',
+    borderColor: '#D9D9D9',
     borderRadius: 10,
     backgroundColor: 'transparent',
   },
@@ -121,8 +168,8 @@ const styles = StyleSheet.create({
   },
 
   optionRowSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F2F8FF',
+    borderColor: '#0761E0',
+    backgroundColor: 'transparent',
   },
 
   optionRowDisabled: {
@@ -150,9 +197,9 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#000',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1C1C1C',
     marginBottom: 4,
   },
 
@@ -165,20 +212,20 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#1A9C30',
     marginRight: 8,
   },
 
   subtitle: {
-    fontSize: 14,
-    color: '#000',
+    fontSize: 12,
+    color: '#1C1C1C',
   },
 
   incentivePill: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 6,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#1A9C30',
   },
 
   incentiveText: {
@@ -191,5 +238,22 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
     fontSize: 13,
     color: '#8E8E93',
+  },
+
+  buttonWrap: {
+    marginTop: 18,
+  },
+
+  confirmButton: {
+    backgroundColor: '#0761E0',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+
+  confirmText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

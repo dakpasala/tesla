@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
-  Modal,
-  TextInput,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
@@ -23,6 +23,7 @@ import type { RootStackParamList } from '../../navigation/types';
 
 // Import existing component
 import { FavoriteIcon } from '../../components/FavoriteIcon';
+import AddressAutocompleteModal from '../../components/AddressAutocompleteModal';
 
 // Import address APIs
 import {
@@ -44,6 +45,7 @@ interface FavoriteLocation {
   miles: string;
   starred: boolean;
 }
+
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
@@ -54,9 +56,9 @@ export default function FavoritesScreen() {
   const [addressLoading, setAddressLoading] = useState(true);
 
   // Modal state
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingType, setEditingType] = useState<'home' | 'work' | null>(null);
-  const [inputValue, setInputValue] = useState('');
+  const [homeModalVisible, setHomeModalVisible] = useState(false);
+  const [workModalVisible, setWorkModalVisible] = useState(false);
+  const [homeInputValue, setHomeInputValue] = useState('');
   const [saving, setSaving] = useState(false);
 
   const { userId } = useAuth();
@@ -92,40 +94,54 @@ export default function FavoritesScreen() {
     }
 
     loadAll();
-  }, []);
+  }, [userId]);
 
   // Opens the edit modal for home or work
-  const openEditor = (type: 'home' | 'work') => {
-    setEditingType(type);
-    setInputValue(type === 'home' ? (homeAddress ?? '') : (workAddress ?? ''));
-    setModalVisible(true);
+  const openHomeEditor = () => {
+    setHomeInputValue(homeAddress || '');
+    setHomeModalVisible(true);
   };
 
-  // Saves the address via API
-  const saveAddress = async () => {
+  const openWorkEditor = () => {
+    setWorkModalVisible(true);
+  };
+
+  // Save home address via API
+  const saveHomeAddress = async () => {
     if (!userId) return;
-    if (!editingType) return;
     setSaving(true);
+
     try {
-      if (editingType === 'home') {
-        await setUserHomeAddress(userId, inputValue);
-        setHomeAddress(inputValue);
-      } else {
-        await setUserWorkAddress(userId, inputValue);
-        setWorkAddress(inputValue);
-      }
-      setModalVisible(false);
-    } catch (err) {
-      console.error('SAVE ADDRESS ERROR:', err);
-      Alert.alert('Error', 'Something went wrong. Try again.');
+      await setUserHomeAddress(userId, homeInputValue);
+      setHomeAddress(homeInputValue);
+      setHomeModalVisible(false);
+    } catch (err: any) {
+      console.error('SAVE HOME ADDRESS ERROR:', err);
+      const errorMessage = err?.response?.data?.error || err?.message || 'Something went wrong. Try again.';
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setSaving(false);
     }
   };
 
+  // Save work address via API
+  const saveWorkAddress = async (address: string) => {
+    if (!userId) return;
+
+    try {
+      await setUserWorkAddress(userId, address);
+      setWorkAddress(address);
+      setWorkModalVisible(false);
+    } catch (err: any) {
+      console.error('SAVE WORK ADDRESS ERROR:', err);
+      const errorMessage = err?.response?.data?.error || err?.message || 'Something went wrong. Try again.';
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
+    }
+  };
+
   const toggleFavorite = (id: string) => {
-    setFavorites(prev =>
-      prev.map(item =>
+    setFavorites((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, starred: !item.starred } : item
       )
     );
@@ -182,7 +198,7 @@ export default function FavoritesScreen() {
           {/* Home */}
           <TouchableOpacity
             style={styles.quickItem}
-            onPress={() => openEditor('home')}
+            onPress={openHomeEditor}
           >
             <View style={styles.quickCircle}>
               <Image
@@ -191,12 +207,12 @@ export default function FavoritesScreen() {
                 resizeMode="contain"
               />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.quickTitle}>Home</Text>
               {addressLoading ? (
                 <ActivityIndicator size="small" color="#878585" />
               ) : (
-                <Text style={styles.quickSubtitle}>
+                <Text style={styles.quickSubtitle} numberOfLines={1} ellipsizeMode="tail">
                   {homeAddress ?? 'Set location'}
                 </Text>
               )}
@@ -206,7 +222,7 @@ export default function FavoritesScreen() {
           {/* Work */}
           <TouchableOpacity
             style={styles.quickItem}
-            onPress={() => openEditor('work')}
+            onPress={openWorkEditor}
           >
             <View style={styles.quickCircle}>
               <Image
@@ -215,12 +231,12 @@ export default function FavoritesScreen() {
                 resizeMode="contain"
               />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.quickTitle}>Work</Text>
               {addressLoading ? (
                 <ActivityIndicator size="small" color="#878585" />
               ) : (
-                <Text style={styles.quickSubtitle}>
+                <Text style={styles.quickSubtitle} numberOfLines={1} ellipsizeMode="tail">
                   {workAddress ?? 'Set location'}
                 </Text>
               )}
@@ -235,7 +251,7 @@ export default function FavoritesScreen() {
         <FlatList
           data={favorites}
           renderItem={renderFavorite}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -248,44 +264,42 @@ export default function FavoritesScreen() {
         />
       </ScrollViewWrapper>
 
-      {/* Edit Address Modal */}
+      {/* Home Address Modal - Simple Text Input */}
       <Modal
-        visible={modalVisible}
+        visible={homeModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => setHomeModalVisible(false)}
       >
         <KeyboardAvoidingView
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>
-              Set {editingType === 'home' ? 'Home' : 'Work'} Address
-            </Text>
+            <Text style={styles.modalTitle}>Set Home Address</Text>
 
             <TextInput
               style={styles.modalInput}
-              value={inputValue}
-              onChangeText={setInputValue}
+              value={homeInputValue}
+              onChangeText={setHomeInputValue}
               placeholder="Enter address..."
               autoFocus
               clearButtonMode="while-editing"
-              onSubmitEditing={saveAddress}
+              onSubmitEditing={saveHomeAddress}
               returnKeyType="done"
             />
 
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancel}
-                onPress={() => setModalVisible(false)}
+                onPress={() => setHomeModalVisible(false)}
               >
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.modalSave}
-                onPress={saveAddress}
-                disabled={saving || inputValue.trim() === ''}
+                onPress={saveHomeAddress}
+                disabled={saving || homeInputValue.trim() === ''}
               >
                 {saving ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -297,6 +311,15 @@ export default function FavoritesScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Work Address Modal - Autocomplete */}
+      <AddressAutocompleteModal
+        visible={workModalVisible}
+        title="Set Work Address"
+        initialValue={workAddress || ''}
+        onSave={saveWorkAddress}
+        onCancel={() => setWorkModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -344,6 +367,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    minWidth: 0, // Allow flex children to shrink
   },
   quickCircle: {
     width: 36,
@@ -426,7 +450,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  // Modal
+  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

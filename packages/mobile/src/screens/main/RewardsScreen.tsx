@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -15,18 +16,25 @@ import LinearGradient from 'react-native-linear-gradient';
 import { getUserIncentives, getUserBalance } from '../../services/users';
 import { useAuth } from '../../context/AuthContext';
 
+const newBike = require('../../assets/icons/new/newBike.png');
+const newBus = require('../../assets/icons/new/newBus.png');
+const newCar = require('../../assets/icons/new/newCar.png');
+const newShuttle = require('../../assets/icons/new/newShuttle.png');
+
 export default function RewardsScreen() {
   const navigation = useNavigation();
 
   const { userId } = useAuth();
 
   const [balance, setBalance] = React.useState<number>(0);
-  const [incentives, setIncentives] = React.useState<Array<{
-    id: number;
-    transit_type: string;
-    amount: number;
-    created_at: string;
-  }>>([]);
+  const [incentives, setIncentives] = React.useState<
+    Array<{
+      id: number;
+      transit_type: string;
+      amount: number;
+      created_at: string;
+    }>
+  >([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -52,19 +60,25 @@ export default function RewardsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rewards</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Top nav row (Back + Settings) */}
+        <View style={styles.topNavRow}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backLink}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.backChevron}>‹</Text>
+            <Text style={styles.backLabel}>Settings</Text>
+          </TouchableOpacity>
+
+          {/* spacer to keep left-aligned feel (optional) */}
+          <View style={{ width: 24 }} />
+        </View>
+
+        {/* Big screen title */}
+        <Text style={styles.pageTitle}>Rewards</Text>
+
         {/* Main Card */}
         <LinearGradient
           colors={['#111', '#333']}
@@ -72,22 +86,20 @@ export default function RewardsScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View>
-            <Text style={styles.cardLabel}>TOTAL POINTS</Text>
-            <Text style={styles.cardValue}>
-              {loading ? '—' : `${balance} pts`}
-            </Text>
-            <Text style={styles.cardSub}>
-              Keep using sustainable transport to earn more!
-            </Text>
-          </View>
-          <View style={styles.iconCircle}>
-            <Text style={styles.leafIcon}>🌿</Text>
+          <View style={styles.mainCardInner}>
+            <View>
+              <Text style={styles.cardLabel}>TOTAL POINTS</Text>
+              <Text style={styles.cardValue}>
+                {loading ? '—' : `${balance} pts`}
+              </Text>
+              <Text style={styles.cardSub}>
+                Keep using sustainable transport to earn more!
+              </Text>
+            </View>
           </View>
         </LinearGradient>
 
         <Text style={styles.sectionHeader}>History</Text>
-
         {loading && (
           <Text style={{ textAlign: 'center', color: '#666' }}>
             Loading reward history…
@@ -96,34 +108,45 @@ export default function RewardsScreen() {
 
         {!loading &&
           incentives.map(inc => {
-            const isShuttle = inc.transit_type === 'shuttle';
+            const type = inc.transit_type;
+
+            const icon =
+              type === 'shuttle'
+                ? newShuttle
+                : type === 'bus'
+                  ? newBus
+                  : type === 'car'
+                    ? newCar
+                    : newBike;
+
+            const title =
+              type === 'shuttle'
+                ? 'Shuttle'
+                : type === 'bus'
+                  ? 'Bus'
+                  : type === 'car'
+                    ? 'Car'
+                    : 'Biking';
+
+            const dateText = new Date(inc.created_at)
+              .toLocaleDateString(undefined, {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric',
+              })
+              .toUpperCase();
 
             return (
-              <View key={inc.id} style={styles.historyItem}>
-                <View
-                  style={[
-                    styles.historyIcon,
-                    {
-                      backgroundColor: isShuttle ? '#E8F5E9' : '#E3F2FD',
-                    },
-                  ]}
-                >
-                  <Text style={styles.historyEmoji}>
-                    {isShuttle ? '🚌' : '🚲'}
-                  </Text>
+              <View key={inc.id} style={styles.historyCard}>
+                <Image source={icon} style={styles.historyIconImg} />
+
+                <View style={styles.historyMid}>
+                  <Text style={styles.historyDateText}>{dateText}</Text>
+                  <Text style={styles.historyTitleText}>{title}</Text>
                 </View>
 
-                <View style={styles.historyInfo}>
-                  <Text style={styles.historyTitle}>
-                    {isShuttle ? 'Shuttle Trip' : 'Bike Commute'}
-                  </Text>
-                  <Text style={styles.historyDate}>
-                    {new Date(inc.created_at).toLocaleString()}
-                  </Text>
-                </View>
-
-                <Text style={styles.historyPoints}>
-                  +{inc.amount} pts
+                <Text style={styles.historySavedText}>
+                  SAVED {inc.amount}KG
                 </Text>
               </View>
             );
@@ -132,114 +155,138 @@ export default function RewardsScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
+
+  content: {
+    paddingHorizontal: 40,
+    paddingTop: 0,
+    paddingBottom: 24,
+  },
+
+  topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    marginBottom: 8,
   },
-  backButton: {
-    padding: 8,
+
+  backLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
   },
-  backText: {
-    fontSize: 24,
-    color: '#007AFF',
+
+  backChevron: {
+    fontSize: 22,
+    lineHeight: 22,
+    marginRight: 6,
+    color: '#E83F3F',
   },
-  headerTitle: {
-    fontSize: 17,
+
+  backLabel: {
+    fontSize: 14,
+    lineHeight: 16,
+    fontWeight: '600',
+    color: '#E83F3F',
+  },
+
+  pageTitle: {
+    fontSize: 30,
     fontWeight: '600',
     color: '#000',
+    marginTop: -5,
+    marginBottom: 20,
   },
-  content: {
-    padding: 20,
-  },
+
   mainCard: {
-    padding: 24,
-    borderRadius: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 5,
+    width: 328,
+    height: 165.13,
+
+    borderRadius: 28,
+    overflow: 'hidden',
+
+    marginBottom: 20,
+
+    shadowColor: '#1C1C1C',
   },
+
+  mainCardInner: {
+    flex: 1,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
   cardLabel: {
-    color: '#A0A0A0',
+    color: '#FCFCFC',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '400',
     marginBottom: 4,
   },
   cardValue: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '700',
+    color: '#FCFCFC',
+
+    fontSize: 43,
+    fontWeight: '500',
     marginBottom: 8,
   },
   cardSub: {
-    color: '#ccc',
-    fontSize: 13,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  leafIcon: {
-    fontSize: 28,
+    fontSize: 15,
+    color: '#FCFCFC',
+    fontWeight: '500',
   },
   sectionHeader: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '600',
     marginBottom: 16,
     color: '#000',
   },
-  historyItem: {
+  historyCard: {
+    width: 329,
+    minHeight: 67,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#F1F1F1',
+    backgroundColor: '#FFF',
+
     flexDirection: 'row',
     alignItems: 'center',
+
+    padding: 20,
     marginBottom: 20,
   },
-  historyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
+
+  historyIconImg: {
+    width: 36,
+    height: 36,
+    resizeMode: 'contain',
+    marginRight: 15,
   },
-  historyEmoji: {
-    fontSize: 20,
-  },
-  historyInfo: {
+
+  historyMid: {
     flex: 1,
   },
-  historyTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+
+  historyDateText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000',
+    marginBottom: 4,
+  },
+
+  historyTitleText: {
+    fontSize: 14,
+    fontWeight: '500',
     color: '#000',
   },
-  historyDate: {
-    fontSize: 13,
-    color: '#8E8E93',
-    marginTop: 2,
-  },
-  historyPoints: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#34A853',
+
+  historySavedText: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#1A9C30',
   },
 });

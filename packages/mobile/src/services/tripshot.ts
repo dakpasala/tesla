@@ -107,6 +107,7 @@ export type Ride = {
   rideId: string;
   routeId: string;
   routeName: string;
+  shortName: string | null;  // ADDED: shortName field (can be null)
   vehicleName: string;
   vehicleShortName: string;
   color: string;

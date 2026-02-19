@@ -1,6 +1,8 @@
 // packages/mobile/src/components/ShuttleArrivalSheet.tsx
 
 import React, { useEffect, useState } from 'react';
+import { Image, Modal } from 'react-native';
+
 import {
   View,
   Text,
@@ -12,6 +14,9 @@ import {
   LiveStatusResponse,
   getOccupancyPercentage,
 } from '../services/tripshot';
+import ReportPopupInputs, { ReportPopupOption } from './ReportPopUp';
+
+const newShuttleIcon = require('../assets/icons/new/newShuttle.png');
 
 interface ShuttleArrivalSheetProps {
   stopName: string;
@@ -36,6 +41,14 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
+const REPORT_OPTIONS: ReportPopupOption[] = [
+  { id: 'late', label: 'Shuttle is running late' },
+  { id: 'full', label: 'Shuttle is too full' },
+  { id: 'no-show', label: 'Shuttle didn\'t arrive' },
+  { id: 'safety', label: 'Safety concern' },
+  { id: 'other', label: 'Other issue' },
+];
+
 export function ShuttleArrivalSheet({
   stopName,
   etaMinutes,
@@ -49,6 +62,8 @@ export function ShuttleArrivalSheet({
   onRefreshStatus,
 }: ShuttleArrivalSheetProps) {
   const [appState, setAppState] = useState(AppState.currentState);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportOption, setSelectedReportOption] = useState<string | undefined>(undefined);
 
   /**
    * ======================================================
@@ -56,7 +71,7 @@ export function ShuttleArrivalSheet({
    * ======================================================
    */
 
-  const MOCK_MODE = false;
+  const MOCK_MODE = true;
 
   const mockLiveStatus: LiveStatusResponse = {
     rides: [
@@ -64,6 +79,7 @@ export function ShuttleArrivalSheet({
         rideId: 'mock',
         routeId: 'mock',
         routeName: 'Mock Route',
+        shortName: 'Tesla HQ Deer Creek Shuttle A',
         vehicleName: 'Mock Vehicle',
         vehicleShortName: 'M1',
         color: '#BF40BF',
@@ -78,7 +94,7 @@ export function ShuttleArrivalSheet({
             Awaiting: {
               stopId: '1',
               expectedArrivalTime: new Date(
-                Date.now() + 12 * 60000
+                Date.now() + 2 * 60000
               ).toISOString(),
               scheduledDepartureTime: new Date(
                 Date.now() - 2 * 60000
@@ -90,7 +106,7 @@ export function ShuttleArrivalSheet({
             Awaiting: {
               stopId: '2',
               expectedArrivalTime: new Date(
-                Date.now() + 15 * 60000
+                Date.now() + 10 * 60000
               ).toISOString(),
               scheduledDepartureTime: new Date(
                 Date.now() + 10 * 60000
@@ -221,6 +237,31 @@ export function ShuttleArrivalSheet({
 
   /**
    * ======================================================
+   * REPORT HANDLERS
+   * ======================================================
+   */
+
+  const handleOpenReportModal = () => {
+    setShowReportModal(true);
+    setSelectedReportOption(undefined);
+  };
+
+  const handleCloseReportModal = () => {
+    setShowReportModal(false);
+    setSelectedReportOption(undefined);
+  };
+
+  const handleSubmitReport = () => {
+    if (selectedReportOption) {
+      const selectedOption = REPORT_OPTIONS.find(opt => opt.id === selectedReportOption);
+      console.log('Report submitted:', selectedOption?.label);
+      onReportIssue(); // Call the original handler
+      handleCloseReportModal();
+    }
+  };
+
+  /**
+   * ======================================================
    * EFFECTS
    * ======================================================
    */
@@ -250,8 +291,6 @@ export function ShuttleArrivalSheet({
 
   return (
     <View style={styles.container}>
-      <View style={styles.handleBar} />
-
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
         <Text style={styles.backIcon}>‹</Text>
         <Text style={styles.backText}>All Routes</Text>
@@ -276,7 +315,7 @@ export function ShuttleArrivalSheet({
           {/* Report issue link */}
           <TouchableOpacity
             style={styles.reportContainer}
-            onPress={onReportIssue}
+            onPress={handleOpenReportModal}
           >
             <Text style={styles.reportText}>
               See something off?{' '}
@@ -307,7 +346,11 @@ export function ShuttleArrivalSheet({
             {reachedCorner && <View style={styles.progressCurve} />}
 
             <View style={[styles.car, { right: carRight, top: carTop }]}>
-              <Text style={styles.carIcon}>🚐</Text>
+              <Image
+                source={newShuttleIcon}
+                style={styles.carImage}
+                resizeMode="contain"
+              />
             </View>
 
             {/* DOTS */}
@@ -368,6 +411,54 @@ export function ShuttleArrivalSheet({
           </View>
         </View>
       </View>
+
+      {/* Report Modal */}
+      <Modal
+        visible={showReportModal}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseReportModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Report an Issue</Text>
+            <Text style={styles.modalSubtitle}>What happened?</Text>
+
+            <ReportPopupInputs
+              options={REPORT_OPTIONS}
+              selectedId={selectedReportOption}
+              onSelect={(option) => setSelectedReportOption(option.id)}
+              layout="column"
+              style={styles.reportOptions}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCloseReportModal}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  !selectedReportOption && styles.submitButtonDisabled,
+                ]}
+                onPress={handleSubmitReport}
+                disabled={!selectedReportOption}
+              >
+                <Text style={[
+                  styles.submitButtonText,
+                  !selectedReportOption && styles.submitButtonTextDisabled,
+                ]}>
+                  Submit
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -383,14 +474,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     paddingHorizontal: 24,
     paddingTop: 12,
-  },
-  handleBar: {
-    width: 73,
-    height: 3,
-    backgroundColor: '#D9D9D9',
-    borderRadius: 5,
-    alignSelf: 'center',
-    marginBottom: 10,
   },
   backButton: {
     flexDirection: 'row',
@@ -501,7 +584,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 2,
+    padding: 0,
   },
   carIcon: { fontSize: 14 },
   dot: {
@@ -526,5 +609,73 @@ const styles = StyleSheet.create({
   reportContainer: {
     alignSelf: 'flex-start',
     marginTop: 8,
+  },
+  carImage: {
+    width: 25,
+    height: 25,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 20,
+  },
+  reportOptions: {
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#DADADA',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000',
+  },
+  submitButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: BLUE,
+    alignItems: 'center',
+  },
+  submitButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  submitButtonTextDisabled: {
+    color: '#999',
   },
 });

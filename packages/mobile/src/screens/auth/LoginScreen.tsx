@@ -17,8 +17,9 @@ import { useAuth } from '../../context/AuthContext';
 
 // Hardcoded credentials
 const CREDENTIALS = {
-  'dpasala@calpoly.edu': { password: 'test123', userId: 1 },
-  'kbeltr03@calpoly.edu': { password: 'test123', userId: 2 },
+  'dpasala@calpoly.edu': { password: 'test123', userId: 1, isAdmin: false },
+  'kbeltr03@calpoly.edu': { password: 'test123', userId: 2, isAdmin: false },
+  'admin@tesla.com': { password: 'admin123', userId: 999, isAdmin: true },
 };
 
 export default function LoginScreen() {
@@ -43,7 +44,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      await login(user.userId);
+      await login(user.userId, user.isAdmin);
     } catch (err) {
       Alert.alert('Error', 'Something went wrong. Try again.');
     } finally {
@@ -58,13 +59,11 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.content}>
-          {/* Logo / Title */}
           <View style={styles.header}>
             <Text style={styles.title}>Tesla</Text>
-            <Text style={styles.subtitle}>Powered by React Native</Text>
+            <Text style={styles.subtitle}>Commute App</Text>
           </View>
 
-          {/* Email Input */}
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -77,7 +76,6 @@ export default function LoginScreen() {
             editable={!loading}
           />
 
-          {/* Password Input */}
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -92,7 +90,6 @@ export default function LoginScreen() {
             returnKeyType="go"
           />
 
-          {/* Login Button */}
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
             onPress={handleLogin}
@@ -104,6 +101,11 @@ export default function LoginScreen() {
               <Text style={styles.buttonText}>Login</Text>
             )}
           </TouchableOpacity>
+
+          <Text style={styles.hintText}>
+            User: dpasala@calpoly.edu / test123{'\n'}
+            Admin: admin@tesla.com / admin123
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -111,32 +113,12 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FCFCFC',
-  },
-  inner: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8E8E93',
-  },
+  container: { flex: 1, backgroundColor: '#FCFCFC' },
+  inner: { flex: 1 },
+  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 32 },
+  header: { alignItems: 'center', marginBottom: 48 },
+  title: { fontSize: 36, fontWeight: '700', color: '#000', marginBottom: 8 },
+  subtitle: { fontSize: 14, color: '#8E8E93' },
   input: {
     height: 50,
     borderWidth: 1,
@@ -156,18 +138,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 8,
   },
-  buttonDisabled: {
-    backgroundColor: '#B0D4FF',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
+  buttonDisabled: { backgroundColor: '#B0D4FF' },
+  buttonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
   hintText: {
     fontSize: 12,
     color: '#8E8E93',
     textAlign: 'center',
     marginTop: 24,
+    lineHeight: 18,
   },
 });

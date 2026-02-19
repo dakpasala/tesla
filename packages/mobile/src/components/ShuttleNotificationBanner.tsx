@@ -50,7 +50,7 @@ const ShuttleNotificationBanner: React.FC = () => {
     }) || [];
 
   const isStopReached = (index: number) => {
-    if (index === 0) return true;
+    if (index === 0) return true; // First stop is always reached (current)
     return reachedStops[index]?.reached ?? false;
   };
 
@@ -118,47 +118,60 @@ const ShuttleNotificationBanner: React.FC = () => {
         {/* Right Side - Route Component */}
         {stopStatus && stopStatus.length > 0 && nextStops && (
           <View style={styles.routeContainer}>
-            <View style={styles.routeColumn}>
-              {/* Dot 1 - Current Stop */}
+            <View style={styles.routeCol}>
+              {/* Static background path */}
+              <View style={styles.horizontalLine} />
+              <View style={styles.curve} />
+              <View style={styles.verticalLine} />
+
+              {/* Shuttle icon */}
+              <View style={styles.car}>
+                <Text style={styles.carIcon}>🚐</Text>
+              </View>
+
+              {/* DOTS */}
               <View
                 style={[
                   styles.dot,
-                  styles.dot1,
-                  { backgroundColor: '#007AFF' },
+                  styles.dotTop,
+                  {
+                    backgroundColor: isStopReached(0) ? '#007AFF' : '#D1D1D6',
+                  },
                 ]}
               />
-
-              {/* Vertical line 1-2 */}
-              <View style={styles.verticalLine12} />
-
-              {/* Dot 2 */}
               <View
                 style={[
                   styles.dot,
-                  styles.dot2,
-                  { backgroundColor: isStopReached(1) ? '#007AFF' : '#D1D1D6' },
+                  styles.dotMiddle,
+                  {
+                    backgroundColor: isStopReached(1) ? '#007AFF' : '#D1D1D6',
+                  },
                 ]}
               />
-
-              {/* Vertical line 2-3 */}
-              <View style={styles.verticalLine23} />
-
-              {/* Dot 3 */}
               <View
                 style={[
                   styles.dot,
-                  styles.dot3,
-                  { backgroundColor: isStopReached(2) ? '#007AFF' : '#D1D1D6' },
+                  styles.dotBottom,
+                  {
+                    backgroundColor: isStopReached(2) ? '#007AFF' : '#D1D1D6',
+                  },
                 ]}
               />
             </View>
 
             {/* Stop labels */}
-            <View style={styles.labelsContainer}>
-              <Text style={[styles.stopLabel, styles.stopLabel1Active]}>
+            <View style={styles.labelsCol}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.stopLabel,
+                  isStopReached(0) && styles.stopLabelActive,
+                ]}
+              >
                 {stops[0] || ''}
               </Text>
               <Text
+                numberOfLines={1}
                 style={[
                   styles.stopLabel,
                   isStopReached(1) && styles.stopLabelActive,
@@ -167,6 +180,7 @@ const ShuttleNotificationBanner: React.FC = () => {
                 {stops[1] || ''}
               </Text>
               <Text
+                numberOfLines={1}
                 style={[
                   styles.stopLabel,
                   isStopReached(2) && styles.stopLabelActive,
@@ -231,72 +245,92 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     marginBottom: 6,
   },
-  /* Route Component Styles */
+  /* Route Component Styles - Copied from ShuttleArrivalSheet */
   routeContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginLeft: 8,
-    width: 110,
+    gap: 4,
   },
-  routeColumn: {
+  routeCol: {
+    width: 36,
+    height: 95,
     position: 'relative',
-    width: 12,
-    height: 90,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
   },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+  horizontalLine: {
     position: 'absolute',
+    top: 8,
+    right: -20,
+    width: 55,
+    height: 2,
+    backgroundColor: '#D1D1D6',
+  },
+  curve: {
+    position: 'absolute',
+    top: 8,
+    right: 12,
+    width: 14,
+    height: 14,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderColor: '#D1D1D6',
+    borderTopLeftRadius: 8,
+  },
+  verticalLine: {
+    position: 'absolute',
+    top: 22,
+    right: 24,
+    width: 2,
+    height: 65,
+    backgroundColor: '#D1D1D6',
+  },
+  car: {
+    position: 'absolute',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 2,
+    top: -2,
+    right: 25,
     zIndex: 10,
   },
-  dot1: {
-    top: 0,
+  carIcon: {
+    fontSize: 12,
   },
-  dot2: {
-    top: 39,
-  },
-  dot3: {
-    top: 78,
-  },
-  verticalLine12: {
+  dot: {
     position: 'absolute',
-    top: 6,
-    left: 5,
-    width: 2,
-    height: 33,
-    backgroundColor: '#D1D1D6',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  verticalLine23: {
-    position: 'absolute',
-    top: 45,
-    left: 5,
-    width: 2,
-    height: 33,
-    backgroundColor: '#D1D1D6',
+  dotTop: {
+    top: 12,
+    right: 21,
   },
-  labelsContainer: {
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingLeft: 12,
-    height: 90,
-    flexDirection: 'column',
+  dotMiddle: {
+    top: 40,
+    right: 21,
+  },
+  dotBottom: {
+    top: 68,
+    right: 21,
+  },
+  labelsCol: {
+    paddingLeft: 0,
+    paddingTop: 12,
+    width: 100,
   },
   stopLabel: {
     fontFamily: 'Inter',
     fontWeight: '400',
     fontSize: 10,
     color: '#999999',
-    maxWidth: 70,
-    lineHeight: 12,
+    marginBottom: 14,
   },
-  stopLabel1Active: {
+  stopLabelActive: {
     color: '#007AFF',
     fontWeight: '600',
   },
-  stopLabelActive: {
+  /* Unused old styles - keeping for backwards compat */
+  stopLabel1Active: {
     color: '#007AFF',
     fontWeight: '600',
   },

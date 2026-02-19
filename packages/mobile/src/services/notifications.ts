@@ -68,7 +68,12 @@ export async function startShuttleTracking(
     isDelayed: boolean;
     delayMinutes: number;
     occupancy: number;
-  }>
+  }>,
+  onNotificationUpdate?: (data: {
+    etaMinutes: number;
+    stopName: string;
+    isDelayed: boolean;
+  }) => void
 ) {
   console.log(
     '[Shuttle Tracking] Starting tracking for rideId:',
@@ -114,21 +119,42 @@ export async function startShuttleTracking(
       console.log('[Shuttle Tracking] Data changed! Updating notification...');
       shuttleTrackingState[rideId] = statusString;
 
-      const statusText = status.isDelayed
-        ? `${status.delayMinutes} min delay`
-        : 'On Time';
+      const statusText = status.isDelayed ? 'Late' : 'On Time';
+      const statusEmoji = status.isDelayed ? '🔴' : '🟢';
+
+      // Determine title based on ETA
+      const title =
+        status.etaMinutes <= 1
+          ? 'Boarding Now'
+          : `Arriving in ${status.etaMinutes} min`;
+
+      // Extract stop name without full address (e.g., "Stevens Creek" from "Stevens Creek & Albany Bus Stop")
+      const shortStopName = stopName.split(' & ')[0] || stopName;
+
+      // Trigger in-app notification if callback provided
+      if (onNotificationUpdate) {
+        onNotificationUpdate({
+          etaMinutes: status.etaMinutes,
+          stopName: shortStopName,
+          isDelayed: status.isDelayed,
+        });
+      }
 
       await notifee.displayNotification({
         id: 'shuttle-arrival-tracking',
-        title: `🚌 Arriving in ${status.etaMinutes} min`,
-        body: `${stopName}\n${statusText}`,
+        title: title,
+        body: `${shortStopName}\n${statusEmoji} ${statusText}`,
         android: {
           channelId: notificationChannelId!,
           importance: AndroidImportance.HIGH,
           ongoing: true,
           autoCancel: false,
           smallIcon: 'ic_notification',
-          color: '#007AFF',
+          color: status.isDelayed ? '#FF3B30' : '#34C759',
+          style: {
+            type: 'bigtext',
+            text: `${shortStopName}\n${statusEmoji} ${statusText}`,
+          },
           progress: {
             max: 15,
             current: Math.max(0, 15 - status.etaMinutes),
@@ -147,9 +173,9 @@ export async function startShuttleTracking(
           categoryId: 'shuttle-tracking',
           badge: 0,
           foregroundPresentationOptions: {
-            alert: false,
+            alert: true,
             badge: false,
-            sound: false,
+            sound: true,
           },
         },
       });

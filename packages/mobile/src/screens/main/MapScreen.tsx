@@ -29,8 +29,10 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 // Import existing components
 import SearchBar from '../../components/SearchBar';
+import ShuttleNotificationBanner from '../../components/ShuttleNotificationBanner';
 import { useRideContext, TravelMode } from '../../context/RideContext';
 import { useAuth } from '../../context/AuthContext';
+import { useShuttleNotification } from '../../context/ShuttleNotificationContext';
 import { theme } from '../../theme/theme';
 
 // Import Quickstart components
@@ -77,6 +79,8 @@ function MapScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { userId } = useAuth();
   const { setDestination, travelMode, setTravelMode } = useRideContext();
+  const { showNotification: showShuttleNotification } =
+    useShuttleNotification();
 
   // ============ MAIN HOME STATE ============
   const [searchExpanded, setSearchExpanded] = useState(false);
@@ -154,7 +158,11 @@ function MapScreen() {
 
   // ============ SHUTTLE TRACKING & NOTIFICATIONS ============
   useEffect(() => {
-    if (isNavigating && travelMode === 'shuttle' && tripshotData?.options?.[0]) {
+    if (
+      isNavigating &&
+      travelMode === 'shuttle' &&
+      tripshotData?.options?.[0]
+    ) {
       // Get the ride ID from first option
       const firstStep = tripshotData.options[0].steps.find(
         s => 'OnRouteScheduledStep' in s
@@ -205,7 +213,19 @@ function MapScreen() {
         };
 
         // Start background tracking
-        startShuttleTracking(rideId, stopName, getLiveStatusForNotification);
+        startShuttleTracking(
+          rideId,
+          stopName,
+          getLiveStatusForNotification,
+          data => {
+            // Show in-app notification banner
+            showShuttleNotification({
+              etaMinutes: data.etaMinutes,
+              stopName: data.stopName,
+              isDelayed: data.isDelayed,
+            });
+          }
+        );
 
         // Setup notification handlers
         const unsubscribe = setupShuttleNotificationHandlers(
@@ -346,19 +366,23 @@ function MapScreen() {
   const modeTimes: ModeTimes = useMemo(() => {
     if (!fetchedRouteData?.routes)
       return { car: '30m', shuttle: '50m', transit: '1h 5m', bike: '30m' };
-    
+
     const times: ModeTimes = {};
-    
+
     // Map each transport mode to the corresponding route mode from API
     const carRoute = fetchedRouteData.routes?.find(r => r.mode === 'driving');
     if (carRoute) times.car = formatDuration(carRoute.duration_sec);
-    
-    const bikeRoute = fetchedRouteData.routes?.find(r => r.mode === 'bicycling');
+
+    const bikeRoute = fetchedRouteData.routes?.find(
+      r => r.mode === 'bicycling'
+    );
     if (bikeRoute) times.bike = formatDuration(bikeRoute.duration_sec);
-    
-    const transitRoute = fetchedRouteData.routes?.find(r => r.mode === 'transit');
+
+    const transitRoute = fetchedRouteData.routes?.find(
+      r => r.mode === 'transit'
+    );
     if (transitRoute) times.transit = formatDuration(transitRoute.duration_sec);
-    
+
     // For shuttle, use TripShot data if available, otherwise use walking route as fallback
     if (tripshotData?.options?.[0]) {
       const shuttleDuration = Math.round(
@@ -368,10 +392,12 @@ function MapScreen() {
       );
       times.shuttle = formatDuration(shuttleDuration * 60);
     } else {
-      const walkRoute = fetchedRouteData.routes?.find(r => r.mode === 'walking');
+      const walkRoute = fetchedRouteData.routes?.find(
+        r => r.mode === 'walking'
+      );
       if (walkRoute) times.shuttle = formatDuration(walkRoute.duration_sec);
     }
-    
+
     return times;
   }, [fetchedRouteData, tripshotData]);
 
@@ -543,14 +569,12 @@ function MapScreen() {
     if (!tripshotData?.stops || !liveStatus?.rides?.[0])
       return ['Stevens Creek', 'Sunnyvale', 'Mountain View'];
 
-    const stops = liveStatus.rides[0].stopStatus
-      .slice(0, 3)
-      .map(status => {
-        const stop = tripshotData.stops?.find(
-          s => s.stopId === status.Awaiting.stopId
-        );
-        return stop?.name || 'Stop';
-      });
+    const stops = liveStatus.rides[0].stopStatus.slice(0, 3).map(status => {
+      const stop = tripshotData.stops?.find(
+        s => s.stopId === status.Awaiting.stopId
+      );
+      return stop?.name || 'Stop';
+    });
 
     return stops.length > 0
       ? stops
@@ -607,7 +631,9 @@ function MapScreen() {
         onReportIssue={handleReport}
         tripshotData={tripshotData}
         liveStatus={liveStatus}
-        googleMapsRoute={fetchedRouteData?.routes?.find(r => r.mode === 'transit')}
+        googleMapsRoute={fetchedRouteData?.routes?.find(
+          r => r.mode === 'transit'
+        )}
       />
     );
   };
@@ -615,6 +641,7 @@ function MapScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <ShuttleNotificationBanner />
 
       {/* Map Background */}
       <View style={styles.mapContainer}>

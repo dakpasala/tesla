@@ -5,6 +5,7 @@ import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RideProvider } from './src/context/RideContext';
 import { AuthProvider } from './src/context/AuthContext';
+import { ShuttleNotificationProvider } from './src/context/ShuttleNotificationContext';
 import SplashScreen from './src/components/SplashScreen';
 
 export default function App() {
@@ -25,9 +26,11 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
         <RideProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
+          <ShuttleNotificationProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </ShuttleNotificationProvider>
         </RideProvider>
       </AuthProvider>
     </GestureHandlerRootView>

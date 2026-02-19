@@ -212,7 +212,7 @@ export async function startShuttleTracking(
         await notifee.displayNotification({
           id: 'shuttle-arrival-tracking',
           title: title,
-          body: `${shortStopName}\n${statusEmoji} ${statusText}`,
+          body: `${shortStopName}\n${statusText}`,
           android: {
             channelId: notificationChannelId!,
             importance: AndroidImportance.HIGH,
@@ -222,7 +222,7 @@ export async function startShuttleTracking(
             color: status.isDelayed ? '#FF3B30' : '#34C759',
             style: {
               type: 'bigtext',
-              text: `${shortStopName}\n${statusEmoji} ${statusText}`,
+              text: `${shortStopName}\n${statusText}`,
             },
             progress: {
               max: 15,

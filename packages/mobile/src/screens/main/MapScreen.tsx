@@ -57,6 +57,7 @@ import {
 import {
   startShuttleTracking,
   stopShuttleTracking,
+  pauseShuttleTracking,
   setupShuttleNotificationHandlers,
 } from '../../services/notifications';
 
@@ -115,7 +116,7 @@ function MapScreen() {
     setMode('search');
     setSearchExpanded(false);
     setIsNavigating(false);
-    stopShuttleTracking(); // Stop background notifications
+    pauseShuttleTracking(); // Pause tracking but keep notification visible
     bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
   }, []);
 
@@ -200,6 +201,7 @@ function MapScreen() {
               isDelayed: isRideDelayed(ride),
               delayMinutes: Math.round(ride.lateBySec / 60),
               occupancy: getOccupancyPercentage(ride),
+              expectedArrivalTime: nextStop?.Awaiting?.expectedArrivalTime,
             };
           } catch (error) {
             console.error('Failed to get live status:', error);
@@ -208,6 +210,7 @@ function MapScreen() {
               isDelayed: false,
               delayMinutes: 0,
               occupancy: 0,
+              expectedArrivalTime: undefined,
             };
           }
         };
@@ -241,7 +244,7 @@ function MapScreen() {
 
         return () => {
           unsubscribe();
-          stopShuttleTracking();
+          pauseShuttleTracking(); // Pause tracking but keep notification visible
         };
       }
     }
@@ -515,7 +518,7 @@ function MapScreen() {
 
   const handleBackFromNavigation = useCallback(() => {
     setIsNavigating(false);
-    stopShuttleTracking(); // Stop background notifications
+    pauseShuttleTracking(); // Pause tracking but keep notification visible
   }, []);
 
   // Callback to refresh shuttle status (for polling)

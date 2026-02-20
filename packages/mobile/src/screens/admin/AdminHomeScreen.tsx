@@ -18,12 +18,16 @@ import { getShuttleReportsCount } from '../../services/shuttleAlerts';
 import { getFullLotsCount } from '../../services/parkings';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
+import { useTheme } from '../../context/ThemeContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function AdminHomeScreen() {
   const navigation = useNavigation<NavigationProp>();
   const announcementModalRef = useRef<Modalize>(null);
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+  const components = activeTheme.components;
 
   const [shuttleReportsCount, setShuttleReportsCount] = useState(0);
   const [fullLotsCount, setFullLotsCount] = useState(0);
@@ -87,12 +91,12 @@ export default function AdminHomeScreen() {
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.welcomeText}>Welcome Back</Text>
-          <Text style={styles.userName}>Amanda</Text>
-          <Text style={styles.locationText}>Tesla HQ Deer Creek</Text>
+          <Text style={[styles.welcomeText, { color: c.text.primary }]}>Welcome Back</Text>
+          <Text style={[styles.userName, { color: c.text.primary }]}>Amanda</Text>
+          <Text style={[styles.locationText, { color: c.text.secondary }]}>Tesla HQ Deer Creek</Text>
         </View>
         <Image
           source={{ uri: 'https://via.placeholder.com/46' }}
@@ -124,7 +128,7 @@ export default function AdminHomeScreen() {
           {MENU_ITEMS.map(item => (
             <TouchableOpacity
               key={item.id}
-              style={styles.menuCard}
+              style={[styles.menuCard, { backgroundColor: c.card, borderColor: c.border }]}
               activeOpacity={0.7}
               onPress={() => {
                 if (item.route) {
@@ -133,10 +137,10 @@ export default function AdminHomeScreen() {
                 }
               }}
             >
-              <View style={styles.iconContainer}>
+              <View style={[styles.iconContainer, { backgroundColor: c.backgroundAlt }]}>
                 <Image
                   source={item.image}
-                  style={{ width: 24, height: 24, resizeMode: 'contain' }}
+                  style={{ width: 24, height: 24, resizeMode: 'contain', tintColor: c.text.primary }}
                 />
                 {item.badge && (
                   <View style={styles.badge}>
@@ -145,9 +149,9 @@ export default function AdminHomeScreen() {
                 )}
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
+                <Text style={[styles.cardTitle, { color: c.text.primary }]}>{item.title}</Text>
                 {item.subtitle ? (
-                  <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+                  <Text style={[styles.cardSubtitle, { color: c.text.secondary }]}>{item.subtitle}</Text>
                 ) : null}
               </View>
               {item.badge && (
@@ -155,7 +159,7 @@ export default function AdminHomeScreen() {
                   <Text style={styles.countBadgeText}>{item.badge}</Text>
                 </View>
               )}
-              <Text style={styles.chevron}>›</Text>
+              <Text style={[styles.chevron, { color: c.text.primary }]}>›</Text>
             </TouchableOpacity>
           ))}
         </View>

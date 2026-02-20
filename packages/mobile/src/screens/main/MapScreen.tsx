@@ -30,8 +30,10 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 
 // Import existing components
 import SearchBar from '../../components/SearchBar';
+import ShuttleNotificationBanner from '../../components/ShuttleNotificationBanner';
 import { useRideContext, TravelMode } from '../../context/RideContext';
 import { useAuth } from '../../context/AuthContext';
+import { useShuttleNotification } from '../../context/ShuttleNotificationContext';
 import { theme } from '../../theme/theme';
 
 // Import Quickstart components
@@ -58,6 +60,7 @@ import {
 import {
   startShuttleTracking,
   stopShuttleTracking,
+  pauseShuttleTracking,
   setupShuttleNotificationHandlers,
 } from '../../services/notifications';
 
@@ -83,6 +86,8 @@ function MapScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const { userId } = useAuth();
   const { setDestination, travelMode, setTravelMode } = useRideContext();
+  const { showNotification: showShuttleNotification } =
+    useShuttleNotification();
 
   const handleOtherLots = useCallback(() => {
     setPendingParkingId(null);
@@ -129,7 +134,7 @@ function MapScreen() {
     setMode('search');
     setSearchExpanded(false);
     setIsNavigating(false);
-    stopShuttleTracking(); // Stop background notifications
+    pauseShuttleTracking(); // Pause tracking but keep notification visible
     bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
   }, []);
 
@@ -189,7 +194,7 @@ function MapScreen() {
         const stopName =
           tripshotData.stops?.find(
             s => s.stopId === tripshotData.options[0].departureStopId
-          )?.name || 'Shuttle Stop';
+          )?.name || 'Stevens Creek & Albany Bus Stop';
 
         // Function to get live status for notifications
         const getLiveStatusForNotification = async (id: string) => {
@@ -203,6 +208,7 @@ function MapScreen() {
                 isDelayed: false,
                 delayMinutes: 0,
                 occupancy: 0,
+                stopStatus: undefined,
               };
             }
 
@@ -216,6 +222,8 @@ function MapScreen() {
               isDelayed: isRideDelayed(ride),
               delayMinutes: Math.round(ride.lateBySec / 60),
               occupancy: getOccupancyPercentage(ride),
+              expectedArrivalTime: nextStop?.Awaiting?.expectedArrivalTime,
+              stopStatus: ride.stopStatus,
             };
           } catch (error) {
             console.error('Failed to get live status:', error);
@@ -224,12 +232,29 @@ function MapScreen() {
               isDelayed: false,
               delayMinutes: 0,
               occupancy: 0,
+              expectedArrivalTime: undefined,
+              stopStatus: undefined,
             };
           }
         };
 
         // Start background tracking
-        startShuttleTracking(rideId, stopName, getLiveStatusForNotification);
+        startShuttleTracking(
+          rideId,
+          stopName,
+          nextStops || ['Stevens Creek', 'Sunnyvale', 'Mountain View'],
+          getLiveStatusForNotification,
+          data => {
+            // Show in-app notification banner
+            showShuttleNotification({
+              etaMinutes: data.etaMinutes,
+              stopName: data.stopName,
+              isDelayed: data.isDelayed,
+              stopStatus: data.stopStatus,
+              nextStops: data.nextStops,
+            });
+          }
+        );
 
         // Setup notification handlers
         const unsubscribe = setupShuttleNotificationHandlers(
@@ -245,7 +270,7 @@ function MapScreen() {
 
         return () => {
           unsubscribe();
-          stopShuttleTracking();
+          pauseShuttleTracking(); // Pause tracking but keep notification visible
         };
       }
     }
@@ -572,7 +597,7 @@ function MapScreen() {
 
   const handleBackFromNavigation = useCallback(() => {
     setIsNavigating(false);
-    stopShuttleTracking(); // Stop background notifications
+    pauseShuttleTracking(); // Pause tracking but keep notification visible
   }, []);
 
   const handleBackFromReport = useCallback(() => {
@@ -773,6 +798,7 @@ function MapScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
+      <ShuttleNotificationBanner />
 
       {/* Map Background */}
       <View style={styles.mapContainer}>

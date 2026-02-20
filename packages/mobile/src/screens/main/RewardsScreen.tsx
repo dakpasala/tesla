@@ -15,6 +15,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 import { getUserIncentives, getUserBalance } from '../../services/users';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 const newBike = require('../../assets/icons/new/newBike.png');
 const newBus = require('../../assets/icons/new/newBus.png');
@@ -23,6 +24,8 @@ const newShuttle = require('../../assets/icons/new/newShuttle.png');
 
 export default function RewardsScreen() {
   const navigation = useNavigation();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
 
   const { userId } = useAuth();
 
@@ -59,7 +62,7 @@ export default function RewardsScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Top nav row (Back + Settings) */}
         <View style={styles.topNavRow}>
@@ -77,7 +80,7 @@ export default function RewardsScreen() {
         </View>
 
         {/* Big screen title */}
-        <Text style={styles.pageTitle}>Rewards</Text>
+        <Text style={[styles.pageTitle, { color: c.text.primary }]}>Rewards</Text>
 
         {/* Main Card */}
         <LinearGradient
@@ -99,9 +102,9 @@ export default function RewardsScreen() {
           </View>
         </LinearGradient>
 
-        <Text style={styles.sectionHeader}>History</Text>
+        <Text style={[styles.sectionHeader, { color: c.text.primary }]}>History</Text>
         {loading && (
-          <Text style={{ textAlign: 'center', color: '#666' }}>
+          <Text style={{ textAlign: 'center', color: c.text.secondary }}>
             Loading reward history…
           </Text>
         )}
@@ -137,12 +140,15 @@ export default function RewardsScreen() {
               .toUpperCase();
 
             return (
-              <View key={inc.id} style={styles.historyCard}>
-                <Image source={icon} style={styles.historyIconImg} />
+              <View key={inc.id} style={[styles.historyCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                <Image
+                  source={icon}
+                  style={[styles.historyIconImg, { tintColor: c.text.primary }]}
+                />
 
                 <View style={styles.historyMid}>
-                  <Text style={styles.historyDateText}>{dateText}</Text>
-                  <Text style={styles.historyTitleText}>{title}</Text>
+                  <Text style={[styles.historyDateText, { color: c.text.secondary }]}>{dateText}</Text>
+                  <Text style={[styles.historyTitleText, { color: c.text.primary }]}>{title}</Text>
                 </View>
 
                 <Text style={styles.historySavedText}>
@@ -155,6 +161,7 @@ export default function RewardsScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

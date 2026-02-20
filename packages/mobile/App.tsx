@@ -6,15 +6,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { RideProvider } from './src/context/RideContext';
 import { AuthProvider } from './src/context/AuthContext';
 import SplashScreen from './src/components/SplashScreen';
+import { ThemeProvider } from './src/context/ThemeContext';
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Simulate app initialization (fonts, assets, etc.)
     setTimeout(() => {
       setIsReady(true);
-    }, 2000); // Show splash for 2 seconds
+    }, 2000);
   }, []);
 
   if (!isReady) {
@@ -23,13 +23,15 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <RideProvider>
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </RideProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <RideProvider>
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </RideProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

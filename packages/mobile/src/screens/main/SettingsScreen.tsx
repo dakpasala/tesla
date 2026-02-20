@@ -14,13 +14,21 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../navigation/types';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { logout, isAdmin } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [liveActivityEnabled, setLiveActivityEnabled] = useState(true);
+
+  const isDarkMode = theme === 'dark';
+
+  const handleDarkModeToggle = (value: boolean) => {
+    setTheme(value ? 'dark' : 'light');
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -62,6 +70,17 @@ export default function SettingsScreen() {
           <Switch
             value={liveActivityEnabled}
             onValueChange={setLiveActivityEnabled}
+            trackColor={{ false: '#E5E5E5', true: '#FF3B30' }}
+            thumbColor="#FFFFFF"
+            ios_backgroundColor="#E5E5E5"
+          />
+        </View>
+
+        <View style={styles.item}>
+          <Text style={styles.itemText}>Dark Mode</Text>
+          <Switch
+            value={isDarkMode}
+            onValueChange={handleDarkModeToggle}
             trackColor={{ false: '#E5E5E5', true: '#FF3B30' }}
             thumbColor="#FFFFFF"
             ios_backgroundColor="#E5E5E5"

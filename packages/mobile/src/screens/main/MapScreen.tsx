@@ -35,6 +35,7 @@ import { useRideContext, TravelMode } from '../../context/RideContext';
 import { useAuth } from '../../context/AuthContext';
 import { useShuttleNotification } from '../../context/ShuttleNotificationContext';
 import { theme } from '../../theme/theme';
+import { useTheme } from '../../context/ThemeContext';
 
 // Import Quickstart components
 import {
@@ -91,6 +92,9 @@ function MapScreen() {
   const { setDestination, travelMode, setTravelMode } = useRideContext();
   const { showNotification: showShuttleNotification } =
     useShuttleNotification();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+  const components = activeTheme.components;
 
   const handleOtherLots = useCallback(() => {
     setPendingParkingId(null);
@@ -753,7 +757,7 @@ function MapScreen() {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0761E0" />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <Text style={[styles.loadingText, { color: c.text.secondary }]}>Loading...</Text>
         </View>
       );
     }
@@ -801,7 +805,7 @@ function MapScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.backgroundAlt }]}>
       <StatusBar barStyle="dark-content" />
       <ShuttleNotificationBanner />
 
@@ -905,10 +909,10 @@ function MapScreen() {
         {/* Settings button overlay on map (Only in Search mode) */}
         {mode === 'search' && (
           <TouchableOpacity
-            style={styles.settingsButton}
+            style={[styles.settingsButton, { backgroundColor: c.white }]}
             onPress={handleSettingsPress}
           >
-            <Text style={styles.settingsIcon}>⚙️</Text>
+            <Text style={[styles.settingsIcon, { color: components.icon }]}>⚙️</Text>
           </TouchableOpacity>
         )}
 
@@ -920,9 +924,9 @@ function MapScreen() {
         {/* Loading overlay for pre-check */}
         {preCheckLoading && (
           <View style={styles.preCheckLoadingOverlay}>
-            <View style={styles.preCheckLoadingBox}>
+            <View style={[styles.preCheckLoadingBox, { backgroundColor: c.card }]}>
               <ActivityIndicator size="large" color="#0761E0" />
-              <Text style={styles.preCheckLoadingText}>Checking routes...</Text>
+              <Text style={[styles.preCheckLoadingText, { color: c.text.primary }]}>Checking routes...</Text>
             </View>
           </View>
         )}
@@ -934,7 +938,7 @@ function MapScreen() {
         index={0}
         snapPoints={snapPoints}
         onChange={handleSheetChanges}
-        backgroundStyle={styles.bottomSheetBackground}
+        backgroundStyle={[styles.bottomSheetBackground, { backgroundColor: c.background }]}
         handleIndicatorStyle={styles.bottomSheetHandle}
         enablePanDownToClose={false}
       >
@@ -1004,7 +1008,7 @@ function MapScreen() {
                 style={styles.tempBackButton}
                 onPress={handleBackToSearch}
               >
-                <Text style={styles.tempBackText}>← Back</Text>
+                <Text style={[styles.tempBackText, { color: c.primary }]}>← Back</Text>
               </TouchableOpacity>
 
               <RouteHeader
@@ -1155,7 +1159,6 @@ const styles = StyleSheet.create({
     color: '#0761E0',
     fontWeight: '500',
   },
-
   shuttleNavigationContainer: {
     paddingHorizontal: 0,
   },

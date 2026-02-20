@@ -7,9 +7,13 @@ import {
   Animated,
 } from 'react-native';
 import { useShuttleNotification } from '../context/ShuttleNotificationContext';
+import { useTheme } from '../context/ThemeContext';
 
 const ShuttleNotificationBanner: React.FC = () => {
   const { notification, hideNotification } = useShuttleNotification();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [slideAnim] = useState(new Animated.Value(-200));
 
   const { visible, etaMinutes, stopName, isDelayed, stopStatus, nextStops } =
@@ -173,18 +177,18 @@ const ShuttleNotificationBanner: React.FC = () => {
       ]}
     >
       <TouchableOpacity
-        style={styles.banner}
+        style={[styles.banner, { backgroundColor: c.card }]}
         onPress={hideNotification}
         activeOpacity={0.9}
       >
         {/* Left Content */}
         <View style={styles.contentContainer}>
           {/* Title */}
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, { color: c.text.primary }]}>{title}</Text>
 
           {/* Stop Name (full) */}
           <Text
-            style={[styles.stopName, styles.stopNamePrimary]}
+            style={[styles.stopName, styles.stopNamePrimary, { color: c.text.primary }]}
             numberOfLines={1}
           >
             {stopName || ''}
@@ -207,7 +211,7 @@ const ShuttleNotificationBanner: React.FC = () => {
 
               {/* Shuttle icon (animated along L-path) */}
               <Animated.View
-                style={[styles.car, { right: carRightAnim, top: carTopAnim }]}
+                style={[styles.car, { backgroundColor: c.card }, { right: carRightAnim, top: carTopAnim }]}
               >
                 <Text style={styles.carIcon}>🚐</Text>
               </Animated.View>
@@ -248,6 +252,7 @@ const ShuttleNotificationBanner: React.FC = () => {
                 numberOfLines={1}
                 style={[
                   styles.stopLabel,
+                  { color: c.text.secondary },
                   isStopReached(0) && styles.stopLabelActive,
                 ]}
               >
@@ -257,6 +262,7 @@ const ShuttleNotificationBanner: React.FC = () => {
                 numberOfLines={1}
                 style={[
                   styles.stopLabel,
+                  { color: c.text.secondary },
                   isStopReached(1) && styles.stopLabelActive,
                 ]}
               >
@@ -266,6 +272,7 @@ const ShuttleNotificationBanner: React.FC = () => {
                 numberOfLines={1}
                 style={[
                   styles.stopLabel,
+                  { color: c.text.secondary },
                   isStopReached(2) && styles.stopLabelActive,
                 ]}
               >

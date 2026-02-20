@@ -7,6 +7,7 @@ import {
   Modal,
 } from 'react-native';
 import { ParkingRow } from '../services/parkings';
+import { useTheme } from '../context/ThemeContext';
 
 interface ParkingEditModalProps {
   visible: boolean;
@@ -23,6 +24,9 @@ export default function ParkingEditModal({
   onSave,
   totalCapacity,
 }: ParkingEditModalProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [tempOccupancy, setTempOccupancy] = useState(0);
   const [localStatus, setLocalStatus] = useState<string | null>(null);
 
@@ -57,27 +61,27 @@ export default function ParkingEditModal({
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHandle} />
-          <Text style={styles.modalTitle}>{lot?.lot_name || 'Edit Lot'}</Text>
+        <View style={[styles.modalContent, { backgroundColor: c.card }]}>
+          <View style={[styles.modalHandle, { backgroundColor: c.border }]} />
+          <Text style={[styles.modalTitle, { color: c.text.primary }]}>{lot?.lot_name || 'Edit Lot'}</Text>
 
           <View style={styles.occupancySection}>
             <View>
-              <Text style={styles.sectionLabel}>Parking Occupancy</Text>
-              <Text style={styles.subLabel}>Auto-calculated by Vision Model</Text>
+              <Text style={[styles.sectionLabel, { color: c.text.primary }]}>Parking Occupancy</Text>
+              <Text style={[styles.subLabel, { color: c.text.secondary }]}>Auto-calculated by Vision Model</Text>
             </View>
-            <View style={styles.stepper}>
+            <View style={[styles.stepper, { backgroundColor: c.backgroundAlt }]}>
               <TouchableOpacity onPress={() => adjustOccupancy(-5)} style={styles.stepBtn}>
-                <Text style={styles.stepText}>−</Text>
+                <Text style={[styles.stepText, { color: c.text.secondary }]}>−</Text>
               </TouchableOpacity>
-              <Text style={styles.occValueText}>{localStatus ? '--' : `${tempOccupancy}%`}</Text>
+              <Text style={[styles.occValueText, { color: c.text.primary }]}>{localStatus ? '--' : `${tempOccupancy}%`}</Text>
               <TouchableOpacity onPress={() => adjustOccupancy(5)} style={styles.stepBtn}>
-                <Text style={styles.stepText}>+</Text>
+                <Text style={[styles.stepText, { color: c.text.secondary }]}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <Text style={styles.sectionLabel}>Status Overrides</Text>
+          <Text style={[styles.sectionLabel, { color: c.text.primary }]}>Status Overrides</Text>
           <View style={styles.overrideRow}>
             {[
               { label: 'Mark as full', val: 'FULL' },
@@ -86,10 +90,18 @@ export default function ParkingEditModal({
             ].map((item) => (
               <TouchableOpacity
                 key={item.val}
-                style={[styles.overrideBtn, localStatus === item.val && styles.overrideBtnActive]}
+                style={[
+                  styles.overrideBtn,
+                  { borderColor: c.border, backgroundColor: c.backgroundAlt },
+                  localStatus === item.val && styles.overrideBtnActive,
+                ]}
                 onPress={() => setLocalStatus(item.val)}
               >
-                <Text style={[styles.overrideText, localStatus === item.val && styles.overrideTextActive]}>
+                <Text style={[
+                  styles.overrideText,
+                  { color: c.text.primary },
+                  localStatus === item.val && styles.overrideTextActive,
+                ]}>
                   {item.label}
                 </Text>
               </TouchableOpacity>
@@ -100,7 +112,7 @@ export default function ParkingEditModal({
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: c.text.secondary }]}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </View>

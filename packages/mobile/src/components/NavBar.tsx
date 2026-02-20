@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Image, Pressable, Text } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export type NavScreen = 'car' | 'bike' | 'bus' | 'train' | 'walk';
 
@@ -9,6 +10,9 @@ interface NavBarProps {
 }
 
 export default function NavBar({ currentScreen, onScreenChange }: NavBarProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const navItems: { screen: NavScreen; activeIcon: any; inactiveIcon: any, placeholder: number}[] = [
     {
         screen: 'car',
@@ -60,16 +64,16 @@ export default function NavBar({ currentScreen, onScreenChange }: NavBarProps) {
           >
             <Image
               source={isActive ? item.activeIcon : item.inactiveIcon}
-              style={styles.icon}
+              style={[styles.icon, { tintColor: c.text.primary }]}
             />
-            <Text style={styles.placeholder}>{item.placeholder}</Text>
+            <Text style={[styles.placeholder, { color: c.text.primary }]}>{item.placeholder}</Text>
           </Pressable>
         );
       })}
       
     </View>
 
-  <View style={styles.divider} /> 
+  <View style={[styles.divider, { backgroundColor: c.border }]} /> 
   </View>
     
   );
@@ -112,4 +116,3 @@ const styles = StyleSheet.create({
     margin: 10,
   },
 });
-

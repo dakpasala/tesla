@@ -23,16 +23,18 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <AuthProvider>
+  <GestureHandlerRootView style={{ flex: 1 }}>
+    <ThemeProvider>
+      <AuthProvider>
+        <ShuttleNotificationProvider>  
           <RideProvider>
             <NavigationContainer>
               <AppNavigator />
             </NavigationContainer>
           </RideProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </GestureHandlerRootView>
-  );
+        </ShuttleNotificationProvider> 
+      </AuthProvider>
+    </ThemeProvider>
+  </GestureHandlerRootView>
+);
 }

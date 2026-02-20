@@ -1,4 +1,4 @@
-// packages/mobile/src/screens/main/MainHomeScreen.tsx
+// packages/mobile/src/screens/main/MapScreen.tsx
 
 import React, {
   useRef,

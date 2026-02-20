@@ -3,6 +3,7 @@ import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Svg, { Path } from 'react-native-svg';
 import { theme } from '../theme/theme';
+import { useTheme } from '../context/ThemeContext';
 
 interface BackButtonProps {
   onPress?: () => void;
@@ -12,6 +13,8 @@ interface BackButtonProps {
 
 export const BackButton = ({ onPress, color, style }: BackButtonProps) => {
   const navigation = useNavigation();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
 
   const handlePress = () => {
     if (onPress) {
@@ -35,7 +38,7 @@ export const BackButton = ({ onPress, color, style }: BackButtonProps) => {
       <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
         <Path
           d="M15 19L8 12L15 5"
-          stroke={color || '#8E8E93'} // Default to iOS gray (secondary text) or theme.colors.text.secondary
+          stroke={color || c.text.secondary} // Uses theme secondary color, falls back to prop if provided
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"

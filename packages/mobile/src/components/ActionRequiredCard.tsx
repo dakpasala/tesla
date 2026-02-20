@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 type Severity = 'high' | 'medium' | 'low';
 
@@ -26,6 +27,12 @@ const SEVERITY_BG: Record<Severity, string> = {
   low: '#E8F5E9',
 };
 
+const SEVERITY_BG_DARK: Record<Severity, string> = {
+  high: '#3A1A1A',
+  medium: '#3A2A10',
+  low: '#1A3A1A',
+};
+
 const SEVERITY_LABEL: Record<Severity, string> = {
   high: 'new',
   medium: 'in progress',
@@ -40,14 +47,25 @@ export default function ActionRequiredCard({
   severity,
   onPress,
 }: ActionRequiredCardProps) {
+  const { activeTheme, theme } = useTheme();
+  const c = activeTheme.colors;
+  const isDark = theme === 'dark';
+
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.7} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: c.card }]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
       <View style={styles.topRow}>
-        <Text style={styles.shuttleName} numberOfLines={1}>
+        <Text style={[styles.shuttleName, { color: c.text.primary }]} numberOfLines={1}>
           {shuttleName}
         </Text>
         <View
-          style={[styles.badge, { backgroundColor: SEVERITY_BG[severity] }]}
+          style={[
+            styles.badge,
+            { backgroundColor: isDark ? SEVERITY_BG_DARK[severity] : SEVERITY_BG[severity] },
+          ]}
         >
           <Text
             style={[styles.badgeText, { color: SEVERITY_COLORS[severity] }]}
@@ -61,7 +79,7 @@ export default function ActionRequiredCard({
       <Text style={styles.reportCount}>{reportCount} New Reports</Text>
 
       {/* 12 regular */}
-      <Text style={styles.lastReported}>
+      <Text style={[styles.lastReported, { color: c.text.secondary }]}>
         Last reported: {lastReported} ({lastType})
       </Text>
     </TouchableOpacity>

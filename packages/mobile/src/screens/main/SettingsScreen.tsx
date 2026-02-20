@@ -21,10 +21,13 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function SettingsScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { logout, isAdmin } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, activeTheme, setTheme } = useTheme();
   const [liveActivityEnabled, setLiveActivityEnabled] = useState(true);
 
-  const isDarkMode = theme === 'dark';
+  const isDark = theme === 'dark';
+  
+  const c = activeTheme.colors;
+  const components = activeTheme.components;
 
   const handleDarkModeToggle = (value: boolean) => {
     setTheme(value ? 'dark' : 'light');
@@ -49,57 +52,76 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: c.background }]}
+      edges={['top']}
+    >
+      <View style={[styles.header, { borderBottomColor: c.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
+          <Text style={[styles.backButton, { color: c.primary }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={[styles.title, { color: c.text.primary }]}>Settings</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity style={styles.item}>
-          <Text style={styles.itemText}>Location Services</Text>
-          <Text style={styles.statusText}>ON</Text>
-          <Text style={styles.chevron}>›</Text>
+        <TouchableOpacity
+          style={[styles.item, { borderBottomColor: c.border }]}
+        >
+          <Text style={[styles.itemText, { color: c.text.primary }]}>
+            Location Services
+          </Text>
+          <Text style={[styles.statusText, { color: c.text.secondary }]}>
+            ON
+          </Text>
+          <Text style={[styles.chevron, { color: components.icon }]}>›</Text>
         </TouchableOpacity>
 
-        <View style={styles.item}>
-          <Text style={styles.itemText}>Live Activity Notifications</Text>
+        <View style={[styles.item, { borderBottomColor: c.border }]}>
+          <Text style={[styles.itemText, { color: c.text.primary }]}>
+            Live Activity Notifications
+          </Text>
           <Switch
             value={liveActivityEnabled}
             onValueChange={setLiveActivityEnabled}
-            trackColor={{ false: '#E5E5E5', true: '#FF3B30' }}
-            thumbColor="#FFFFFF"
-            ios_backgroundColor="#E5E5E5"
+            trackColor={{ false: c.border, true: c.status.error }}
+            thumbColor={c.white}
+            ios_backgroundColor={c.border}
           />
         </View>
 
-        <View style={styles.item}>
-          <Text style={styles.itemText}>Dark Mode</Text>
+        <View style={[styles.item, { borderBottomColor: c.border }]}>
+          <Text style={[styles.itemText, { color: c.text.primary }]}>
+            Dark Mode
+          </Text>
           <Switch
-            value={isDarkMode}
+            value={isDark}
             onValueChange={handleDarkModeToggle}
-            trackColor={{ false: '#E5E5E5', true: '#FF3B30' }}
-            thumbColor="#FFFFFF"
-            ios_backgroundColor="#E5E5E5"
+            trackColor={{ false: c.border, true: c.status.error }}
+            thumbColor={c.white}
+            ios_backgroundColor={c.border}
           />
         </View>
 
         {!isAdmin && (
           <TouchableOpacity
-            style={styles.item}
+            style={[styles.item, { borderBottomColor: c.border }]}
             onPress={() => navigation.navigate('Rewards')}
           >
-            <Text style={styles.itemText}>Rewards</Text>
-            <Text style={styles.chevron}>›</Text>
+            <Text style={[styles.itemText, { color: c.text.primary }]}>
+              Rewards
+            </Text>
+            <Text style={[styles.chevron, { color: components.icon }]}>
+              ›
+            </Text>
           </TouchableOpacity>
         )}
 
         <View style={styles.logoutSection}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Log Out</Text>
+            <Text style={[styles.logoutText, { color: c.status.error }]}>
+              Log Out
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -108,22 +130,28 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FCFCFC' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  backButton: { fontSize: 28, color: '#007AFF', fontWeight: '400' },
-  title: { fontSize: 20, fontWeight: '600', color: '#1C1C1C' },
+  backButton: { fontSize: 28, fontWeight: '400' },
+  title: { fontSize: 20, fontWeight: '600' },
   content: { paddingHorizontal: 20, paddingTop: 20 },
-  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  itemText: { flex: 1, fontSize: 14, fontWeight: '500', color: '#1C1C1C' },
-  statusText: { fontSize: 14, color: '#8E8E93', marginRight: 8 },
-  chevron: { fontSize: 20, color: '#C7C7CC' },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  itemText: { flex: 1, fontSize: 14, fontWeight: '500' },
+  statusText: { fontSize: 14, marginRight: 8 },
+  chevron: { fontSize: 20 },
   logoutSection: { marginTop: 40 },
   logoutButton: { paddingVertical: 12 },
-  logoutText: { fontSize: 14, fontWeight: '500', color: '#FF3B30' },
+  logoutText: { fontSize: 14, fontWeight: '500' },
 });

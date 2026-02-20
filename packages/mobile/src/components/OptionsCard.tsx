@@ -8,6 +8,7 @@ import {
   Pressable,
   ViewStyle,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export type OptionItem = {
   id: string;
@@ -55,6 +56,9 @@ export default function OptionsCard({
   itemStyle,
   buttonStyle,
 }: OptionsCardProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   // internal selected state (so you don't *have* to manage it in parent)
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -98,6 +102,7 @@ export default function OptionsCard({
             }}
             style={[
               styles.optionRow,
+              { borderColor: c.border },
               itemStyle,
               isSelected && styles.optionRowSelected,
               item.disabled && styles.optionRowDisabled,
@@ -105,21 +110,21 @@ export default function OptionsCard({
             ]}
           >
             {item.icon && (
-              <View style={styles.iconBox}>
-                <Image source={item.icon} style={styles.icon} />
+              <View style={[styles.iconBox, { backgroundColor: c.card }]}>
+                <Image source={item.icon} style={[styles.icon, { tintColor: c.text.primary }]} />
               </View>
             )}
 
             <View style={styles.textCol}>
-              <Text style={styles.title}>{item.title}</Text>
+              <Text style={[styles.title, { color: c.text.primary }]}>{item.title}</Text>
               <View style={styles.subtitleRow}>
                 <View style={styles.dot} />
-                <Text style={styles.subtitle}>{item.subtitle}</Text>
+                <Text style={[styles.subtitle, { color: c.text.secondary }]}>{item.subtitle}</Text>
               </View>
             </View>
 
             {item.rightText ? (
-              <Text style={styles.rightText}>{item.rightText}</Text>
+              <Text style={[styles.rightText, { color: c.text.secondary }]}>{item.rightText}</Text>
             ) : null}
 
             {item.showIncentive && item.incentiveText ? (

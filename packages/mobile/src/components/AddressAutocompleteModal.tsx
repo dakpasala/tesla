@@ -14,6 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import { getAllLocations, Location } from '../services/parkings';
+import { useTheme } from '../context/ThemeContext';
 
 interface AddressAutocompleteModalProps {
   visible: boolean;
@@ -30,6 +31,9 @@ export default function AddressAutocompleteModal({
   onSave,
   onCancel,
 }: AddressAutocompleteModalProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [inputValue, setInputValue] = useState(initialValue);
   const [locations, setLocations] = useState<Location[]>([]);
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
@@ -88,15 +92,15 @@ export default function AddressAutocompleteModal({
 
   const renderLocationItem = ({ item }: { item: Location }) => (
     <TouchableOpacity
-      style={styles.locationItem}
+      style={[styles.locationItem, { borderBottomColor: c.border }]}
       onPress={() => handleSelectLocation(item)}
     >
       <View style={styles.pinIcon}>
         <Text style={styles.pinText}>📍</Text>
       </View>
       <View style={styles.locationTextContainer}>
-        <Text style={styles.locationName}>{item.name}</Text>
-        <Text style={styles.locationAddress}>{item.address}</Text>
+        <Text style={[styles.locationName, { color: c.text.primary }]}>{item.name}</Text>
+        <Text style={[styles.locationAddress, { color: c.text.secondary }]}>{item.address}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -112,21 +116,22 @@ export default function AddressAutocompleteModal({
         style={styles.modalOverlay}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>{title}</Text>
+        <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+          <Text style={[styles.modalTitle, { color: c.text.primary }]}>{title}</Text>
 
           <TextInput
-            style={styles.modalInput}
+            style={[styles.modalInput, { borderColor: c.border, color: c.text.primary, backgroundColor: c.backgroundAlt }]}
             value={inputValue}
             onChangeText={setInputValue}
             placeholder="Search by location or address..."
+            placeholderTextColor={c.text.secondary}
             autoFocus
             clearButtonMode="while-editing"
             returnKeyType="done"
           />
 
           {/* Autocomplete Dropdown - Always visible to maintain height */}
-          <View style={styles.dropdown}>
+          <View style={[styles.dropdown, { borderColor: c.border, backgroundColor: c.card }]}>
             {loading ? (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#0761E0" />
@@ -141,7 +146,7 @@ export default function AddressAutocompleteModal({
               />
             ) : (
               <View style={styles.noResultsContainer}>
-                <Text style={styles.noResultsText}>No locations found</Text>
+                <Text style={[styles.noResultsText, { color: c.text.secondary }]}>No locations found</Text>
               </View>
             )}
           </View>
@@ -152,8 +157,11 @@ export default function AddressAutocompleteModal({
           )}
 
           <View style={styles.modalActions}>
-            <TouchableOpacity style={styles.modalCancel} onPress={onCancel}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
+            <TouchableOpacity
+              style={[styles.modalCancel, { borderColor: c.border }]}
+              onPress={onCancel}
+            >
+              <Text style={[styles.modalCancelText, { color: c.text.primary }]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[

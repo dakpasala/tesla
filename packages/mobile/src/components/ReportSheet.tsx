@@ -9,6 +9,7 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const REPORT_OPTIONS = [
   { id: 'delayed', label: 'Shuttle Delayed' },
@@ -25,6 +26,9 @@ interface ReportSheetProps {
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [selectedIssue, setSelectedIssue] = useState<string | undefined>();
   const [details, setDetails] = useState('');
 
@@ -40,16 +44,16 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
   const isSubmitDisabled = !selectedIssue;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Back */}
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backIcon}>‹</Text>
-        <Text style={styles.backText}>Back</Text>
+        <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
+        <Text style={[styles.backText, { color: c.text.primary }]}>Back</Text>
       </TouchableOpacity>
 
       {/* Title */}
-      <Text style={styles.title}>Report An Issue</Text>
-      <Text style={styles.subtitle}>
+      <Text style={[styles.title, { color: c.text.primary }]}>Report An Issue</Text>
+      <Text style={[styles.subtitle, { color: c.text.secondary }]}>
         Something not right? Select an issue below so we can look into it
       </Text>
 
@@ -60,6 +64,7 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
             key={option.id}
             style={[
               styles.chip,
+              { borderColor: c.border },
               selectedIssue === option.id && styles.chipSelected,
             ]}
             onPress={() => setSelectedIssue(option.id)}
@@ -67,6 +72,7 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
             <Text
               style={[
                 styles.chipText,
+                { color: c.text.primary },
                 selectedIssue === option.id && styles.chipTextSelected,
               ]}
             >
@@ -81,6 +87,7 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
         <TouchableOpacity
           style={[
             styles.chip,
+            { borderColor: c.border },
             selectedIssue === 'other' && styles.chipSelected,
           ]}
           onPress={() => setSelectedIssue('other')}
@@ -88,6 +95,7 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
           <Text
             style={[
               styles.chipText,
+              { color: c.text.primary },
               selectedIssue === 'other' && styles.chipTextSelected,
             ]}
           >
@@ -98,9 +106,9 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
 
       {/* Details */}
       <TextInput
-        style={styles.detailsInput}
+        style={[styles.detailsInput, { borderColor: c.border, color: c.text.primary }]}
         placeholder="Add more details"
-        placeholderTextColor="#8E8E93"
+        placeholderTextColor={c.text.secondary}
         value={details}
         onChangeText={setDetails}
         multiline

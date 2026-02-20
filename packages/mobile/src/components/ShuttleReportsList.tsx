@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { Report } from '../services/shuttleAlerts';
 import ShuttleListItem from './ShuttleListItem';
+import { useTheme } from '../context/ThemeContext';
 
 interface ShuttleReportsListProps {
   reports: Report[];
@@ -18,6 +19,9 @@ export default function ShuttleReportsList({
   reports,
   loading,
 }: ShuttleReportsListProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const formatTime = (dateStr?: string) => {
     if (!dateStr) return '';
     return new Date(dateStr).toLocaleTimeString([], {
@@ -31,7 +35,7 @@ export default function ShuttleReportsList({
   }
 
   if (reports.length === 0) {
-    return <Text style={styles.emptyText}>No reports found.</Text>;
+    return <Text style={[styles.emptyText, { color: c.text.secondary }]}>No reports found.</Text>;
   }
 
   return (

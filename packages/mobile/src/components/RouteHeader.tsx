@@ -10,6 +10,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { BackButton } from './BackButton';
+import { useTheme } from '../context/ThemeContext';
 
 // Transport mode type
 export type TransportMode = 'car' | 'shuttle' | 'transit' | 'bike';
@@ -53,12 +54,15 @@ export function RouteHeader({
   modeTimes = DEFAULT_TIMES,
   style,
 }: RouteHeaderProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const modes: TransportMode[] = ['car', 'shuttle', 'transit', 'bike'];
 
   return (
     <View style={[styles.container, style]}>
       {/* Transport Mode Tabs */}
-      <View style={styles.tabContainer}>
+      <View style={[styles.tabContainer, { borderBottomColor: c.border }]}>
         {modes.map(mode => {
           const isActive = activeMode === mode;
           const time = modeTimes[mode] || DEFAULT_TIMES[mode];
@@ -73,11 +77,15 @@ export function RouteHeader({
                 source={MODE_ICONS[mode]}
                 style={[
                   styles.tabIconImage,
-                  { tintColor: isActive ? '#007AFF' : '#8E8E93' },
+                  { tintColor: isActive ? '#007AFF' : c.text.secondary },
                 ]}
                 resizeMode="contain"
               />
-              <Text style={[styles.tabTime, isActive && styles.activeTabTime]}>
+              <Text style={[
+                styles.tabTime,
+                { color: c.text.primary },
+                isActive && styles.activeTabTime,
+              ]}>
                 {time}
               </Text>
             </TouchableOpacity>

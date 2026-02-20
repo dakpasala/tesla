@@ -1,17 +1,18 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { createMMKV } from 'react-native-mmkv';
+import { lightTheme, darkTheme, AppTheme } from '../theme/theme';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
 const storage = createMMKV();
-
 const STORAGE_KEY = 'theme_preference';
 
 type ThemeContextValue = {
   preference: ThemePreference;
   theme: ResolvedTheme;
+  activeTheme: AppTheme;
   setTheme: (pref: ThemePreference) => void;
   toggleTheme: () => void;
 };
@@ -44,10 +45,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [preference, systemTheme]
   );
 
+  // The actual theme object components should use for colors/typography
+  const activeTheme = useMemo(
+    () => (theme === 'dark' ? darkTheme : lightTheme),
+    [theme]
+  );
+
   const setTheme = (pref: ThemePreference) => {
     setPreference(pref);
     storage.set(STORAGE_KEY, pref);
-    console.log('[Theme] setTheme:', pref);
   };
 
   const toggleTheme = () => {
@@ -61,8 +67,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const value = useMemo(
-    () => ({ preference, theme, setTheme, toggleTheme }),
-    [preference, theme]
+    () => ({ preference, theme, activeTheme, setTheme, toggleTheme }),
+    [preference, theme, activeTheme]
   );
 
   return (

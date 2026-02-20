@@ -6,6 +6,7 @@ import {
   GestureResponderEvent,
   ViewStyle,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export type RadioOption = {
   id: string;
@@ -34,6 +35,9 @@ export default function Radio({
   width = 60,
   height = 100,
 }: RadioProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const handlePress = (id: string) => (e: GestureResponderEvent) => {
     onSelect?.(id);
   };
@@ -42,11 +46,7 @@ export default function Radio({
     <View
       style={[
         styles.wrapper,
-        {
-          width,
-          height,
-          borderRadius: 5,
-        },
+        { width, height, borderRadius: 5, borderColor: c.border },
         style,
       ]}
       accessible
@@ -67,13 +67,14 @@ export default function Radio({
               <View
                 style={[
                   styles.radioOuter,
+                  { borderColor: c.text.primary },
                   selected && styles.radioOuterSelected,
                 ]}
               >
                 {selected ? (
                   <View style={styles.radioInnerSelected} />
                 ) : (
-                  <View style={styles.radioInner} />
+                  <View style={[styles.radioInner, { backgroundColor: c.border }]} />
                 )}
               </View>
             </TouchableOpacity>

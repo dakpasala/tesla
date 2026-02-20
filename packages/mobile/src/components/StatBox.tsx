@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface StatBoxProps {
   value: string | number;
@@ -18,6 +19,9 @@ export default function StatBox({
   variant = 'light',
   active = false,
 }: StatBoxProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const isDark = variant === 'dark';
 
   return (
@@ -25,7 +29,7 @@ export default function StatBox({
       style={[
         styles.box,
         {
-          backgroundColor: isDark ? '#1C1C1E' : active ? '#F2F8FF' : '#F2F2F7',
+          backgroundColor: isDark ? '#1C1C1E' : active ? '#F2F8FF' : c.backgroundAlt,
           borderColor: active ? '#007AFF' : 'transparent',
           borderWidth: active ? 1 : 0,
         },
@@ -36,7 +40,7 @@ export default function StatBox({
       <Text
         style={[
           styles.value,
-          { color: isDark ? '#fff' : active ? '#000000' : '#000' },
+          { color: isDark ? '#fff' : c.text.primary },
         ]}
       >
         {value}
@@ -44,7 +48,7 @@ export default function StatBox({
       <Text
         style={[
           styles.label,
-          { color: isDark ? '#A0A0A5' : active ? '#007AFF' : '#8E8E93' },
+          { color: isDark ? '#A0A0A5' : active ? '#007AFF' : c.text.secondary },
         ]}
       >
         {label}

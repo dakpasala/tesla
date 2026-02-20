@@ -9,6 +9,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export type ReportPopupOption = {
   id: string;
@@ -37,6 +38,9 @@ export default function ReportPopupInputs({
   layout = 'column',
   disabled = false,
 }: ReportPopupInputsProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
     <View
       style={[
@@ -59,12 +63,15 @@ export default function ReportPopupInputs({
             accessibilityLabel={opt.label}
             style={[
               styles.pill,
-              isSelected ? styles.pillSelected : styles.pillUnselected,
+              isSelected
+                ? [styles.pillSelected, { backgroundColor: c.backgroundAlt, borderColor: c.border }]
+                : [styles.pillUnselected, { backgroundColor: c.card, borderColor: c.border }],
             ]}
           >
             <Text
               style={[
                 styles.pillText,
+                { color: c.text.primary },
                 isSelected ? styles.pillTextSelected : null,
               ]}
             >

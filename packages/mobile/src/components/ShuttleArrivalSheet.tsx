@@ -14,6 +14,7 @@ import {
   getOccupancyPercentage,
 } from '../services/tripshot';
 import { ReportSheet } from './ReportSheet';
+import { useTheme } from '../context/ThemeContext';
 
 const newShuttleIcon = require('../assets/icons/new/newShuttle.png');
 
@@ -56,6 +57,9 @@ export function ShuttleArrivalSheet({
   liveStatus,
   onRefreshStatus,
 }: ShuttleArrivalSheetProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [appState, setAppState] = useState(AppState.currentState);
   const [page, setPage] = useState<SheetPage>('arrival');
 
@@ -246,11 +250,6 @@ export function ShuttleArrivalSheet({
     return (
       <ReportSheet
         onBack={() => setPage('arrival')}
-        // onSubmit={(issue, details) => {
-        //   console.log(issue, details);
-        //   onReportIssue();
-        //   setPage('arrival');
-        // }}
         onSubmit={(issue, details) => {
           setPage('arrival');
           console.log(issue, details);
@@ -264,17 +263,17 @@ export function ShuttleArrivalSheet({
     return (
       <View
         style={{
-          backgroundColor: '#FCFCFC',
+          backgroundColor: c.background,
           padding: 20,
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
+        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8, color: c.text.primary }}>
           Thanks for reporting
         </Text>
-        <Text style={{ fontSize: 13, color: '#8E8E93', marginBottom: 16 }}>
-          We’ll look into it as soon as possible.
+        <Text style={{ fontSize: 13, color: c.text.secondary, marginBottom: 16 }}>
+          We'll look into it as soon as possible.
         </Text>
 
         <TouchableOpacity
@@ -299,17 +298,17 @@ export function ShuttleArrivalSheet({
    */
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backIcon}>‹</Text>
-        <Text style={styles.backText}>All Routes</Text>
+        <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
+        <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
       </TouchableOpacity>
 
       <View style={styles.mainRow}>
         <View style={styles.left}>
-          <Text style={styles.arrivalTitle}>Arriving In {etaMinutes} Min</Text>
+          <Text style={[styles.arrivalTitle, { color: c.text.primary }]}>Arriving In {etaMinutes} Min</Text>
 
-          <Text style={styles.subLine}>
+          <Text style={[styles.subLine, { color: c.text.secondary }]}>
             {etaTime ? `${etaTime} ETA · ` : ''}
             <Text
               style={{
@@ -323,14 +322,14 @@ export function ShuttleArrivalSheet({
 
           <View style={styles.occupancyRow}>
             <Text>👥</Text>
-            <Text style={styles.occupancyText}>{actualOccupancy}% Full</Text>
+            <Text style={[styles.occupancyText, { color: c.text.secondary }]}>{actualOccupancy}% Full</Text>
           </View>
 
           <TouchableOpacity
             style={styles.reportContainer}
             onPress={() => setPage('report')}
           >
-            <Text style={styles.reportText}>
+            <Text style={[styles.reportText, { color: c.text.secondary }]}>
               See something off?{' '}
               <Text style={styles.reportLink}>Report it</Text>
             </Text>
@@ -365,6 +364,7 @@ export function ShuttleArrivalSheet({
             <View
               style={[
                 styles.car,
+                { backgroundColor: c.card },
                 {
                   right: carRight,
                   top: carTop,
@@ -373,7 +373,7 @@ export function ShuttleArrivalSheet({
             >
               <Image
                 source={newShuttleIcon}
-                style={styles.carImage}
+                style={[styles.carImage, { tintColor: c.text.primary }]}
                 resizeMode="contain"
               />
             </View>
@@ -411,6 +411,7 @@ export function ShuttleArrivalSheet({
             <Text
               style={[
                 styles.stopLabel,
+                { color: c.text.primary },
                 isUiStopReached(0) && styles.stopLabelActive,
               ]}
             >
@@ -419,6 +420,7 @@ export function ShuttleArrivalSheet({
             <Text
               style={[
                 styles.stopLabel,
+                { color: c.text.primary },
                 isUiStopReached(1) && styles.stopLabelActive,
               ]}
             >
@@ -427,6 +429,7 @@ export function ShuttleArrivalSheet({
             <Text
               style={[
                 styles.stopLabel,
+                { color: c.text.primary },
                 isUiStopReached(2) && styles.stopLabelActive,
               ]}
             >

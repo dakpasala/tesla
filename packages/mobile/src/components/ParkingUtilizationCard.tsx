@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { useTheme } from '../context/ThemeContext';
 
 interface ParkingUtilizationCardProps {
   title: string;
@@ -22,6 +23,9 @@ export default function ParkingUtilizationCard({
   isStatusOnly = false,
   onEditPress,
 }: ParkingUtilizationCardProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const clampedPercentage = Math.min(100, Math.max(0, percentage));
   const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * clampedPercentage) / 100;
   
@@ -36,12 +40,12 @@ export default function ParkingUtilizationCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <View style={styles.headerRow}>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={[styles.title, { color: c.text.secondary }]} numberOfLines={1}>{title}</Text>
         {onEditPress && (
           <Pressable onPress={onEditPress}>
-             <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth={2}>
+             <Svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke={c.text.secondary} strokeWidth={2}>
                 <Path d="M12 20h9" /><Path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
              </Svg>
           </Pressable>
@@ -52,7 +56,7 @@ export default function ParkingUtilizationCard({
         {/* ONLY DRAW RING IF NOT STATUS ONLY */}
         {!isStatusOnly ? (
           <Svg width={SIZE} height={SIZE}>
-            <Circle stroke="#F0F0F0" fill="none" cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} strokeWidth={STROKE_WIDTH} />
+            <Circle stroke={c.border} fill="none" cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} strokeWidth={STROKE_WIDTH} />
             <Circle
               stroke={getStrokeColor()}
               fill="none"
@@ -79,9 +83,9 @@ export default function ParkingUtilizationCard({
 
       <View style={[
         styles.statusPill, 
-        { backgroundColor: isStatusOnly ? '#E6B8B7' : (isFull || percentage >= 90 ? '#FFEBEB' : '#F0F0F0') }
+        { backgroundColor: isStatusOnly ? '#E6B8B7' : (isFull || percentage >= 90 ? '#FFEBEB' : c.backgroundAlt) }
       ]}>
-        <Text style={styles.statusText}>{statusLabel}</Text>
+        <Text style={[styles.statusText, { color: c.text.primary }]}>{statusLabel}</Text>
       </View>
     </View>
   );

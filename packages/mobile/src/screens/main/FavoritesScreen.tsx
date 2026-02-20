@@ -35,6 +35,7 @@ import {
 } from '../../services/users';
 
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -49,6 +50,10 @@ interface FavoriteLocation {
 export default function FavoritesScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [favorites, setFavorites] = useState<FavoriteLocation[]>([]);
+
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+  const components = activeTheme.components;
 
   // Home / Work state
   const [homeAddress, setHomeAddress] = useState<string | null>(null);
@@ -149,7 +154,7 @@ export default function FavoritesScreen() {
 
   const renderFavorite = ({ item }: { item: FavoriteLocation }) => (
     <TouchableOpacity
-      style={styles.favoriteCard}
+      style={[styles.favoriteCard, { borderBottomColor: c.border }]}
       onPress={() =>
         navigation.navigate('Map', {
           destinationName: item.name,
@@ -166,29 +171,29 @@ export default function FavoritesScreen() {
         ) : (
           <Image
             source={require('../../assets/images/fav_icon_deactivate.png')}
-            style={styles.starIcon}
+            style={[styles.starIcon, { tintColor: components.icon }]}
             resizeMode="contain"
           />
         )}
       </TouchableOpacity>
       <View style={styles.favoriteInfo}>
-        <Text style={styles.favoriteName}>{item.name}</Text>
-        <Text style={styles.favoriteAddress}>{item.address}</Text>
+        <Text style={[styles.favoriteName, { color: c.text.primary }]}>{item.name}</Text>
+        <Text style={[styles.favoriteAddress, { color: c.text.secondary }]}>{item.address}</Text>
       </View>
-      <Text style={styles.favoriteMiles}>{item.miles}</Text>
+      <Text style={[styles.favoriteMiles, { color: c.text.secondary }]}>{item.miles}</Text>
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: c.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backButton}>←</Text>
+          <Text style={[styles.backButton, { color: c.text.primary }]}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Favorites</Text>
+        <Text style={[styles.headerTitle, { color: c.text.primary }]}>Favorites</Text>
         <TouchableOpacity>
-          <Text style={styles.addButton}>+</Text>
+          <Text style={[styles.addButton, { color: c.primary }]}>+</Text>
         </TouchableOpacity>
       </View>
 
@@ -200,19 +205,19 @@ export default function FavoritesScreen() {
             style={styles.quickItem}
             onPress={openHomeEditor}
           >
-            <View style={styles.quickCircle}>
+            <View style={[styles.quickCircle, { backgroundColor: c.backgroundAlt }]}>
               <Image
                 source={require('../../assets/images/search_house.png')}
-                style={styles.quickIcon}
+                style={[styles.quickIcon, { tintColor: c.text.primary }]}
                 resizeMode="contain"
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.quickTitle}>Home</Text>
+              <Text style={[styles.quickTitle, { color: c.text.primary }]}>Home</Text>
               {addressLoading ? (
                 <ActivityIndicator size="small" color="#878585" />
               ) : (
-                <Text style={styles.quickSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.quickSubtitle, { color: c.text.secondary }]} numberOfLines={1} ellipsizeMode="tail">
                   {homeAddress ?? 'Set location'}
                 </Text>
               )}
@@ -224,19 +229,19 @@ export default function FavoritesScreen() {
             style={styles.quickItem}
             onPress={openWorkEditor}
           >
-            <View style={styles.quickCircle}>
+            <View style={[styles.quickCircle, { backgroundColor: c.backgroundAlt }]}>
               <Image
                 source={require('../../assets/images/search_job.png')}
-                style={styles.quickIcon}
+                style={[styles.quickIcon, { tintColor: c.text.primary }]}
                 resizeMode="contain"
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.quickTitle}>Work</Text>
+              <Text style={[styles.quickTitle, { color: c.text.primary }]}>Work</Text>
               {addressLoading ? (
                 <ActivityIndicator size="small" color="#878585" />
               ) : (
-                <Text style={styles.quickSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={[styles.quickSubtitle, { color: c.text.secondary }]} numberOfLines={1} ellipsizeMode="tail">
                   {workAddress ?? 'Set location'}
                 </Text>
               )}
@@ -245,7 +250,7 @@ export default function FavoritesScreen() {
         </View>
 
         {/* Section Title */}
-        <Text style={styles.sectionTitle}>My Favorites</Text>
+        <Text style={[styles.sectionTitle, { color: c.text.primary }]}>My Favorites</Text>
 
         {/* Favorites List */}
         <FlatList
@@ -255,8 +260,8 @@ export default function FavoritesScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No favorites yet</Text>
-              <Text style={styles.emptySubtext}>
+              <Text style={[styles.emptyText, { color: c.text.primary }]}>No favorites yet</Text>
+              <Text style={[styles.emptySubtext, { color: c.text.secondary }]}>
                 Save your frequent destinations for quick access
               </Text>
             </View>
@@ -275,14 +280,15 @@ export default function FavoritesScreen() {
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Set Home Address</Text>
+          <View style={[styles.modalCard, { backgroundColor: c.card }]}>
+            <Text style={[styles.modalTitle, { color: c.text.primary }]}>Set Home Address</Text>
 
             <TextInput
-              style={styles.modalInput}
+              style={[styles.modalInput, { borderColor: c.border, color: c.text.primary, backgroundColor: c.backgroundAlt }]}
               value={homeInputValue}
               onChangeText={setHomeInputValue}
               placeholder="Enter address..."
+              placeholderTextColor={c.text.secondary}
               autoFocus
               clearButtonMode="while-editing"
               onSubmitEditing={saveHomeAddress}
@@ -291,13 +297,13 @@ export default function FavoritesScreen() {
 
             <View style={styles.modalActions}>
               <TouchableOpacity
-                style={styles.modalCancel}
+                style={[styles.modalCancel, { borderColor: c.border }]}
                 onPress={() => setHomeModalVisible(false)}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: c.text.primary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.modalSave}
+                style={[styles.modalSave, { backgroundColor: c.primary }]}
                 onPress={saveHomeAddress}
                 disabled={saving || homeInputValue.trim() === ''}
               >

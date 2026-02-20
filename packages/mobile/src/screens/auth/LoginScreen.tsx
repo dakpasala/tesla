@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 // Hardcoded credentials
 const CREDENTIALS = {
@@ -24,6 +25,9 @@ const CREDENTIALS = {
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,21 +57,21 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]} edges={['top', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Tesla</Text>
-            <Text style={styles.subtitle}>Commute App</Text>
+            <Text style={[styles.title, { color: c.text.primary }]}>Tesla</Text>
+            <Text style={[styles.subtitle, { color: c.text.secondary }]}>Commute App</Text>
           </View>
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: c.border, color: c.text.primary, backgroundColor: c.card }]}
             placeholder="Email"
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={c.text.secondary}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -77,9 +81,9 @@ export default function LoginScreen() {
           />
 
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: c.border, color: c.text.primary, backgroundColor: c.card }]}
             placeholder="Password"
-            placeholderTextColor="#8E8E93"
+            placeholderTextColor={c.text.secondary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -91,7 +95,7 @@ export default function LoginScreen() {
           />
 
           <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.button, loading && styles.buttonDisabled, { backgroundColor: c.primary }]}
             onPress={handleLogin}
             disabled={loading || !email.trim() || !password}
           >
@@ -102,7 +106,7 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          <Text style={styles.hintText}>
+          <Text style={[styles.hintText, { color: c.text.secondary }]}>
             User: dpasala@calpoly.edu / test123{'\n'}
             Admin: admin@tesla.com / admin123
           </Text>

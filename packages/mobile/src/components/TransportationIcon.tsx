@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, ImageStyle, StyleProp } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export type TransportationType = 'car' | 'van' | 'bus' | 'bike';
 
@@ -23,10 +24,13 @@ export default function TransportationIcon({
   style,
   accessibilityLabel,
 }: Props) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
     <Image
       source={ICONS[type]}
-      style={[{ width: size, height: size }, style]}
+      style={[{ width: size, height: size, tintColor: c.text.primary }, style]}
       resizeMode="contain"
       accessibilityRole="image"
       accessibilityLabel={accessibilityLabel ?? `${type} icon`}

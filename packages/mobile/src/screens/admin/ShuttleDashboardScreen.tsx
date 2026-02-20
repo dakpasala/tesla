@@ -23,6 +23,7 @@ import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import LiveAlertCard from '../../components/LiveAlertCard';
 import StatBox from '../../components/StatBox';
 import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
+import { useTheme } from '../../context/ThemeContext';
 
 // Extracted Lists
 import ShuttleReportsList from '../../components/ShuttleReportsList';
@@ -46,6 +47,8 @@ type DashboardTab = 'reports' | 'alerts' | 'active' | null;
 export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
   const announcementModalRef = useRef<Modalize>(null);
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
@@ -245,7 +248,7 @@ export default function ShuttleDashboardScreen() {
         {actionRequired.length > 0 && (
           <>
             <View style={styles.sectionRow}>
-              <Text style={styles.sectionHeader}>Action Required</Text>
+              <Text style={[styles.sectionHeader, { color: c.text.primary }]}>Action Required</Text>
               <TouchableOpacity onPress={() => setSelectedTab('reports')}>
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
@@ -271,7 +274,7 @@ export default function ShuttleDashboardScreen() {
 
         {/* Live Alerts Summary */}
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionHeader}>Live Alerts</Text>
+          <Text style={[styles.sectionHeader, { color: c.text.primary }]}>Live Alerts</Text>
           <TouchableOpacity onPress={() => setSelectedTab('alerts')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
@@ -288,7 +291,7 @@ export default function ShuttleDashboardScreen() {
 
         {/* Shuttles Summary */}
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionHeader}>Shuttles</Text>
+          <Text style={[styles.sectionHeader, { color: c.text.primary }]}>Shuttles</Text>
           <TouchableOpacity onPress={() => setSelectedTab('active')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
@@ -315,7 +318,7 @@ export default function ShuttleDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -334,7 +337,7 @@ export default function ShuttleDashboardScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
-          <Text style={styles.dashTitle}>{getTitle()}</Text>
+          <Text style={[styles.dashTitle, { color: c.text.primary }]}>{getTitle()}</Text>
 
           {/* Filter Buttons */}
           <View style={styles.statsRow}>
@@ -378,7 +381,7 @@ export default function ShuttleDashboardScreen() {
         </ScrollView>
       ) : (
         <View style={[styles.content, { flex: 1, paddingBottom: 0 }]}>
-          <Text style={styles.dashTitle}>{getTitle()}</Text>
+          <Text style={[styles.dashTitle, { color: c.text.primary }]}>{getTitle()}</Text>
 
           {/* Filter Buttons */}
           <View style={styles.statsRow}>

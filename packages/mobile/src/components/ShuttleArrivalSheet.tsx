@@ -1,20 +1,19 @@
 // packages/mobile/src/components/ShuttleArrivalSheet.tsx
 
 import React, { useEffect, useState } from 'react';
-import { Image, Modal } from 'react-native';
-
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   AppState,
+  Image,
 } from 'react-native';
 import {
   LiveStatusResponse,
   getOccupancyPercentage,
 } from '../services/tripshot';
-import ReportPopupInputs, { ReportPopupOption } from './ReportPopUp';
+import { ReportSheet } from './ReportSheet';
 
 const newShuttleIcon = require('../assets/icons/new/newShuttle.png');
 
@@ -26,14 +25,19 @@ interface ShuttleArrivalSheetProps {
   occupancy?: number;
   nextStops?: string[];
   onBack: () => void;
-  onReportIssue: () => void;
+  // onReportIssue: () => void;
+  onReportIssue: (issue: string, details: string) => void;
   liveStatus?: LiveStatusResponse | null;
   onRefreshStatus?: () => void;
 }
 
+type SheetPage = 'arrival' | 'report' | 'confirmation';
+
+// const LINE = '#D1D1D6';
+// const BLUE = '#007AFF';
+
 const HORIZONTAL_START_RIGHT = -20;
 const HORIZONTAL_LENGTH = 85;
-
 const VERTICAL_START_TOP = 22;
 const VERTICAL_LENGTH = 80;
 
@@ -41,19 +45,10 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-const REPORT_OPTIONS: ReportPopupOption[] = [
-  { id: 'late', label: 'Shuttle is running late' },
-  { id: 'full', label: 'Shuttle is too full' },
-  { id: 'no-show', label: 'Shuttle didn\'t arrive' },
-  { id: 'safety', label: 'Safety concern' },
-  { id: 'other', label: 'Other issue' },
-];
-
 export function ShuttleArrivalSheet({
   stopName,
   etaMinutes,
   etaTime,
-  status,
   occupancy = 75,
   nextStops = ['Stevens Creek', 'Sunnyvale', 'Mountain View'],
   onBack,
@@ -62,8 +57,7 @@ export function ShuttleArrivalSheet({
   onRefreshStatus,
 }: ShuttleArrivalSheetProps) {
   const [appState, setAppState] = useState(AppState.currentState);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [selectedReportOption, setSelectedReportOption] = useState<string | undefined>(undefined);
+  const [page, setPage] = useState<SheetPage>('arrival');
 
   /**
    * ======================================================
@@ -124,14 +118,7 @@ export function ShuttleArrivalSheet({
 
   const firstRide = effectiveLiveStatus?.rides?.[0];
 
-  /**
-   * ======================================================
-   * DELAY STATUS
-   * ======================================================
-   */
-
   const lateSec = firstRide?.lateBySec ?? 0;
-
   let statusText = 'On Time';
   let statusColor = '#34C759';
 
@@ -146,9 +133,9 @@ export function ShuttleArrivalSheet({
     : occupancy;
 
   /**
-   * ======================================================
-   * STOP STATE PROCESSING
-   * ======================================================
+   * ================================
+   * ROUTE PROGRESS (UNCHANGED)
+   * ================================
    */
 
   const stopStatus = firstRide?.stopStatus ?? [];
@@ -165,23 +152,15 @@ export function ShuttleArrivalSheet({
     const state = getStopState(stop);
     return {
       index,
-      state,
       reached:
         state === 'Arrived' || state === 'Departed' || state === 'Skipped',
     };
   });
 
-  // First stop is always visually "active"
   const isUiStopReached = (uiIndex: number) => {
     if (uiIndex === 0) return true;
     return reachedStops[uiIndex]?.reached ?? false;
   };
-
-  /**
-   * ======================================================
-   * ROUTE PROGRESS
-   * ======================================================
-   */
 
   const totalStops = stopStatus.length;
   const totalSegments = Math.max(totalStops - 1, 1);
@@ -200,7 +179,6 @@ export function ShuttleArrivalSheet({
     'Awaiting' in stopStatus[currentStopIndex]
   ) {
     const awaiting = stopStatus[currentStopIndex].Awaiting;
-
     const now = Date.now();
     const departure = new Date(awaiting.scheduledDepartureTime).getTime();
     const arrival = new Date(awaiting.expectedArrivalTime).getTime();
@@ -236,34 +214,9 @@ export function ShuttleArrivalSheet({
   const progressVerticalHeight = VERTICAL_LENGTH * verticalProgress;
 
   /**
-   * ======================================================
-   * REPORT HANDLERS
-   * ======================================================
-   */
-
-  const handleOpenReportModal = () => {
-    setShowReportModal(true);
-    setSelectedReportOption(undefined);
-  };
-
-  const handleCloseReportModal = () => {
-    setShowReportModal(false);
-    setSelectedReportOption(undefined);
-  };
-
-  const handleSubmitReport = () => {
-    if (selectedReportOption) {
-      const selectedOption = REPORT_OPTIONS.find(opt => opt.id === selectedReportOption);
-      console.log('Report submitted:', selectedOption?.label);
-      onReportIssue(); // Call the original handler
-      handleCloseReportModal();
-    }
-  };
-
-  /**
-   * ======================================================
+   * ================================
    * EFFECTS
-   * ======================================================
+   * ================================
    */
 
   useEffect(() => {
@@ -284,9 +237,65 @@ export function ShuttleArrivalSheet({
   }, [appState, onRefreshStatus]);
 
   /**
-   * ======================================================
-   * RENDER
-   * ======================================================
+   * ================================
+   * PAGE SWITCH
+   * ================================
+   */
+
+  if (page === 'report') {
+    return (
+      <ReportSheet
+        onBack={() => setPage('arrival')}
+        // onSubmit={(issue, details) => {
+        //   console.log(issue, details);
+        //   onReportIssue();
+        //   setPage('arrival');
+        // }}
+        onSubmit={(issue, details) => {
+          setPage('arrival');
+          console.log(issue, details);
+          onReportIssue(issue, details);
+        }}
+      />
+    );
+  }
+
+  if (page === 'confirmation') {
+    return (
+      <View
+        style={{
+          backgroundColor: '#FCFCFC',
+          padding: 20,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }}
+      >
+        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8 }}>
+          Thanks for reporting
+        </Text>
+        <Text style={{ fontSize: 13, color: '#8E8E93', marginBottom: 16 }}>
+          We’ll look into it as soon as possible.
+        </Text>
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#007AFF',
+            paddingVertical: 12,
+            borderRadius: 10,
+            alignItems: 'center',
+          }}
+          onPress={() => setPage('arrival')}
+        >
+          <Text style={{ color: '#FFF', fontWeight: '600' }}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  /**
+   * ================================
+   * ARRIVAL VIEW (UNCHANGED UI)
+   * ================================
    */
 
   return (
@@ -302,20 +311,24 @@ export function ShuttleArrivalSheet({
 
           <Text style={styles.subLine}>
             {etaTime ? `${etaTime} ETA · ` : ''}
-            <Text style={[styles.statusOnTime, { color: statusColor }]}>
+            <Text
+              style={{
+                fontWeight: '600',
+                color: statusColor,
+              }}
+            >
               {statusText}
             </Text>
           </Text>
 
           <View style={styles.occupancyRow}>
-            <Text style={styles.occupancyIcon}>👥</Text>
+            <Text>👥</Text>
             <Text style={styles.occupancyText}>{actualOccupancy}% Full</Text>
           </View>
 
-          {/* Report issue link */}
           <TouchableOpacity
             style={styles.reportContainer}
-            onPress={handleOpenReportModal}
+            onPress={() => setPage('report')}
           >
             <Text style={styles.reportText}>
               See something off?{' '}
@@ -333,19 +346,31 @@ export function ShuttleArrivalSheet({
             <View
               style={[
                 styles.progressHorizontal,
-                { width: progressHorizontalWidth },
+                {
+                  width: progressHorizontalWidth,
+                },
               ]}
             />
             <View
               style={[
                 styles.progressVertical,
-                { height: progressVerticalHeight },
+                {
+                  height: progressVerticalHeight,
+                },
               ]}
             />
 
             {reachedCorner && <View style={styles.progressCurve} />}
 
-            <View style={[styles.car, { right: carRight, top: carTop }]}>
+            <View
+              style={[
+                styles.car,
+                {
+                  right: carRight,
+                  top: carTop,
+                },
+              ]}
+            >
               <Image
                 source={newShuttleIcon}
                 style={styles.carImage}
@@ -353,7 +378,6 @@ export function ShuttleArrivalSheet({
               />
             </View>
 
-            {/* DOTS */}
             <View
               style={[
                 styles.dot,
@@ -411,54 +435,6 @@ export function ShuttleArrivalSheet({
           </View>
         </View>
       </View>
-
-      {/* Report Modal */}
-      <Modal
-        visible={showReportModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseReportModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Report an Issue</Text>
-            <Text style={styles.modalSubtitle}>What happened?</Text>
-
-            <ReportPopupInputs
-              options={REPORT_OPTIONS}
-              selectedId={selectedReportOption}
-              onSelect={(option) => setSelectedReportOption(option.id)}
-              layout="column"
-              style={styles.reportOptions}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCloseReportModal}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  !selectedReportOption && styles.submitButtonDisabled,
-                ]}
-                onPress={handleSubmitReport}
-                disabled={!selectedReportOption}
-              >
-                <Text style={[
-                  styles.submitButtonText,
-                  !selectedReportOption && styles.submitButtonTextDisabled,
-                ]}>
-                  Submit
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }

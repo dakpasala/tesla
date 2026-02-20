@@ -50,7 +50,10 @@ import { ReportSheet } from '../../components/ReportSheet';
 
 // Import services
 import { getUserLocation } from '../../services/location';
-import { getRoutesGoHome, getRoutesToOfficeQuickStart } from '../../services/maps';
+import {
+  getRoutesGoHome,
+  getRoutesToOfficeQuickStart,
+} from '../../services/maps';
 import {
   getMinutesUntil,
   isRideDelayed,
@@ -485,7 +488,7 @@ function MapScreen() {
 
       try {
         const origin = await getUserLocation();
-        
+
         // Try to get routes first to validate
         await getRoutesGoHome({ origin, destination: homeAddress });
 
@@ -531,9 +534,12 @@ function MapScreen() {
 
       try {
         const origin = await getUserLocation();
-        
+
         // Try to get routes first to validate
-        await getRoutesToOfficeQuickStart({ origin, destinationAddress: workAddress });
+        await getRoutesToOfficeQuickStart({
+          origin,
+          destinationAddress: workAddress,
+        });
 
         // If successful, navigate to quickstart
         setDestinationName('Work');
@@ -604,33 +610,32 @@ function MapScreen() {
     setShowingReport(false);
   }, []);
 
-  const handleSubmitReport = useCallback(async (issue: string, details: string) => {
-    try {
-      // Get the shuttle short name from tripshot routes data
-      const shuttleName = tripshotData?.routes?.[0]?.shortName || 'Tesla Shuttle';
+  const handleSubmitReport = useCallback(
+    async (issue: string, details: string) => {
+      try {
+        // Get the shuttle short name from tripshot routes data
+        const shuttleName =
+          tripshotData?.routes?.[0]?.shortName || 'Tesla Shuttle';
 
-      // Format the comment: "Issue: Additional details"
-      const comment = details.trim() 
-        ? `${issue}: ${details}` 
-        : issue;
+        // Format the comment: "Issue: Additional details"
+        const comment = details.trim() ? `${issue}: ${details}` : issue;
 
-      // Call the API
-      await submitShuttleReport(shuttleName, comment);
+        // Call the API
+        await submitShuttleReport(shuttleName, comment);
 
-      Alert.alert(
-        'Report Submitted',
-        'Thank you! Your feedback helps improve our service.'
-      );
-      setShowingReport(false);
-      setIsNavigating(false);
-    } catch (error) {
-      console.error('Error submitting report:', error);
-      Alert.alert(
-        'Error',
-        'Failed to submit report. Please try again.'
-      );
-    }
-  }, [tripshotData]);
+        Alert.alert(
+          'Report Submitted',
+          'Thank you! Your feedback helps improve our service.'
+        );
+        setShowingReport(false);
+        setIsNavigating(false);
+      } catch (error) {
+        console.error('Error submitting report:', error);
+        Alert.alert('Error', 'Failed to submit report. Please try again.');
+      }
+    },
+    [tripshotData]
+  );
 
   // Callback to refresh shuttle status (for polling)
   const handleRefreshStatus = useCallback(() => {
@@ -985,7 +990,8 @@ function MapScreen() {
                 }
                 nextStops={nextStops}
                 onBack={handleBackFromNavigation}
-                onReportIssue={handleReport}
+                // onReportIssue={handleReport}
+                onReportIssue={handleSubmitReport}
                 liveStatus={liveStatus}
                 onRefreshStatus={handleRefreshStatus}
               />
@@ -994,7 +1000,7 @@ function MapScreen() {
             // Quickstart Content (RouteDetailView)
             <View style={styles.quickstartContainer}>
               {/* Temporary back button */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.tempBackButton}
                 onPress={handleBackToSearch}
               >

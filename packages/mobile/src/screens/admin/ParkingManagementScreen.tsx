@@ -12,9 +12,12 @@ import { useNavigation } from '@react-navigation/native';
 import { getAllParkingAvailability, updateParkingAvailability, ParkingRow } from '../../services/parkings';
 import ParkingUtilizationCard from '../../components/ParkingUtilizationCard';
 import ParkingEditModal from '../../components/ParkingEditModal';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ParkingManagementScreen() {
   const navigation = useNavigation();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
 
   const [loading, setLoading] = useState(true);
   const [groupedData, setGroupedData] = useState<Record<string, ParkingRow[]>>({});
@@ -77,23 +80,25 @@ export default function ParkingManagementScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}><ActivityIndicator size="large" color="#FF3B30" /></View>
+      <View style={[styles.centered, { backgroundColor: c.background }]}>
+        <ActivityIndicator size="large" color="#FF3B30" />
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backText}>{'< '}Home</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Parking Lots Management</Text>
+        <Text style={[styles.headerTitle, { color: c.text.primary }]}>Parking Lots Management</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {Object.entries(groupedData).map(([locationName, lots]) => (
           <View key={locationName} style={styles.locationSection}>
-            <Text style={styles.locationTitle}>{locationName}</Text>
+            <Text style={[styles.locationTitle, { color: c.text.secondary }]}>{locationName}</Text>
             <View style={styles.grid}>
               {lots.map((lot) => {
                 // Calculation using dynamic capacity

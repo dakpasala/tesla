@@ -15,6 +15,7 @@ import {
   isRideDelayed,
   getOccupancyPercentage,
 } from '../services/tripshot';
+import { useTheme } from '../context/ThemeContext';
 
 interface RouteDetailViewProps {
   travelMode: TravelMode;
@@ -39,6 +40,9 @@ export function RouteDetailView({
   liveStatus,
   googleMapsRoute,
 }: RouteDetailViewProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   // Parse TripShot data if available (for shuttle)
   const firstOption = tripshotData?.options?.[0];
   const steps = firstOption?.steps || [];
@@ -83,18 +87,18 @@ export function RouteDetailView({
     return (
       <>
         <GHTouchableOpacity
-          style={styles.routeCard}
+          style={[styles.routeCard, { backgroundColor: c.card, borderColor: c.border }]}
           activeOpacity={0.9}
           onPress={onOpenInGoogleMaps}
         >
           <View style={styles.routeHeader}>
             <View>
-              <Text style={styles.routeTitle}>Bike Route</Text>
-              <Text style={styles.routeSub}>Fastest option</Text>
+              <Text style={[styles.routeTitle, { color: c.text.primary }]}>Bike Route</Text>
+              <Text style={[styles.routeSub]}>Fastest option</Text>
             </View>
             <View style={styles.etaBadge}>
-              <Text style={styles.etaText}>{modeTimes.bike || '30 min'}</Text>
-              <Text style={styles.etaSub}>ETA</Text>
+              <Text style={[styles.etaText, { color: c.text.primary }]}>{modeTimes.bike || '30 min'}</Text>
+              <Text style={[styles.etaSub, { color: c.text.secondary }]}>ETA</Text>
             </View>
           </View>
 
@@ -109,27 +113,27 @@ export function RouteDetailView({
         </GHTouchableOpacity>
 
         <View style={styles.footerLinks}>
-          <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
+          <Text style={[styles.footerTitle, { color: c.text.secondary }]}>OTHER OPTIONS</Text>
           <GHTouchableOpacity
-            style={styles.altRow}
+            style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('shuttle')}
           >
-            <Text style={styles.altText}>Tesla Shuttle</Text>
-            <Text style={styles.altTime}>{modeTimes.shuttle || '50 min'}</Text>
+            <Text style={[styles.altText, { color: c.text.primary }]}>Tesla Shuttle</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.shuttle || '50 min'}</Text>
           </GHTouchableOpacity>
           <GHTouchableOpacity
-            style={styles.altRow}
+            style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('transit')}
           >
-            <Text style={styles.altText}>Public Transit</Text>
-            <Text style={styles.altTime}>{modeTimes.transit || '1h 10m'}</Text>
+            <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
           </GHTouchableOpacity>
           <GHTouchableOpacity
-            style={styles.altRow}
+            style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('car')}
           >
-            <Text style={styles.altText}>Drive (view parking)</Text>
-            <Text style={styles.altTime}>{modeTimes.car || '30m'}</Text>
+            <Text style={[styles.altText, { color: c.text.primary }]}>Drive (view parking)</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.car || '30m'}</Text>
           </GHTouchableOpacity>
         </View>
       </>
@@ -160,9 +164,9 @@ export function RouteDetailView({
                   </Svg>
                 </View>
                 <View style={styles.stepContent}>
-                  <Text style={styles.stepLocation}>{formatted.from}</Text>
+                  <Text style={[styles.stepLocation, { color: c.text.primary }]}>{formatted.from}</Text>
                 </View>
-                <Text style={styles.stepTime}>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>
                   {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
                 </Text>
               </View>
@@ -177,35 +181,35 @@ export function RouteDetailView({
                   <Svg width={12} height={80} style={styles.svgLine}>
                     <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
-                  <View style={styles.iconContainer}>
+                  <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
                     <Image 
                       source={require('../assets/icons/new/PersonSimpleWalk.png')} 
-                      style={styles.stepIconImage}
+                      style={[styles.stepIconImage, { tintColor: c.text.primary }]}
                     />
                   </View>
                 </View>
                 <View style={styles.stepContent}>
-                  <Text style={styles.walkDuration}>{formatted.duration} min walk</Text>
-                  <Text style={styles.otherOptionsLabel}>Other Options:</Text>
+                  <Text style={[styles.walkDuration, { color: c.text.primary }]}>{formatted.duration} min walk</Text>
+                  <Text style={[styles.otherOptionsLabel, { color: c.text.primary }]}>Other Options:</Text>
                   <View style={styles.altOptionsRow}>
-                    <View style={styles.altOption}>
+                    <View style={[styles.altOption, { backgroundColor: c.backgroundAlt, borderColor: c.border }]}>
                       <Image 
                         source={require('../assets/icons/new/newCar.png')} 
-                        style={styles.altOptionIcon}
+                        style={[styles.altOptionIcon, { tintColor: c.text.primary }]}
                       />
-                      <Text style={styles.altOptionText}>2 min</Text>
+                      <Text style={[styles.altOptionText, { color: c.text.primary }]}>2 min</Text>
                     </View>
-                    <View style={styles.altOption}>
+                    <View style={[styles.altOption, { backgroundColor: c.backgroundAlt, borderColor: c.border }]}>
                       <Image 
                         source={require('../assets/icons/new/newBike.png')} 
-                        style={styles.altOptionIcon}
+                        style={[styles.altOptionIcon, { tintColor: c.text.primary }]}
                       />
-                      <Text style={styles.altOptionText}>5 min</Text>
+                      <Text style={[styles.altOptionText, { color: c.text.primary }]}>5 min</Text>
                     </View>
                   </View>
                 </View>
               </View>
-              <View style={styles.sectionDivider} />
+              <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
             </>
           )}
 
@@ -217,42 +221,42 @@ export function RouteDetailView({
                   <Svg width={12} height={140} style={styles.svgLine}>
                     <Line x1={6} y1={0} x2={6} y2={140} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
-                  <View style={styles.iconContainer}>
+                  <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
                     <Image 
                       source={require('../assets/icons/new/newShuttle.png')} 
-                      style={styles.stepIconImage}
+                      style={[styles.stepIconImage, { tintColor: c.text.primary }]}
                     />
                   </View>
                 </View>
                 <View style={styles.shuttleStopContent}>
-                  <Text style={styles.stopName}>{formatted.from}</Text>
-                  <Text style={styles.shuttleName}>
+                  <Text style={[styles.stopName, { color: c.text.primary }]}>{formatted.from}</Text>
+                  <Text style={[styles.shuttleName, { color: c.text.secondary }]}>
                     {routeInfo?.shortName || 'Tesla Shuttle A'}
                   </Text>
                   <View style={styles.shuttleAmenities}>
-                    <View style={styles.amenityBadge}>
+                    <View style={[styles.amenityBadge, { borderColor: c.border, backgroundColor: c.card }]}>
                       <Image 
                         source={require('../assets/icons/new/double.png')} 
-                        style={styles.amenityIconImage}
+                        style={[styles.amenityIconImage, { tintColor: c.text.primary }]}
                       />
-                      <Text style={styles.amenityText}>
+                      <Text style={[styles.amenityText, { color: c.text.primary }]}>
                         {firstRide ? `${getOccupancyPercentage(firstRide)}% Full` : '65% Full'}
                       </Text>
                     </View>
-                    <View style={styles.amenityBadge}>
+                    <View style={[styles.amenityBadge, { borderColor: c.border, backgroundColor: c.card }]}>
                       <Image 
                         source={require('../assets/icons/new/Wifi.png')} 
-                        style={styles.amenityIconImage}
+                        style={[styles.amenityIconImage, { tintColor: c.text.primary }]}
                       />
-                      <Text style={styles.amenityText}>Free Wifi</Text>
+                      <Text style={[styles.amenityText, { color: c.text.primary }]}>Free Wifi</Text>
                     </View>
                   </View>
                 </View>
-                <Text style={styles.stepTime}>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>
                   {formatted.departureTime ? formatTime(formatted.departureTime) : ''}
                 </Text>
               </View>
-              <View style={styles.sectionDivider} />
+              <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
             </>
           )}
 
@@ -268,9 +272,9 @@ export function RouteDetailView({
                   </Svg>
                 </View>
                 <View style={styles.stepContent}>
-                  <Text style={styles.stepLocation}>{formatted.to}</Text>
+                  <Text style={[styles.stepLocation, { color: c.text.primary }]}>{formatted.to}</Text>
                 </View>
-                <Text style={styles.stepTime}>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>
                   {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
                 </Text>
               </View>
@@ -280,7 +284,7 @@ export function RouteDetailView({
           {/* Final destination for walk-only routes */}
           {isLast && !isShuttleStep && (
             <>
-              <View style={styles.sectionDivider} />
+              <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
               <View style={styles.stepRow}>
                 <View style={styles.stepIconColumn}>
                   <Svg width={12} height={20} style={styles.svgLine}>
@@ -289,9 +293,9 @@ export function RouteDetailView({
                   </Svg>
                 </View>
                 <View style={styles.stepContent}>
-                  <Text style={styles.stepLocation}>{formatted.to}</Text>
+                  <Text style={[styles.stepLocation, { color: c.text.primary }]}>{formatted.to}</Text>
                 </View>
-                <Text style={styles.stepTime}>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>
                   {formatted.arrivalTime ? formatTime(formatted.arrivalTime) : ''}
                 </Text>
               </View>
@@ -329,9 +333,9 @@ export function RouteDetailView({
                   </Svg>
                 </View>
                 <View style={styles.stepContent}>
-                  <Text style={styles.stepLocation}>Your Location</Text>
+                  <Text style={[styles.stepLocation, { color: c.text.primary }]}>Your Location</Text>
                 </View>
-                <Text style={styles.stepTime}>{departureTime}</Text>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>{departureTime}</Text>
               </View>
             )}
 
@@ -343,20 +347,20 @@ export function RouteDetailView({
                     <Svg width={12} height={60} style={styles.svgLine}>
                       <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
                     </Svg>
-                    <View style={styles.iconContainer}>
+                    <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
                       <Image 
                         source={require('../assets/icons/new/PersonSimpleWalk.png')} 
-                        style={styles.stepIconImage}
+                        style={[styles.stepIconImage, { tintColor: c.text.primary }]}
                       />
                     </View>
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={styles.walkDuration}>
+                    <Text style={[styles.walkDuration, { color: c.text.primary }]}>
                       {duration} min walk{!isLast && ' to station'}
                     </Text>
                   </View>
                 </View>
-                {!isLast && <View style={styles.sectionDivider} />}
+                {!isLast && <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />}
               </>
             )}
 
@@ -368,41 +372,41 @@ export function RouteDetailView({
                     <Svg width={12} height={140} style={styles.svgLine}>
                       <Line x1={6} y1={0} x2={6} y2={140} stroke="#BEDBFF" strokeWidth={2} />
                     </Svg>
-                    <View style={styles.iconContainer}>
+                    <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
                       <Image 
                         source={step.transit_details?.line?.vehicle?.type === 'BUS' 
                           ? require('../assets/icons/new/newBus.png')
                           : require('../assets/icons/new/newShuttle.png')} 
-                        style={styles.stepIconImage}
+                        style={[styles.stepIconImage, { tintColor: c.text.primary }]}
                       />
                     </View>
                   </View>
                   <View style={styles.shuttleStopContent}>
-                    <Text style={styles.stopName}>
+                    <Text style={[styles.stopName, { color: c.text.primary }]}>
                       {step.transit_details?.departure_stop?.name || 'Transit Stop'}
                     </Text>
-                    <Text style={styles.shuttleName}>
+                    <Text style={[styles.shuttleName, { color: c.text.secondary }]}>
                       {step.transit_details?.line?.short_name || step.transit_details?.line?.name || 'Transit'}
                       {step.transit_details?.headsign && ` - ${step.transit_details.headsign}`}
                     </Text>
                     <View style={styles.shuttleAmenities}>
-                      <View style={styles.amenityBadge}>
+                      <View style={[styles.amenityBadge, { borderColor: c.border, backgroundColor: c.card }]}>
                         <Text style={styles.amenityIcon}>🕐</Text>
-                        <Text style={styles.amenityText}>{duration} min ride</Text>
+                        <Text style={[styles.amenityText, { color: c.text.primary }]}>{duration} min ride</Text>
                       </View>
                       {step.transit_details?.num_stops && (
-                        <View style={styles.amenityBadge}>
+                        <View style={[styles.amenityBadge, { borderColor: c.border, backgroundColor: c.card }]}>
                           <Text style={styles.amenityIcon}>🛑</Text>
-                          <Text style={styles.amenityText}>
+                          <Text style={[styles.amenityText, { color: c.text.primary }]}>
                             {step.transit_details.num_stops} stops
                           </Text>
                         </View>
                       )}
                     </View>
                   </View>
-                  <Text style={styles.stepTime}>{departureTime}</Text>
+                  <Text style={[styles.stepTime, { color: c.text.primary }]}>{departureTime}</Text>
                 </View>
-                <View style={styles.sectionDivider} />
+                <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
                 <View style={styles.stepRow}>
                   <View style={styles.stepIconColumn}>
                     <Svg width={12} height={20} style={styles.svgLine}>
@@ -412,11 +416,11 @@ export function RouteDetailView({
                     </Svg>
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={styles.stepLocation}>
+                    <Text style={[styles.stepLocation, { color: c.text.primary }]}>
                       {step.transit_details?.arrival_stop?.name || 'Arrival Station'}
                     </Text>
                   </View>
-                  <Text style={styles.stepTime}>{arrivalTime}</Text>
+                  <Text style={[styles.stepTime, { color: c.text.primary }]}>{arrivalTime}</Text>
                 </View>
               </>
             )}
@@ -424,7 +428,7 @@ export function RouteDetailView({
             {/* Final destination */}
             {isLast && isWalkStep && (
               <>
-                <View style={styles.sectionDivider} />
+                <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
                 <View style={styles.stepRow}>
                   <View style={styles.stepIconColumn}>
                     <Svg width={12} height={20} style={styles.svgLine}>
@@ -433,9 +437,9 @@ export function RouteDetailView({
                     </Svg>
                   </View>
                   <View style={styles.stepContent}>
-                    <Text style={styles.stepLocation}>{destinationName}</Text>
+                    <Text style={[styles.stepLocation, { color: c.text.primary }]}>{destinationName}</Text>
                   </View>
-                  <Text style={styles.stepTime}>{arrivalTime}</Text>
+                  <Text style={[styles.stepTime, { color: c.text.primary }]}>{arrivalTime}</Text>
                 </View>
               </>
             )}
@@ -455,9 +459,9 @@ export function RouteDetailView({
             </Svg>
           </View>
           <View style={styles.stepContent}>
-            <Text style={styles.stepLocation}>Your Location</Text>
+            <Text style={[styles.stepLocation, { color: c.text.primary }]}>Your Location</Text>
           </View>
-          <Text style={styles.stepTime}>8:40 AM</Text>
+          <Text style={[styles.stepTime, { color: c.text.primary }]}>8:40 AM</Text>
         </View>
 
         {/* Walk to station */}
@@ -466,19 +470,19 @@ export function RouteDetailView({
             <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={styles.iconContainer}>
+            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
               <Image 
                 source={require('../assets/icons/new/PersonSimpleWalk.png')} 
-                style={styles.stepIconImage}
+                style={[styles.stepIconImage, { tintColor: c.text.primary }]}
               />
             </View>
           </View>
           <View style={styles.stepContent}>
-            <Text style={styles.walkDuration}>5 min walk to station</Text>
+            <Text style={[styles.walkDuration, { color: c.text.primary }]}>5 min walk to station</Text>
           </View>
         </View>
 
-        <View style={styles.sectionDivider} />
+        <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
 
         {/* Transit ride */}
         <View style={styles.stepRow}>
@@ -486,27 +490,27 @@ export function RouteDetailView({
             <Svg width={12} height={140} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={140} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={styles.iconContainer}>
+            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
               <Image 
                 source={require('../assets/icons/new/newBus.png')} 
-                style={styles.stepIconImage}
+                style={[styles.stepIconImage, { tintColor: c.text.primary }]}
               />
             </View>
           </View>
           <View style={styles.shuttleStopContent}>
-            <Text style={styles.stopName}>Mountain View Station</Text>
-            <Text style={styles.shuttleName}>Caltrain Northbound</Text>
+            <Text style={[styles.stopName, { color: c.text.primary }]}>Mountain View Station</Text>
+            <Text style={[styles.shuttleName, { color: c.text.secondary }]}>Caltrain Northbound</Text>
             <View style={styles.shuttleAmenities}>
-              <View style={styles.amenityBadge}>
+              <View style={[styles.amenityBadge, { borderColor: c.border, backgroundColor: c.card }]}>
                 <Text style={styles.amenityIcon}>🕐</Text>
-                <Text style={styles.amenityText}>15 min ride</Text>
+                <Text style={[styles.amenityText, { color: c.text.primary }]}>15 min ride</Text>
               </View>
             </View>
           </View>
-          <Text style={styles.stepTime}>8:50 AM</Text>
+          <Text style={[styles.stepTime, { color: c.text.primary }]}>8:50 AM</Text>
         </View>
 
-        <View style={styles.sectionDivider} />
+        <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
 
         {/* Arrival */}
         <View style={styles.stepRow}>
@@ -518,9 +522,9 @@ export function RouteDetailView({
             </Svg>
           </View>
           <View style={styles.stepContent}>
-            <Text style={styles.stepLocation}>Palo Alto Station</Text>
+            <Text style={[styles.stepLocation, { color: c.text.primary }]}>Palo Alto Station</Text>
           </View>
-          <Text style={styles.stepTime}>9:05 AM</Text>
+          <Text style={[styles.stepTime, { color: c.text.primary }]}>9:05 AM</Text>
         </View>
 
         {/* Walk to destination */}
@@ -529,19 +533,19 @@ export function RouteDetailView({
             <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={styles.iconContainer}>
+            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
               <Image 
                 source={require('../assets/icons/new/PersonSimpleWalk.png')} 
-                style={styles.stepIconImage}
+                style={[styles.stepIconImage, { tintColor: c.text.primary }]}
               />
             </View>
           </View>
           <View style={styles.stepContent}>
-            <Text style={styles.walkDuration}>8 min walk</Text>
+            <Text style={[styles.walkDuration, { color: c.text.primary }]}>8 min walk</Text>
           </View>
         </View>
 
-        <View style={styles.sectionDivider} />
+        <View style={[styles.sectionDivider, { backgroundColor: c.border }]} />
 
         <View style={styles.stepRow}>
           <View style={styles.stepIconColumn}>
@@ -551,9 +555,9 @@ export function RouteDetailView({
             </Svg>
           </View>
           <View style={styles.stepContent}>
-            <Text style={styles.stepLocation}>{destinationName}</Text>
+            <Text style={[styles.stepLocation, { color: c.text.primary }]}>{destinationName}</Text>
           </View>
-          <Text style={styles.stepTime}>9:15 AM</Text>
+          <Text style={[styles.stepTime, { color: c.text.primary }]}>9:15 AM</Text>
         </View>
       </>
     );
@@ -562,13 +566,13 @@ export function RouteDetailView({
   return (
     <>
       <GHTouchableOpacity
-        style={styles.routeCard}
+        style={[styles.routeCard, { backgroundColor: c.card, borderColor: c.border }]}
         activeOpacity={0.9}
         onPress={onOpenInGoogleMaps}
       >
         <View style={styles.routeHeader}>
           <View>
-            <Text style={styles.routeTitle}>
+            <Text style={[styles.routeTitle, { color: c.text.primary }]}>
               {travelMode === 'shuttle'
                 ? routeInfo?.shortName || 'Tesla Shuttle A'
                 : 'Public Transit'}
@@ -583,30 +587,30 @@ export function RouteDetailView({
             </Text>
           </View>
           <View style={styles.etaBadge}>
-            <Text style={styles.etaText}>
+            <Text style={[styles.etaText, { color: c.text.primary }]}>
               {travelMode === 'shuttle' 
                 ? `${totalDuration} Min` 
                 : modeTimes.transit || '1h 10m'}
             </Text>
-            <Text style={styles.etaSub}>
+            <Text style={[styles.etaSub, { color: c.text.secondary }]}>
               {travelMode === 'shuttle' ? `${etaTime} ETA` : 'ETA'}
             </Text>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: c.border }]} />
 
         <View style={styles.routeDetails}>
-          <Text style={styles.sectionTitle}>ROUTE DETAILS</Text>
+          <Text style={[styles.sectionTitle, { color: c.text.secondary }]}>ROUTE DETAILS</Text>
 
           {/* Render appropriate steps based on travel mode */}
           {travelMode === 'shuttle' ? renderShuttleSteps() : renderTransitSteps()}
         </View>
 
         <View style={styles.reportRow}>
-          <Text style={styles.reportText}>See something off? </Text>
+          <Text style={[styles.reportText, { color: c.text.primary }]}>See something off? </Text>
           <GHTouchableOpacity onPress={onReportIssue}>
-            <Text style={styles.reportLink}>Report it</Text>
+            <Text style={[styles.reportLink, { color: c.text.primary }]}>Report it</Text>
           </GHTouchableOpacity>
         </View>
 
@@ -621,29 +625,29 @@ export function RouteDetailView({
       </GHTouchableOpacity>
 
       <View style={styles.footerLinks}>
-        <Text style={styles.footerTitle}>OTHER OPTIONS</Text>
+        <Text style={[styles.footerTitle, { color: c.text.secondary }]}>OTHER OPTIONS</Text>
         {travelMode === 'shuttle' && (
           <GHTouchableOpacity
-            style={styles.altRow}
+            style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => {}}
           >
-            <Text style={styles.altText}>Tesla Shuttle B</Text>
-            <Text style={styles.altTime}>55 min</Text>
+            <Text style={[styles.altText, { color: c.text.primary }]}>Tesla Shuttle B</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>55 min</Text>
           </GHTouchableOpacity>
         )}
         <GHTouchableOpacity
-          style={styles.altRow}
+          style={[styles.altRow, { borderBottomColor: c.border }]}
           onPress={() => onSetTravelMode('transit')}
         >
-          <Text style={styles.altText}>Public Transit</Text>
-          <Text style={styles.altTime}>{modeTimes.transit || '1h 10m'}</Text>
+          <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
+          <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
         </GHTouchableOpacity>
         <GHTouchableOpacity
-          style={styles.altRow}
+          style={[styles.altRow, { borderBottomColor: c.border }]}
           onPress={() => onSetTravelMode('car')}
         >
-          <Text style={styles.altText}>Drive (view parking)</Text>
-          <Text style={styles.altTime}>{modeTimes.car || '30m'}</Text>
+          <Text style={[styles.altText, { color: c.text.primary }]}>Drive (view parking)</Text>
+          <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.car || '30m'}</Text>
         </GHTouchableOpacity>
       </View>
     </>

@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   Modal,
+  Alert,
   ViewStyle,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -89,6 +90,15 @@ export function RouteHeader({
   };
 
   const handleConfirm = () => {
+    if (pendingTime && (activeMode === 'transit' || activeMode === 'bike')) {
+      Alert.alert(
+        'Not Available',
+        'Future departure times for public transit and bike are not supported yet. Use shuttle or car for future planning.',
+        [{ text: 'OK' }]
+      );
+      setPickerVisible(false);
+      return;
+    }
     onDepartureTimeChange?.(pendingTime);
     setPickerVisible(false);
   };
@@ -109,7 +119,12 @@ export function RouteHeader({
             <TouchableOpacity
               key={mode}
               style={[styles.tab, isActive && styles.activeTabBorder]}
-              onPress={() => onModeChange(mode)}
+              onPress={() => {
+                if ((mode === 'transit' || mode === 'bike') && departureTime) {
+                  onDepartureTimeChange?.(null);
+                }
+                onModeChange(mode);
+              }}
             >
               <Image
                 source={MODE_ICONS[mode]}

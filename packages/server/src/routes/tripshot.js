@@ -104,8 +104,6 @@ function resolveRoute(startLat, startLng, endLat, endLng) {
     return 'mountain-view';
   }
 
-
-  // THIS IS FOR TESTING UNCOMMENT WHEN IN PRODUCTION. THIS IS A MOCK SHUTTLE
   // SF area (covers Union Square, SoMa, Mission, Caltrain station)
   const isSF = (lat, lng) => lat > 37.75 && lat < 37.81 && lng > -122.43 && lng < -122.38;
 
@@ -128,9 +126,27 @@ const toIso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, '.0000000000
  * Build 2 shuttle departure options matching real TripShot response shape.
  * Options spaced ~25 min apart, both relative to now.
  */
-function buildOptions(routeKey, day, startLat, startLng, startName, endLat, endLng, endName, travelMode) {
+function parseTimeToMs(timeStr) {
+  // Parse "10:30 AM" or "9:45 PM" into a ms timestamp for today
+  if (!timeStr) return Date.now();
+  const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return Date.now();
+  let hour = parseInt(match[1]);
+  const min = parseInt(match[2]);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && hour !== 12) hour += 12;
+  if (period === 'AM' && hour === 12) hour = 0;
+  const d = new Date();
+  d.setHours(hour, min, 0, 0);
+  // If parsed time is in the past, it means they want today at that time
+  return d.getTime();
+}
+
+function buildOptions(routeKey, day, startLat, startLng, startName, endLat, endLng, endName, travelMode, requestedTime) {
   const route = ROUTES[routeKey];
-  const now   = Date.now();
+  // Use requested departure time as base, or now if not provided / in the past
+  const parsedMs = parseTimeToMs(requestedTime);
+  const now = parsedMs > Date.now() ? parsedMs : Date.now();
 
   const boardingStop  = STOPS[route.boardingStopId];
   const alightingStop = STOPS[route.alightingStopId];
@@ -255,7 +271,7 @@ router.post('/commutePlan', (req, res) => {
   }
 
   const route   = ROUTES[routeKey];
-  const options = buildOptions(routeKey, day, sLat, sLng, sName, eLat, eLng, eName, travelMode);
+  const options = buildOptions(routeKey, day, sLat, sLng, sName, eLat, eLng, eName, travelMode, time);
 
   const stops = [route.boardingStopId, route.alightingStopId].map((stopId) => {
     const stop = STOPS[stopId];

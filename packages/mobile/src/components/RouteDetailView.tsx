@@ -656,7 +656,12 @@ export function RouteDetailView({
                 ? `${etaTime} ETA`
                 : googleMapsRoute?.arrival_time
                   ? `${googleMapsRoute.arrival_time} ETA`
-                  : 'ETA'}
+                  : (() => {
+                      const bikeRoute = modeTimes.bike;
+                      if (!bikeRoute) return 'ETA';
+                      const eta = new Date(Date.now() + (googleMapsRoute?.duration_sec || 0) * 1000);
+                      return `${eta.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ETA`;
+                    })()}
             </Text>
           </View>
         </View>

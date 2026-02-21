@@ -364,19 +364,20 @@ function MapScreen() {
   }, [activePolyline]);
 
   const modeTimes: ModeTimes = useMemo(() => {
-    if (!fetchedRouteData?.routes)
-      return { car: '30m', shuttle: '50m', transit: '1h 5m', bike: '30m' };
+    // Show dashes while loading — never show stale/wrong placeholder values
+    if (routesLoading) return { car: '—', shuttle: '—', transit: '—', bike: '—' };
+    if (!fetchedRouteData?.routes) return { car: '—', shuttle: '—', transit: '—', bike: '—' };
 
     const times: ModeTimes = {};
 
     const carRoute = fetchedRouteData.routes?.find(r => r.mode === 'driving');
-    if (carRoute) times.car = formatDuration(carRoute.duration_sec);
+    times.car = carRoute ? formatDuration(carRoute.duration_sec) : '—';
 
     const bikeRoute = fetchedRouteData.routes?.find(r => r.mode === 'bicycling');
-    if (bikeRoute) times.bike = formatDuration(bikeRoute.duration_sec);
+    times.bike = bikeRoute ? formatDuration(bikeRoute.duration_sec) : '—';
 
     const transitRoute = fetchedRouteData.routes?.find(r => r.mode === 'transit');
-    if (transitRoute) times.transit = formatDuration(transitRoute.duration_sec);
+    times.transit = transitRoute ? formatDuration(transitRoute.duration_sec) : '—';
 
     if (tripshotData?.options?.[0]) {
       const shuttleDuration = Math.round(
@@ -386,12 +387,11 @@ function MapScreen() {
       );
       times.shuttle = formatDuration(shuttleDuration * 60);
     } else {
-      const walkRoute = fetchedRouteData.routes?.find(r => r.mode === 'walking');
-      if (walkRoute) times.shuttle = formatDuration(walkRoute.duration_sec);
+      times.shuttle = '—';
     }
 
     return times;
-  }, [fetchedRouteData, tripshotData]);
+  }, [fetchedRouteData, tripshotData, routesLoading]);
 
   const routeDuration = useMemo(() => {
     if (fetchedRouteData?.routes?.length) {

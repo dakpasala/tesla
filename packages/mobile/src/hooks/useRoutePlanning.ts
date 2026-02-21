@@ -76,7 +76,7 @@ export function useRoutePlanning({
   const [routesLoading, setRoutesLoading] = useState(false);
   const [routesError, setRoutesError] = useState<string | null>(null);
 
-  // Fetch routes whenever mode, destination, travelMode, or departureTime changes
+  // Fetch Google Maps routes (car/bike/transit/walking) — always on load
   useEffect(() => {
     if (mode !== 'quickstart' || !destinationAddress) return;
 
@@ -86,33 +86,11 @@ export function useRoutePlanning({
       setRoutesError(null);
       try {
         const origin = await getUserLocation();
-
-        if (travelMode === 'shuttle') {
-          const now = new Date();
-          const day = now.toISOString().split('T')[0];
-          const time = formatTripShotTime(departureTime);
-
-          const data = await getCommutePlan({
-            day,
-            time,
-            timezone: 'Pacific',
-            startLat: origin.lat,
-            startLng: origin.lng,
-            startName: 'Current Location',
-            endLat: 37.3945701,
-            endLng: -122.1501086,
-            endName: destinationAddress,
-            travelMode: 'Walking',
-          });
-
-          if (!cancelled) setTripshotData(data);
-        } else {
-          const departureTimestamp = toUnixTimestamp(departureTime);
-          const data = isHomeRoute
-            ? await getRoutesGoHome({ origin, destination: destinationAddress, departureTime: departureTimestamp })
-            : await getRoutesToOfficeQuickStart({ origin, destinationAddress, departureTime: departureTimestamp });
-          if (!cancelled) setFetchedRouteData(data);
-        }
+        const departureTimestamp = toUnixTimestamp(departureTime);
+        const data = isHomeRoute
+          ? await getRoutesGoHome({ origin, destination: destinationAddress, departureTime: departureTimestamp })
+          : await getRoutesToOfficeQuickStart({ origin, destinationAddress, departureTime: departureTimestamp });
+        if (!cancelled) setFetchedRouteData(data);
       } catch (err: any) {
         if (cancelled) return;
         if (err?.status === 403 || err?.response?.status === 403) {
@@ -133,7 +111,42 @@ export function useRoutePlanning({
 
     fetchRoutes();
     return () => { cancelled = true; };
-  }, [mode, destinationAddress, isHomeRoute, travelMode, onBackToSearch, departureTime]);
+  }, [mode, destinationAddress, isHomeRoute, onBackToSearch, departureTime]);
+
+  // Fetch TripShot shuttle plan — always on load so shuttle time is ready immediately
+  useEffect(() => {
+    if (mode !== 'quickstart' || !destinationAddress) return;
+
+    let cancelled = false;
+    const fetchTripshot = async () => {
+      try {
+        const origin = await getUserLocation();
+        const now = new Date();
+        const day = now.toISOString().split('T')[0];
+        const time = formatTripShotTime(departureTime);
+
+        const data = await getCommutePlan({
+          day,
+          time,
+          timezone: 'Pacific',
+          startLat: origin.lat,
+          startLng: origin.lng,
+          startName: 'Current Location',
+          endLat: 37.3945701,
+          endLng: -122.1501086,
+          endName: destinationAddress,
+          travelMode: 'Walking',
+        });
+
+        if (!cancelled) setTripshotData(data);
+      } catch (err) {
+        console.error('Failed to fetch TripShot data:', err);
+      }
+    };
+
+    fetchTripshot();
+    return () => { cancelled = true; };
+  }, [mode, destinationAddress, departureTime]);
 
   // Live status polling
   useEffect(() => {

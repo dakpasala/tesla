@@ -118,6 +118,7 @@ function MapScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [showingReport, setShowingReport] = useState(false);
   const [preCheckLoading, setPreCheckLoading] = useState(false);
+  const [departureTime, setDepartureTime] = useState<{ hour: number; minute: number; period: 'am' | 'pm' } | null>(null);
 
   const searchSnapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
   const quickstartSnapPoints = useMemo(() => ['20%', '50%', '80%'], []);
@@ -149,6 +150,7 @@ function MapScreen() {
     isHomeRoute,
     travelMode,
     onBackToSearch: handleBackToSearch,
+    departureTime,
   });
 
   const [selectedParkingId, setSelectedParkingId] = useState<string | null>(null);
@@ -876,6 +878,8 @@ function MapScreen() {
                 activeMode={travelMode as TransportMode}
                 onModeChange={mode => setTravelMode(mode as TravelMode)}
                 modeTimes={modeTimes}
+                departureTime={departureTime}
+                onDepartureTimeChange={setDepartureTime}
               />
               {renderAvailabilityContent()}
             </View>

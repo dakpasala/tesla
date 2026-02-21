@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import {
   getRoutesGoHome,
-  getRoutesToOffice,
   getRoutesToOfficeQuickStart,
   RouteResponse,
 } from '../services/maps';
@@ -16,12 +15,33 @@ import {
 } from '../services/tripshot';
 import { getUserLocation } from '../services/location';
 
+interface DepartureTime {
+  hour: number;
+  minute: number;
+  period: 'am' | 'pm';
+}
+
 interface UseRoutePlanningProps {
   mode: 'search' | 'quickstart';
   destinationAddress: string | null;
   isHomeRoute: boolean;
-  travelMode: string; // 'car' | 'shuttle' | 'bike' | 'transit'
+  travelMode: string;
   onBackToSearch?: () => void;
+  departureTime?: DepartureTime | null; // null = leave now
+}
+
+function formatTripShotTime(dt: DepartureTime | null | undefined): string {
+  if (!dt) {
+    // "now" — use current time
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+  const min = dt.minute.toString().padStart(2, '0');
+  return `${dt.hour}:${min} ${dt.period.toUpperCase()}`;
 }
 
 export function useRoutePlanning({
@@ -30,17 +50,15 @@ export function useRoutePlanning({
   isHomeRoute,
   travelMode,
   onBackToSearch,
+  departureTime,
 }: UseRoutePlanningProps) {
-  const [fetchedRouteData, setFetchedRouteData] =
-    useState<RouteResponse | null>(null);
-  const [tripshotData, setTripshotData] = useState<CommutePlanResponse | null>(
-    null
-  );
+  const [fetchedRouteData, setFetchedRouteData] = useState<RouteResponse | null>(null);
+  const [tripshotData, setTripshotData] = useState<CommutePlanResponse | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatusResponse | null>(null);
   const [routesLoading, setRoutesLoading] = useState(false);
   const [routesError, setRoutesError] = useState<string | null>(null);
 
-  // Fetch routes (commute plan)
+  // Fetch routes whenever mode, destination, travelMode, or departureTime changes
   useEffect(() => {
     if (mode !== 'quickstart' || !destinationAddress) return;
 
@@ -51,19 +69,11 @@ export function useRoutePlanning({
       try {
         const origin = await getUserLocation();
 
-        // Use TripShot API for shuttle mode
         if (travelMode === 'shuttle') {
-          // Get current date and time
           const now = new Date();
-          const day = now.toISOString().split('T')[0]; // YYYY-MM-DD
-          const time = now.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true,
-          }); // e.g., "10:56 AM"
+          const day = now.toISOString().split('T')[0];
+          const time = formatTripShotTime(departureTime);
 
-          // TODO: Parse actual destination coordinates from destinationAddress
-          // For now using hardcoded Tesla locations
           const data = await getCommutePlan({
             day,
             time,
@@ -71,7 +81,7 @@ export function useRoutePlanning({
             startLat: origin.lat,
             startLng: origin.lng,
             startName: 'Current Location',
-            endLat: 37.3945701, // Deer Creek - TODO: parse from destinationAddress
+            endLat: 37.3945701,
             endLng: -122.1501086,
             endName: destinationAddress,
             travelMode: 'Walking',
@@ -79,13 +89,9 @@ export function useRoutePlanning({
 
           if (!cancelled) setTripshotData(data);
         } else {
-          // Use existing routing API for other modes
           const data = isHomeRoute
             ? await getRoutesGoHome({ origin, destination: destinationAddress })
-            : await getRoutesToOfficeQuickStart({
-                origin,
-                destinationAddress,
-              });
+            : await getRoutesToOfficeQuickStart({ origin, destinationAddress });
           if (!cancelled) setFetchedRouteData(data);
         }
       } catch (err: any) {
@@ -107,24 +113,19 @@ export function useRoutePlanning({
     };
 
     fetchRoutes();
-    return () => {
-      cancelled = true;
-    };
-  }, [mode, destinationAddress, isHomeRoute, travelMode, onBackToSearch]);
+    return () => { cancelled = true; };
+  }, [mode, destinationAddress, isHomeRoute, travelMode, onBackToSearch, departureTime]);
 
-  // Fetch live status when we have TripShot data
+  // Live status polling
   useEffect(() => {
     if (!tripshotData || travelMode !== 'shuttle') return;
 
-    // Extract rideIds from the trip options
     const rideIds: string[] = [];
     tripshotData.options?.forEach(option => {
       option.steps?.forEach(step => {
         if ('OnRouteScheduledStep' in step) {
           const rideId = step.OnRouteScheduledStep.rideId;
-          if (rideId && !rideIds.includes(rideId)) {
-            rideIds.push(rideId);
-          }
+          if (rideId && !rideIds.includes(rideId)) rideIds.push(rideId);
         }
       });
     });
@@ -142,14 +143,8 @@ export function useRoutePlanning({
     };
 
     fetchLiveStatus();
-
-    // Poll for updates every 10 seconds
     const interval = setInterval(fetchLiveStatus, 10000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
+    return () => { cancelled = true; clearInterval(interval); };
   }, [tripshotData, travelMode]);
 
   return {

@@ -74,6 +74,12 @@ const CAMPUS_QUERIES = [
     endLat: 37.394358,    endLng: -122.076307,
     startName: '1501 Page Mill', endName: 'Mountain View Caltrain',
   },
+  {
+    // SF Express route
+    startLat: 37.776400, startLng: -122.394800,
+    endLat: 37.3945701,  endLng: -122.1501086,
+    startName: 'SF Caltrain Station', endName: '3500 Deer Creek',
+  },
 ];
 
 function colorFromHex(hex: string, fallback: number): ActiveShuttle['color'] {

@@ -236,7 +236,7 @@ export function RouteDetailView({
                   <Svg width={12} height={80} style={styles.svgLine}>
                     <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
-                  <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
+                  <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
                     <Image 
                       source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                       style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -402,7 +402,7 @@ export function RouteDetailView({
                     <Svg width={12} height={60} style={styles.svgLine}>
                       <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
                     </Svg>
-                    <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
+                    <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
                       <Image 
                         source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                         style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -525,7 +525,7 @@ export function RouteDetailView({
             <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
+            <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
               <Image 
                 source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                 style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -588,7 +588,7 @@ export function RouteDetailView({
             <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
+            <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
               <Image 
                 source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                 style={[styles.stepIconImage, { tintColor: c.text.primary }]}

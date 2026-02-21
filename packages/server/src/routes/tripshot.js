@@ -28,6 +28,15 @@ const STOPS = {
     name: 'Mountain View Caltrain',
     location: { lt: 37.394358, lg: -122.076307 },
   },
+  // SF shuttle stops
+  'sf001-4abc-1234-abcd-sf0000000001': {
+    name: 'SF Caltrain Station',
+    location: { lt: 37.776400, lg: -122.394800 },
+  },
+  'sf002-4abc-1234-abcd-sf0000000002': {
+    name: 'Union Square / Powell St',
+    location: { lt: 37.787990, lg: -122.407437 },
+  },
 };
 
 // ─── ROUTE REGISTRY ──────────────────────────────────────────────────────────
@@ -56,6 +65,18 @@ const ROUTES = {
       'a8d4e991-12c3-4f56-b789-0e1234567890',
     ],
   },
+  'sf-palo-alto': {
+    routeId:         'a1b2c3d4-e5f6-7890-abcd-sf1234567890',
+    name:            'San Francisco - Palo Alto Express',
+    shortName:       'SF - Palo Alto Express',
+    color:           '#FF9500',
+    boardingStopId:  'sf001-4abc-1234-abcd-sf0000000001',
+    alightingStopId: '647f900f-9e4b-4d46-96c5-77bd4ddb6c5f',
+    rideIds: [
+      'b1c2d3e4-f5a6-7890-bcde-sf2345678901',
+      'c2d3e4f5-a6b7-8901-cdef-sf3456789012',
+    ],
+  },
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -81,6 +102,20 @@ function resolveRoute(startLat, startLng, endLat, endLng) {
     (isMtnView(startLat, startLng) && isDeerCreek(endLat, endLng))
   ) {
     return 'mountain-view';
+  }
+
+
+  // THIS IS FOR TESTING UNCOMMENT WHEN IN PRODUCTION. THIS IS A MOCK SHUTTLE
+  // SF area (covers Union Square, SoMa, Mission, Caltrain station)
+  const isSF = (lat, lng) => lat > 37.75 && lat < 37.81 && lng > -122.43 && lng < -122.38;
+
+  if (
+    (isSF(startLat, startLng) && isDeerCreek(endLat, endLng)) ||
+    (isDeerCreek(startLat, startLng) && isSF(endLat, endLng)) ||
+    (isSF(startLat, startLng) && isPageMill(endLat, endLng)) ||
+    (isPageMill(startLat, startLng) && isSF(endLat, endLng))
+  ) {
+    return 'sf-palo-alto';
   }
 
   return null;

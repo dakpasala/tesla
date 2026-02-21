@@ -45,15 +45,15 @@ const ROUTES = {
     ],
   },
   'mountain-view': {
-    routeId:         '5eebffb5-1000-557f-0f0b-96b22d3f5fd5',
+    routeId:         '6163d847-fb80-442f-a0e1-551dcf8f3001',
     name:            'Palo Alto - Santa Clara/Sunnyvale/Mountain View',
     shortName:       'Palo Alto - Santa Clara/Sunnyvale/Mountain View',
-    color:           '#0761E0',
+    color:           '#0000FF',
     boardingStopId:  'f1a2b3c4-d5e6-7890-abcd-ef1234567890',
     alightingStopId: '647f900f-9e4b-4d46-96c5-77bd4ddb6c5f',
     rideIds: [
       '62f21225-34a9-4214-b3ec-7961ec8f3833',
-      '73a32336-45b0-5325-c4fd-8072fd9f4944',
+      'a8d4e991-12c3-4f56-b789-0e1234567890',
     ],
   },
 };
@@ -291,40 +291,57 @@ router.post('/liveStatus', (req, res) => {
     rideIds = [rideIds];
   }
 
+  // Look up which route each rideId belongs to
+  const rideIdToRoute = {};
+  for (const [routeKey, route] of Object.entries(ROUTES)) {
+    for (const rideId of route.rideIds) {
+      rideIdToRoute[rideId] = routeKey;
+    }
+  }
+
   return res.status(200).json({
-    rides: rideIds.map((rideId) => ({
-      rideId,
-      routeId:          '4ddaeeb4-0fff-446e-9e3a-85a11c2f4ec4',
-      routeName:        'Palo Alto - Deer Creek | 3000 Hanover | Page Mill',
-      shortName:        'Palo Alto - Deer Creek | 3000 Hanover | Page Mill',
-      vehicleName:      '24039 / 8751045',
-      vehicleShortName: '24039',
-      color:            '#BF40BF',
-      state:            { Accepted: [] },
-      lateBySec:        0,
-      riderCount:       8,
-      vehicleCapacity:  24,
-      lastEtaUpdate:     new Date().toISOString(),
-      lastMonitorUpdate: new Date().toISOString(),
-      stopStatus: [
-        {
-          Awaiting: {
-            stopId:                 '7f4580bb-f504-4ef4-80fc-eae036ea82cb',
-            expectedArrivalTime:    new Date(Date.now() + 5 * 60000).toISOString(),
-            scheduledDepartureTime: new Date(Date.now() + 5 * 60000).toISOString(),
-            riderStatus: 'OnTime',
+    rides: rideIds.map((rideId) => {
+      // Match by UUID prefix (strip the :date suffix)
+      const uuidPrefix = rideId.split(':')[0];
+      const routeKey = rideIdToRoute[uuidPrefix] || 'deer-creek-page-mill';
+      const route = ROUTES[routeKey];
+
+      const isMtnView = routeKey === 'mountain-view';
+
+      return {
+        rideId,
+        routeId:          route.routeId,
+        routeName:        route.name,
+        shortName:        route.shortName,
+        vehicleName:      isMtnView ? '24041 / 8751047' : '24039 / 8751045',
+        vehicleShortName: isMtnView ? '24041' : '24039',
+        color:            route.color,
+        state:            { Accepted: [] },
+        lateBySec:        0,
+        riderCount:       isMtnView ? 12 : 8,
+        vehicleCapacity:  24,
+        lastEtaUpdate:     new Date().toISOString(),
+        lastMonitorUpdate: new Date().toISOString(),
+        stopStatus: [
+          {
+            Awaiting: {
+              stopId:                 route.boardingStopId,
+              expectedArrivalTime:    new Date(Date.now() + 5 * 60000).toISOString(),
+              scheduledDepartureTime: new Date(Date.now() + 5 * 60000).toISOString(),
+              riderStatus: 'OnTime',
+            },
           },
-        },
-        {
-          Awaiting: {
-            stopId:                 '647f900f-9e4b-4d46-96c5-77bd4ddb6c5f',
-            expectedArrivalTime:    new Date(Date.now() + 20 * 60000).toISOString(),
-            scheduledDepartureTime: new Date(Date.now() + 20 * 60000).toISOString(),
-            riderStatus: 'OnTime',
+          {
+            Awaiting: {
+              stopId:                 route.alightingStopId,
+              expectedArrivalTime:    new Date(Date.now() + 20 * 60000).toISOString(),
+              scheduledDepartureTime: new Date(Date.now() + 20 * 60000).toISOString(),
+              riderStatus: 'OnTime',
+            },
           },
-        },
-      ],
-    })),
+        ],
+      };
+    }),
     timestamp: new Date().toISOString(),
   });
 });

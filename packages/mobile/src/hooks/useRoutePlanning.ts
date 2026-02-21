@@ -32,7 +32,6 @@ interface UseRoutePlanningProps {
 
 function formatTripShotTime(dt: DepartureTime | null | undefined): string {
   if (!dt) {
-    // "now" — use current time
     const now = new Date();
     return now.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -42,6 +41,25 @@ function formatTripShotTime(dt: DepartureTime | null | undefined): string {
   }
   const min = dt.minute.toString().padStart(2, '0');
   return `${dt.hour}:${min} ${dt.period.toUpperCase()}`;
+}
+
+/** Convert a DepartureTime to a unix timestamp (seconds). Returns null for "now". */
+function toUnixTimestamp(dt: DepartureTime | null | undefined): number | null {
+  if (!dt) return null;
+  const now = new Date();
+  let hour24 = dt.hour % 12;
+  if (dt.period === 'pm') hour24 += 12;
+  const d = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    hour24,
+    dt.minute,
+    0
+  );
+  // If the time is in the past today, treat as tomorrow
+  if (d.getTime() < Date.now()) d.setDate(d.getDate() + 1);
+  return Math.floor(d.getTime() / 1000);
 }
 
 export function useRoutePlanning({
@@ -89,9 +107,10 @@ export function useRoutePlanning({
 
           if (!cancelled) setTripshotData(data);
         } else {
+          const departureTimestamp = toUnixTimestamp(departureTime);
           const data = isHomeRoute
-            ? await getRoutesGoHome({ origin, destination: destinationAddress })
-            : await getRoutesToOfficeQuickStart({ origin, destinationAddress });
+            ? await getRoutesGoHome({ origin, destination: destinationAddress, departureTime: departureTimestamp })
+            : await getRoutesToOfficeQuickStart({ origin, destinationAddress, departureTime: departureTimestamp });
           if (!cancelled) setFetchedRouteData(data);
         }
       } catch (err: any) {

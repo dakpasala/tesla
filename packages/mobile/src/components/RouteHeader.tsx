@@ -81,6 +81,27 @@ export function RouteHeader({
   };
 
   const handleConfirm = () => {
+    if (pendingTime) {
+      // Enforce: selected time must not be in the past
+      const now = new Date();
+      let hour24 = pendingTime.hour % 12;
+      if (pendingTime.period === 'pm') hour24 += 12;
+      const selected = new Date(
+        now.getFullYear(), now.getMonth(), now.getDate(),
+        hour24, pendingTime.minute, 0
+      );
+      if (selected.getTime() <= Date.now()) {
+        // Snap to current time + 5 min instead of blocking the user
+        const snapped = new Date(Date.now() + 5 * 60 * 1000);
+        let h = snapped.getHours() % 12 || 12;
+        let m = Math.ceil(snapped.getMinutes() / 5) * 5;
+        if (m === 60) { m = 0; h = (h % 12) + 1; }
+        const p: 'am' | 'pm' = snapped.getHours() >= 12 ? 'pm' : 'am';
+        onDepartureTimeChange?.({ hour: h, minute: m, period: p });
+        setPickerVisible(false);
+        return;
+      }
+    }
     onDepartureTimeChange?.(pendingTime);
     setPickerVisible(false);
   };

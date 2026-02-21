@@ -128,6 +128,7 @@ function MapScreen() {
     setMode('search');
     setSearchExpanded(false);
     setIsNavigating(false);
+    setDepartureTime(null); // reset to "Now" when leaving quickstart
     pauseShuttleTracking();
     bottomSheetRef.current?.snapToIndex(0);
   }, []);

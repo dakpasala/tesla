@@ -12,6 +12,11 @@ export type RouteOption = {
   duration_sec: number;
   distance_m: number;
   polyline: string;
+  summary?: string;
+  fare_usd?: number;
+  steps?: any[];
+  departure_time?: string | null;
+  arrival_time?: string | null;
 };
 
 export type ToOfficeResponse = {

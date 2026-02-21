@@ -236,7 +236,7 @@ export function RouteDetailView({
                   <Svg width={12} height={80} style={styles.svgLine}>
                     <Line x1={6} y1={0} x2={6} y2={80} stroke="#BEDBFF" strokeWidth={2} />
                   </Svg>
-                  <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
+                  <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
                     <Image 
                       source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                       style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -390,7 +390,9 @@ export function RouteDetailView({
                 <View style={styles.stepContent}>
                   <Text style={[styles.stepLocation, { color: c.text.primary }]}>Your Location</Text>
                 </View>
-                <Text style={[styles.stepTime, { color: c.text.primary }]}>{departureTime}</Text>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>
+                  {isFirst ? (googleMapsRoute?.departure_time || departureTime) : departureTime}
+                </Text>
               </View>
             )}
 
@@ -402,7 +404,7 @@ export function RouteDetailView({
                     <Svg width={12} height={60} style={styles.svgLine}>
                       <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
                     </Svg>
-                    <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
+                    <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
                       <Image 
                         source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                         style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -525,7 +527,7 @@ export function RouteDetailView({
             <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
+            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
               <Image 
                 source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                 style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -588,7 +590,7 @@ export function RouteDetailView({
             <Svg width={12} height={60} style={styles.svgLine}>
               <Line x1={6} y1={0} x2={6} y2={60} stroke="#BEDBFF" strokeWidth={2} />
             </Svg>
-            <View style={[styles.iconContainer, { backgroundColor: c.background }]}>
+            <View style={[styles.iconContainer, { backgroundColor: c.card }]}>
               <Image 
                 source={require('../assets/icons/new/PersonSimpleWalk.png')} 
                 style={[styles.stepIconImage, { tintColor: c.text.primary }]}
@@ -632,14 +634,16 @@ export function RouteDetailView({
                 ? routeInfo?.shortName || 'Tesla Shuttle A'
                 : 'Public Transit'}
             </Text>
-            <Text
-              style={[
-                styles.routeSub,
-                firstRide && isRideDelayed(firstRide) && styles.routeSubDelayed,
-              ]}
-            >
-              {travelMode === 'shuttle' ? getStatusText() : 'On Time · 10 min away'}
-            </Text>
+            {travelMode === 'shuttle' && (
+              <Text
+                style={[
+                  styles.routeSub,
+                  firstRide && isRideDelayed(firstRide) && styles.routeSubDelayed,
+                ]}
+              >
+                {getStatusText()}
+              </Text>
+            )}
           </View>
           <View style={styles.etaBadge}>
             <Text style={[styles.etaText, { color: c.text.primary }]}>
@@ -648,7 +652,11 @@ export function RouteDetailView({
                 : modeTimes.transit || '1h 10m'}
             </Text>
             <Text style={[styles.etaSub, { color: c.text.secondary }]}>
-              {travelMode === 'shuttle' ? `${etaTime} ETA` : 'ETA'}
+              {travelMode === 'shuttle'
+                ? `${etaTime} ETA`
+                : googleMapsRoute?.arrival_time
+                  ? `${googleMapsRoute.arrival_time} ETA`
+                  : 'ETA'}
             </Text>
           </View>
         </View>

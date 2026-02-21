@@ -18,23 +18,23 @@ export default function App() {
     }, 2000);
   }, []);
 
-  if (!isReady) {
-    return <SplashScreen />;
-  }
-
   return (
-  <GestureHandlerRootView style={{ flex: 1 }}>
-    <ThemeProvider>
-      <AuthProvider>
-        <ShuttleNotificationProvider>  
-          <RideProvider>
-            <NavigationContainer>
-              <AppNavigator />
-            </NavigationContainer>
-          </RideProvider>
-        </ShuttleNotificationProvider> 
-      </AuthProvider>
-    </ThemeProvider>
-  </GestureHandlerRootView>
-);
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        {!isReady ? (
+          <SplashScreen />
+        ) : (
+          <AuthProvider>
+            <ShuttleNotificationProvider>
+              <RideProvider>
+                <NavigationContainer>
+                  <AppNavigator />
+                </NavigationContainer>
+              </RideProvider>
+            </ShuttleNotificationProvider>
+          </AuthProvider>
+        )}
+      </ThemeProvider>
+    </GestureHandlerRootView>
+  );
 }

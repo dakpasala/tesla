@@ -1028,4 +1028,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
-});
+}); 

@@ -20,6 +20,7 @@ export type OffRouteStep = {
     travelMode: string;
     departureTime: string;
     arrivalTime: string;
+    legRef?: string;          // added — present in real data
     departFrom: LocationPoint;
     arriveAt: LocationPoint;
   };
@@ -43,6 +44,11 @@ export type TripOption = {
   departureStopId: string;
   travelStart: string;
   travelEnd: string;
+  earliestToArrive?: string;   // added
+  latestToDepart?: string;     // added
+  optionKey?: number;          // added
+  toArrivalTimeSec?: number;   // added
+  toDepartureTimeSec?: number; // added
   steps: TripStep[];
 };
 
@@ -51,6 +57,12 @@ export type Route = {
   name: string;
   shortName: string;
   color: string;
+  announcedAs?: string;
+  description?: string;
+  headsign?: string;
+  publicName?: string;
+  routeType?: string;
+  tags?: string[];
 };
 
 export type Stop = {
@@ -81,19 +93,37 @@ export type Stop = {
 };
 
 export type CommutePlanResponse = {
+  directOnly?: boolean;          // added
   startPoint: LocationPoint;
   endPoint: LocationPoint;
-  options: TripOption[];
-  routes: Route[];
-  stops?: Stop[];
+  options: TripOption[];         // [] when no shuttle route exists
+  routes: Route[];               // [] when no shuttle route exists
+  stops?: Stop[];                // [] when no shuttle route exists
+  legMap?: Record<string, any>;  // added
+  parkingReservations?: any[];   // added
+  reservationStatuses?: any[];   // added
+  reservations?: any[];          // added
+  retrieved_at?: string;         // added
 };
 
+// StopStatus covers all real states from TripShot
 export type StopStatus = {
-  Awaiting: {
+  Awaiting?: {
     stopId: string;
     expectedArrivalTime: string;
     scheduledDepartureTime: string;
     riderStatus: string;
+  };
+  Arrived?: {
+    stopId: string;
+    actualArrivalTime: string;
+  };
+  Departed?: {
+    stopId: string;
+    actualDepartureTime: string;
+  };
+  Skipped?: {
+    stopId: string;
   };
 };
 
@@ -107,7 +137,7 @@ export type Ride = {
   rideId: string;
   routeId: string;
   routeName: string;
-  shortName: string | null;  // ADDED: shortName field (can be null)
+  shortName: string | null;
   vehicleName: string;
   vehicleShortName: string;
   color: string;
@@ -150,12 +180,8 @@ export async function getCommutePlan(params: {
     travelMode: params.travelMode || 'Walking',
   });
 
-  if (params.startName) {
-    queryParams.append('startName', params.startName);
-  }
-  if (params.endName) {
-    queryParams.append('endName', params.endName);
-  }
+  if (params.startName) queryParams.append('startName', params.startName);
+  if (params.endName)   queryParams.append('endName', params.endName);
 
   return post<CommutePlanResponse>(
     `tripshot/commutePlan?${queryParams.toString()}`,
@@ -167,14 +193,35 @@ export async function getLiveStatus(
   rideIds: string[]
 ): Promise<LiveStatusResponse> {
   const queryParams = rideIds.map(id => `rideIds=${encodeURIComponent(id)}`).join('&');
-  
-  return post<LiveStatusResponse>(
-    `tripshot/liveStatus?${queryParams}`,
-    {}
-  );
+  return post<LiveStatusResponse>(`tripshot/liveStatus?${queryParams}`, {});
 }
 
 // Helper Functions
+
+/**
+ * Check whether a commute plan response actually has shuttle options.
+ * Always check this before rendering route details — server returns
+ * options: [] when no shuttle services the requested origin/destination.
+ */
+export function hasShuttleOptions(data: CommutePlanResponse | null | undefined): boolean {
+  return !!(data && data.options.length > 0 && data.routes.length > 0);
+}
+
+/**
+ * Extract all unique rideIds from a commute plan.
+ * Pass the result to getLiveStatus().
+ */
+export function extractRideIds(data: CommutePlanResponse): string[] {
+  const ids: string[] = [];
+  for (const option of data.options) {
+    for (const step of option.steps) {
+      if ('OnRouteScheduledStep' in step) {
+        ids.push(step.OnRouteScheduledStep.rideId);
+      }
+    }
+  }
+  return [...new Set(ids)];
+}
 
 /**
  * Format a trip step for display (without context)
@@ -245,8 +292,7 @@ export function formatTripStepWithContext(
     };
   } else {
     const onRoute = step.OnRouteScheduledStep;
-    
-    // Look up stop names from stops array
+
     const departureStop = tripshotData?.stops?.find(
       s => s.stopId === onRoute.departureStopId
     );
@@ -265,7 +311,7 @@ export function formatTripStepWithContext(
 }
 
 /**
- * Calculate minutes until a given time
+ * Calculate minutes until a given ISO time
  */
 export function getMinutesUntil(isoTime: string): number {
   const now = new Date().getTime();
@@ -274,7 +320,7 @@ export function getMinutesUntil(isoTime: string): number {
 }
 
 /**
- * Format time from ISO to human-readable
+ * Format ISO time to human-readable (e.g. "9:30 AM")
  */
 export function formatTime(isoTime: string): string {
   return new Date(isoTime).toLocaleTimeString([], {
@@ -284,16 +330,17 @@ export function formatTime(isoTime: string): string {
 }
 
 /**
- * Check if a ride is delayed
+ * Check if a ride is delayed (more than 1 minute late)
  */
 export function isRideDelayed(ride: Ride): boolean {
-  return ride.lateBySec > 60; // More than 1 minute late
+  return ride.lateBySec > 60;
 }
 
 /**
- * Get occupancy percentage
+ * Get occupancy as a percentage
  */
 export function getOccupancyPercentage(ride: Ride): number {
+  if (!ride.vehicleCapacity) return 0;
   return Math.round((ride.riderCount / ride.vehicleCapacity) * 100);
 }
 

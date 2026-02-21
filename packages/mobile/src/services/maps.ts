@@ -12,6 +12,11 @@ export type RouteOption = {
   duration_sec: number;
   distance_m: number;
   polyline: string;
+  summary?: string;
+  fare_usd?: number;
+  steps?: any[];
+  departure_time?: string | null;
+  arrival_time?: string | null;
 };
 
 export type ToOfficeResponse = {
@@ -27,7 +32,6 @@ export type ToOfficeQuickStartResponse = {
   destination: string;
   routes: RouteOption[];
 };
-
 
 export type GoHomeResponse = {
   mode: 'FROM_OFFICE';
@@ -46,14 +50,17 @@ export type PresenceResponse =
 export async function getRoutesToOffice(params: {
   origin: LatLng;
   officeName: string;
+  departureTime?: number | null; // unix timestamp
 }): Promise<ToOfficeResponse> {
-  const { origin, officeName } = params;
+  const { origin, officeName, departureTime } = params;
 
-  const endpoint =
+  let endpoint =
     `maps/to-office` +
     `?lat=${origin.lat}` +
     `&lng=${origin.lng}` +
-    `&office_name=${encodeURIComponent(officeName)}`
+    `&office_name=${encodeURIComponent(officeName)}`;
+
+  if (departureTime) endpoint += `&departure_time=${departureTime}`;
 
   return get<ToOfficeResponse>(endpoint);
 }
@@ -61,30 +68,35 @@ export async function getRoutesToOffice(params: {
 export async function getRoutesToOfficeQuickStart(params: {
   origin: LatLng;
   destinationAddress: string;
+  departureTime?: number | null; // unix timestamp
 }): Promise<ToOfficeQuickStartResponse> {
-  const { origin, destinationAddress } = params;
+  const { origin, destinationAddress, departureTime } = params;
 
-  const endpoint =
+  let endpoint =
     `maps/to-office-quick-start` +
     `?lat=${origin.lat}` +
     `&lng=${origin.lng}` +
     `&address=${encodeURIComponent(destinationAddress)}`;
 
+  if (departureTime) endpoint += `&departure_time=${departureTime}`;
+
   return get<ToOfficeQuickStartResponse>(endpoint);
 }
-
 
 export async function getRoutesGoHome(params: {
   origin: LatLng;
   destination: string;
+  departureTime?: number | null; // unix timestamp
 }): Promise<GoHomeResponse> {
-  const { origin, destination } = params;
+  const { origin, destination, departureTime } = params;
 
-  const endpoint =
+  let endpoint =
     `maps/go-home` +
     `?lat=${origin.lat}` +
     `&lng=${origin.lng}` +
     `&destination=${encodeURIComponent(destination)}`;
+
+  if (departureTime) endpoint += `&departure_time=${departureTime}`;
 
   return get<GoHomeResponse>(endpoint);
 }
@@ -95,11 +107,3 @@ export async function checkPresence(origin: LatLng): Promise<PresenceResponse> {
 }
 
 export type RouteResponse = GoHomeResponse | ToOfficeResponse | ToOfficeQuickStartResponse;
-
-// The previous compatibility helper `getRoutesToTeslaHQ` was removed to avoid hardcoded
-// destinations. Now, build destinations in the UI or use office config instead.
-
-// Was a convenience helper used by the mobile app to get routes to the Tesla HQ
-// JUST a placeholder for a hard-coded call in HomeScreen.tsx
-// Prefer calling `getRoutesGoHome` or `getRoutesToOffice` directly with a
-// destination derived from `OFFICE_LOCATIONS` or user input.

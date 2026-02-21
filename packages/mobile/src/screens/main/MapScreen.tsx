@@ -106,51 +106,37 @@ function MapScreen() {
   const [searchExpanded, setSearchExpanded] = useState(false);
 
   // ============ QUICKSTART STATE ============
-  // Mode: 'search' (default) or 'quickstart' (active route)
   const [mode, setMode] = useState<'search' | 'quickstart'>('search');
 
-  // Quickstart Params
   const [destinationName, setDestinationName] = useState<string>('Destination');
-  const [destinationAddress, setDestinationAddress] = useState<string | null>(
-    null
-  );
+  const [destinationAddress, setDestinationAddress] = useState<string | null>(null);
   const [isHomeRoute, setIsHomeRoute] = useState(false);
 
-  // Phase State
   const [phase, setPhase] = useState<ScreenPhase>('availability');
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
 
-  // Navigation State
   const [isNavigating, setIsNavigating] = useState(false);
-
-  // Report State
   const [showingReport, setShowingReport] = useState(false);
-
-  // Pre-check loading state (for validating Home/Work before navigating)
   const [preCheckLoading, setPreCheckLoading] = useState(false);
+  const [departureTime, setDepartureTime] = useState<{ hour: number; minute: number; period: 'am' | 'pm' } | null>(null);
 
-  // Snap points
   const searchSnapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
   const quickstartSnapPoints = useMemo(() => ['20%', '50%', '80%'], []);
-  const snapPoints =
-    mode === 'search' ? searchSnapPoints : quickstartSnapPoints;
+  const snapPoints = mode === 'search' ? searchSnapPoints : quickstartSnapPoints;
 
-  // ============ HANDLERS (Defined early for hooks) ============
-  // Return to Search Mode
   const handleBackToSearch = useCallback(() => {
     setMode('search');
     setSearchExpanded(false);
     setIsNavigating(false);
-    pauseShuttleTracking(); // Pause tracking but keep notification visible
-    bottomSheetRef.current?.snapToIndex(0); // Reset to lowest snap point
+    setDepartureTime(null); // reset to "Now" when leaving quickstart
+    pauseShuttleTracking();
+    bottomSheetRef.current?.snapToIndex(0);
   }, []);
 
   // ============ CUSTOM HOOKS ============
 
-  // 1. Alerts & Notifications
   useMapAlerts(userId);
 
-  // 2. Route Planning (with TripShot integration)
   const {
     fetchedRouteData,
     setFetchedRouteData,
@@ -163,16 +149,13 @@ function MapScreen() {
     mode,
     destinationAddress,
     isHomeRoute,
-    travelMode, // Pass travel mode to hook
+    travelMode,
     onBackToSearch: handleBackToSearch,
+    departureTime,
   });
 
-  // 3. Parking Data
-  const [selectedParkingId, setSelectedParkingId] = useState<string | null>(
-    null
-  );
+  const [selectedParkingId, setSelectedParkingId] = useState<string | null>(null);
   const [pendingParkingId, setPendingParkingId] = useState<string | null>(null);
-
   const [selectedSublot, setSelectedSublot] = useState<string>('');
   const [selectedRouteId] = useState<string | null>(null);
 
@@ -186,12 +169,7 @@ function MapScreen() {
 
   // ============ SHUTTLE TRACKING & NOTIFICATIONS ============
   useEffect(() => {
-    if (
-      isNavigating &&
-      travelMode === 'shuttle' &&
-      tripshotData?.options?.[0]
-    ) {
-      // Get the ride ID from first option
+    if (isNavigating && travelMode === 'shuttle' && tripshotData?.options?.[0]) {
       const firstStep = tripshotData.options[0].steps.find(
         s => 'OnRouteScheduledStep' in s
       );
@@ -203,7 +181,6 @@ function MapScreen() {
             s => s.stopId === tripshotData.options[0].departureStopId
           )?.name || 'Stevens Creek & Albany Bus Stop';
 
-        // Function to get live status for notifications
         const getLiveStatusForNotification = async (id: string) => {
           try {
             const status = await getLiveStatus([id]);
@@ -245,14 +222,12 @@ function MapScreen() {
           }
         };
 
-        // Start background tracking
         startShuttleTracking(
           rideId,
           stopName,
-          nextStops || ['Stevens Creek', 'Sunnyvale', 'Mountain View'],
+          ['Stevens Creek', 'Sunnyvale', 'Mountain View'],
           getLiveStatusForNotification,
           data => {
-            // Show in-app notification banner
             showShuttleNotification({
               etaMinutes: data.etaMinutes,
               stopName: data.stopName,
@@ -263,27 +238,20 @@ function MapScreen() {
           }
         );
 
-        // Setup notification handlers
         const unsubscribe = setupShuttleNotificationHandlers(
-          () => {
-            // User tapped notification - ensure we're showing the tracking screen
-            setIsNavigating(true);
-          },
-          () => {
-            // User stopped tracking
-            handleBackFromNavigation();
-          }
+          () => { setIsNavigating(true); },
+          () => { handleBackFromNavigation(); }
         );
 
         return () => {
           unsubscribe();
-          pauseShuttleTracking(); // Pause tracking but keep notification visible
+          pauseShuttleTracking();
         };
       }
     }
   }, [isNavigating, travelMode, tripshotData]);
 
-  // ============ ADDITIONAL EFFECT: Parking Selection ============
+  // ============ ADDITIONAL EFFECTS ============
   useEffect(() => {
     if (mode === 'quickstart' && parkingLots.length > 0 && !selectedParkingId) {
       const targetLot = parkingLots.find(
@@ -293,14 +261,12 @@ function MapScreen() {
     }
   }, [mode, parkingLots, selectedParkingId, destinationName]);
 
-  // ============ ADDITIONAL EFFECT: Default Sublot Selection ============
   useEffect(() => {
     if (sublots.length > 0) {
       setSelectedSublot(sublots[0].lot_name);
     }
   }, [sublots]);
 
-  // ============ MAP CENTERING ============
   useEffect(() => {
     if (mode === 'search') {
       const centerMap = async () => {
@@ -323,7 +289,6 @@ function MapScreen() {
     }
   }, [mode]);
 
-  // ============ HANDLE NAVIGATION PARAMS ============
   useEffect(() => {
     if (route.params?.destinationName && route.params?.destinationAddress) {
       setDestinationName(route.params.destinationName);
@@ -339,7 +304,7 @@ function MapScreen() {
     }
   }, [route.params, setFetchedRouteData, setTripshotData]);
 
-  // ============ COMPUTED VALUES (Polyline, Region, etc.) ============
+  // ============ COMPUTED VALUES ============
   const originalPolyline = useMemo(() => {
     if (!fetchedRouteData?.routes?.length) return [];
     const sorted = [...fetchedRouteData.routes].sort(
@@ -354,13 +319,10 @@ function MapScreen() {
     return null;
   }, [originalPolyline]);
 
-  const activePolyline = useMemo(() => {
-    return originalPolyline;
-  }, [originalPolyline]);
+  const activePolyline = useMemo(() => originalPolyline, [originalPolyline]);
 
   const routeMapRegion = useMemo(() => {
     if (!activePolyline.length) {
-      // Default region (Silicon Valley)
       return {
         latitude: 37.3935,
         longitude: -122.15,
@@ -370,12 +332,9 @@ function MapScreen() {
     }
     const lats = activePolyline.map(p => p.latitude);
     const lngs = activePolyline.map(p => p.longitude);
-    const minLat = Math.min(...lats),
-      maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs),
-      maxLng = Math.max(...lngs);
-    const padLat = (maxLat - minLat) * 0.15,
-      padLng = (maxLng - minLng) * 0.15;
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const padLat = (maxLat - minLat) * 0.15, padLng = (maxLng - minLng) * 0.15;
     return {
       latitude: (minLat + maxLat) / 2,
       longitude: (minLng + maxLng) / 2,
@@ -384,7 +343,6 @@ function MapScreen() {
     };
   }, [activePolyline]);
 
-  // Auto-zoom to route when available
   useEffect(() => {
     if (mode === 'quickstart' && activePolyline.length > 0) {
       setTimeout(() => {
@@ -406,26 +364,21 @@ function MapScreen() {
   }, [activePolyline]);
 
   const modeTimes: ModeTimes = useMemo(() => {
-    if (!fetchedRouteData?.routes)
-      return { car: '30m', shuttle: '50m', transit: '1h 5m', bike: '30m' };
+    // Show dashes while loading — never show stale/wrong placeholder values
+    if (routesLoading) return { car: '—', shuttle: '—', transit: '—', bike: '—' };
+    if (!fetchedRouteData?.routes) return { car: '—', shuttle: '—', transit: '—', bike: '—' };
 
     const times: ModeTimes = {};
 
-    // Map each transport mode to the corresponding route mode from API
     const carRoute = fetchedRouteData.routes?.find(r => r.mode === 'driving');
-    if (carRoute) times.car = formatDuration(carRoute.duration_sec);
+    times.car = carRoute ? formatDuration(carRoute.duration_sec) : '—';
 
-    const bikeRoute = fetchedRouteData.routes?.find(
-      r => r.mode === 'bicycling'
-    );
-    if (bikeRoute) times.bike = formatDuration(bikeRoute.duration_sec);
+    const bikeRoute = fetchedRouteData.routes?.find(r => r.mode === 'bicycling');
+    times.bike = bikeRoute ? formatDuration(bikeRoute.duration_sec) : '—';
 
-    const transitRoute = fetchedRouteData.routes?.find(
-      r => r.mode === 'transit'
-    );
-    if (transitRoute) times.transit = formatDuration(transitRoute.duration_sec);
+    const transitRoute = fetchedRouteData.routes?.find(r => r.mode === 'transit');
+    times.transit = transitRoute ? formatDuration(transitRoute.duration_sec) : '—';
 
-    // For shuttle, use TripShot data if available, otherwise use walking route as fallback
     if (tripshotData?.options?.[0]) {
       const shuttleDuration = Math.round(
         (new Date(tripshotData.options[0].travelEnd).getTime() -
@@ -434,14 +387,11 @@ function MapScreen() {
       );
       times.shuttle = formatDuration(shuttleDuration * 60);
     } else {
-      const walkRoute = fetchedRouteData.routes?.find(
-        r => r.mode === 'walking'
-      );
-      if (walkRoute) times.shuttle = formatDuration(walkRoute.duration_sec);
+      times.shuttle = '—';
     }
 
     return times;
-  }, [fetchedRouteData, tripshotData]);
+  }, [fetchedRouteData, tripshotData, routesLoading]);
 
   const routeDuration = useMemo(() => {
     if (fetchedRouteData?.routes?.length) {
@@ -455,7 +405,6 @@ function MapScreen() {
 
   // ============ HANDLERS ============
 
-  // Transition to Quickstart Mode
   const handleSelectDestination = useCallback(
     (dest: {
       id: string;
@@ -468,14 +417,13 @@ function MapScreen() {
       setDestinationAddress(dest.subtitle);
       setIsHomeRoute(false);
       setMode('quickstart');
-      // Reset Quickstart state
       setPhase('availability');
       setViewMode('detail');
       setFetchedRouteData(null);
       setTripshotData(null);
       setSelectedParkingId(null);
       setIsNavigating(false);
-      bottomSheetRef.current?.snapToIndex(1); // Snap to 50%
+      bottomSheetRef.current?.snapToIndex(1);
     },
     [setDestination, setFetchedRouteData, setTripshotData]
   );
@@ -486,17 +434,10 @@ function MapScreen() {
         navigation.navigate('Favorites');
         return;
       }
-
-      // Show loading state
       setPreCheckLoading(true);
-
       try {
         const origin = await getUserLocation();
-
-        // Try to get routes first to validate
         await getRoutesGoHome({ origin, destination: homeAddress });
-
-        // If successful, navigate to quickstart
         setDestinationName('Home');
         setDestinationAddress(homeAddress);
         setIsHomeRoute(true);
@@ -509,7 +450,6 @@ function MapScreen() {
         setIsNavigating(false);
         bottomSheetRef.current?.snapToIndex(1);
       } catch (err: any) {
-        // Handle 403 error
         if (err?.status === 403 || err?.response?.status === 403) {
           Alert.alert(
             'Routing Unavailable',
@@ -532,20 +472,13 @@ function MapScreen() {
         navigation.navigate('Favorites');
         return;
       }
-
-      // Show loading state
       setPreCheckLoading(true);
-
       try {
         const origin = await getUserLocation();
-
-        // Try to get routes first to validate
         await getRoutesToOfficeQuickStart({
           origin,
           destinationAddress: workAddress,
         });
-
-        // If successful, navigate to quickstart
         setDestinationName('Work');
         setDestinationAddress(workAddress);
         setIsHomeRoute(false);
@@ -558,7 +491,6 @@ function MapScreen() {
         setIsNavigating(false);
         bottomSheetRef.current?.snapToIndex(1);
       } catch (err: any) {
-        // Handle 403 error
         if (err?.status === 403 || err?.response?.status === 403) {
           Alert.alert(
             'Routing Unavailable',
@@ -581,10 +513,8 @@ function MapScreen() {
 
   const openInGoogleMaps = useCallback(() => {
     if (travelMode === 'shuttle') {
-      // For shuttle mode, start in-app navigation
       setIsNavigating(true);
     } else {
-      // For car mode, open Google Maps
       const lot = parkingLots.find(p => p.id === selectedParkingId);
       if (!lot) return;
       const { latitude, longitude } = lot.coordinate;
@@ -607,7 +537,7 @@ function MapScreen() {
 
   const handleBackFromNavigation = useCallback(() => {
     setIsNavigating(false);
-    pauseShuttleTracking(); // Pause tracking but keep notification visible
+    pauseShuttleTracking();
   }, []);
 
   const handleBackFromReport = useCallback(() => {
@@ -617,16 +547,10 @@ function MapScreen() {
   const handleSubmitReport = useCallback(
     async (issue: string, details: string) => {
       try {
-        // Get the shuttle short name from tripshot routes data
         const shuttleName =
           tripshotData?.routes?.[0]?.shortName || 'Tesla Shuttle';
-
-        // Format the comment: "Issue: Additional details"
         const comment = details.trim() ? `${issue}: ${details}` : issue;
-
-        // Call the API
         await submitShuttleReport(shuttleName, comment);
-
         Alert.alert(
           'Report Submitted',
           'Thank you! Your feedback helps improve our service.'
@@ -641,14 +565,10 @@ function MapScreen() {
     [tripshotData]
   );
 
-  // Callback to refresh shuttle status (for polling)
   const handleRefreshStatus = useCallback(() => {
-    // The useRoutePlanning hook already handles polling via its effect
-    // This is just a placeholder if we need manual refresh
     console.log('Manual refresh triggered');
   }, []);
 
-  // SearchBar Handlers
   const handleHomeLongPress = useCallback(() => {
     navigation.navigate('Favorites');
   }, [navigation]);
@@ -687,26 +607,8 @@ function MapScreen() {
 
   const selectedLot = parkingLots.find(p => p.id === selectedParkingId);
 
-  // ============ GET NEXT STOPS FOR ARRIVAL SHEET ============
-  const nextStops = useMemo(() => {
-    if (!tripshotData?.stops || !liveStatus?.rides?.[0])
-      return ['Stevens Creek', 'Sunnyvale', 'Mountain View'];
-
-    const stops = liveStatus.rides[0].stopStatus.slice(0, 3).map(status => {
-      const stop = tripshotData.stops?.find(
-        s => s.stopId === status.Awaiting.stopId
-      );
-      return stop?.name || 'Stop';
-    });
-
-    return stops.length > 0
-      ? stops
-      : ['Stevens Creek', 'Sunnyvale', 'Mountain View'];
-  }, [tripshotData, liveStatus]);
-
   // ============ RENDER: AVAILABILITY CONTENT ============
   const renderAvailabilityContent = () => {
-    // If navigating with shuttle, don't show RouteDetailView
     if (isNavigating && travelMode === 'shuttle') {
       return null;
     }
@@ -717,8 +619,6 @@ function MapScreen() {
         title: lot.name,
         subtitle: `${lot.fullness}% full`,
         rightText: '',
-
-        // highlight the one you tapped
         selected: pendingParkingId === lot.id,
       }));
 
@@ -730,16 +630,13 @@ function MapScreen() {
           <OptionsCard
             items={items}
             onSelect={item => {
-              // ONLY highlight (do NOT leave this screen yet)
               setPendingParkingId(item.id);
             }}
           />
-
           {pendingParkingId && (
             <Pressable
               style={styles.routeButton}
               onPress={() => {
-                // confirm selection, THEN leave options
                 setSelectedParkingId(pendingParkingId);
                 setViewMode('detail');
               }}
@@ -797,9 +694,7 @@ function MapScreen() {
         onReportIssue={handleReport}
         tripshotData={tripshotData}
         liveStatus={liveStatus}
-        googleMapsRoute={fetchedRouteData?.routes?.find(
-          r => r.mode === 'transit'
-        )}
+        googleMapsRoute={fetchedRouteData?.routes?.find(r => r.mode === 'transit')}
       />
     );
   };
@@ -809,7 +704,6 @@ function MapScreen() {
       <StatusBar barStyle="dark-content" />
       <ShuttleNotificationBanner />
 
-      {/* Map Background */}
       <View style={styles.mapContainer}>
         <MapView
           ref={mapRef}
@@ -822,7 +716,6 @@ function MapScreen() {
             longitudeDelta: 0.05,
           }}
         >
-          {/* Quickstart Overlays */}
           {mode === 'quickstart' && activePolyline.length > 0 && (
             <Polyline
               coordinates={activePolyline}
@@ -837,7 +730,6 @@ function MapScreen() {
             <Marker coordinate={destCoord} title={destinationName} />
           )}
 
-          {/* Parking lot markers in availability phase */}
           {mode === 'quickstart' &&
             phase === 'availability' &&
             viewMode === 'list' &&
@@ -860,16 +752,13 @@ function MapScreen() {
                     borderColor: '#fff',
                   }}
                 >
-                  <Text
-                    style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}
-                  >
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600' }}>
                     {lot.fullness}%
                   </Text>
                 </View>
               </Marker>
             ))}
 
-          {/* Parking lot marker in detail view */}
           {mode === 'quickstart' &&
             phase === 'availability' &&
             viewMode === 'detail' &&
@@ -896,7 +785,6 @@ function MapScreen() {
               </Marker>
             )}
 
-          {/* Current Location Marker (always show if we have it) */}
           {mode === 'quickstart' && originCoord && (
             <Marker coordinate={originCoord} title="You are here">
               <View style={styles.originDot}>
@@ -906,7 +794,6 @@ function MapScreen() {
           )}
         </MapView>
 
-        {/* Settings button overlay on map (Only in Search mode) */}
         {mode === 'search' && (
           <TouchableOpacity
             style={[styles.settingsButton, { backgroundColor: c.white }]}
@@ -916,23 +803,22 @@ function MapScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Quickstart specific Overlay */}
         {mode === 'quickstart' && !isNavigating && (
           <LocationBox destination={destinationName} />
         )}
 
-        {/* Loading overlay for pre-check */}
         {preCheckLoading && (
           <View style={styles.preCheckLoadingOverlay}>
             <View style={[styles.preCheckLoadingBox, { backgroundColor: c.card }]}>
               <ActivityIndicator size="large" color="#0761E0" />
-              <Text style={[styles.preCheckLoadingText, { color: c.text.primary }]}>Checking routes...</Text>
+              <Text style={[styles.preCheckLoadingText, { color: c.text.primary }]}>
+                Checking routes...
+              </Text>
             </View>
           </View>
         )}
       </View>
 
-      {/* Bottom Sheet - Unified */}
       <BottomSheet
         ref={bottomSheetRef}
         index={0}
@@ -961,7 +847,6 @@ function MapScreen() {
               />
             </View>
           ) : showingReport ? (
-            // Show ReportSheet when reporting an issue
             <View style={styles.shuttleNavigationContainer}>
               <ReportSheet
                 onBack={handleBackFromReport}
@@ -969,41 +854,19 @@ function MapScreen() {
               />
             </View>
           ) : isNavigating && travelMode === 'shuttle' ? (
-            // Show ShuttleArrivalSheet inside bottom sheet when navigating
+            // ── ShuttleArrivalSheet: now uses commutePlan + liveStatus directly ──
             <View style={styles.quickstartContainer}>
               <ShuttleArrivalSheet
-                stopName={
-                  tripshotData?.stops?.find(
-                    s =>
-                      s.stopId === tripshotData?.options?.[0]?.departureStopId
-                  )?.name || 'Stevens Creek & Albany Bus Stop'
-                }
-                etaMinutes={
-                  liveStatus?.rides?.[0]?.stopStatus?.[0]?.Awaiting
-                    ?.expectedArrivalTime
-                    ? getMinutesUntil(
-                        liveStatus.rides[0].stopStatus[0].Awaiting
-                          .expectedArrivalTime
-                      )
-                    : 6
-                }
-                status={
-                  liveStatus?.rides?.[0] && isRideDelayed(liveStatus.rides[0])
-                    ? 'Delayed'
-                    : 'On Time'
-                }
-                nextStops={nextStops}
-                onBack={handleBackFromNavigation}
-                // onReportIssue={handleReport}
-                onReportIssue={handleSubmitReport}
+                commutePlan={tripshotData}
                 liveStatus={liveStatus}
+                onBack={handleBackFromNavigation}
+                onReportIssue={handleSubmitReport}
                 onRefreshStatus={handleRefreshStatus}
+                loading={routesLoading}
               />
             </View>
           ) : (
-            // Quickstart Content (RouteDetailView)
             <View style={styles.quickstartContainer}>
-              {/* Temporary back button */}
               <TouchableOpacity
                 style={styles.tempBackButton}
                 onPress={handleBackToSearch}
@@ -1016,6 +879,8 @@ function MapScreen() {
                 activeMode={travelMode as TransportMode}
                 onModeChange={mode => setTravelMode(mode as TravelMode)}
                 modeTimes={modeTimes}
+                departureTime={departureTime}
+                onDepartureTimeChange={setDepartureTime}
               />
               {renderAvailabilityContent()}
             </View>
@@ -1163,4 +1028,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
-});
+}); 

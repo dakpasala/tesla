@@ -12,5 +12,8 @@ export function normalizeGoogleRoute(mode, googleJson) {
     summary: route.summary || "",
     polyline: route.overview_polyline?.points || "",
     fare_usd: googleJson.fare?.value ?? undefined,
+    steps: leg.steps || [],
+    departure_time: leg.departure_time?.text ?? null,
+    arrival_time: leg.arrival_time?.text ?? null,
   };
 }

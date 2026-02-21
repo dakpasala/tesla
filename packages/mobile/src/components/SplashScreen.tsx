@@ -13,7 +13,7 @@ export default function SplashScreen() {
       {/* Tesla Logo */}
       <Image
         source={require('../assets/teslaicon.png')}
-        style={[styles.logo, { tintColor: c.text.primary }]}
+        style={styles.logo}
         resizeMode="contain"
       />
       <Text style={[styles.title, { color: c.text.primary }]}>Tesla</Text>

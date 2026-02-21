@@ -1,21 +1,21 @@
 // packages/mobile/src/components/RouteHeader.tsx
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Image,
+  Modal,
+  Alert,
   ViewStyle,
 } from 'react-native';
-import { BackButton } from './BackButton';
 import { useTheme } from '../context/ThemeContext';
+import AtmWheelPicker from './AtmWheelPicker';
 
-// Transport mode type
 export type TransportMode = 'car' | 'shuttle' | 'transit' | 'bike';
 
-// Mode time configuration
 export interface ModeTimes {
   car?: string;
   shuttle?: string;
@@ -29,9 +29,10 @@ interface RouteHeaderProps {
   onModeChange: (mode: TransportMode) => void;
   modeTimes?: ModeTimes;
   style?: ViewStyle;
+  departureTime?: { hour: number; minute: number; period: 'am' | 'pm' } | null;
+  onDepartureTimeChange?: (time: { hour: number; minute: number; period: 'am' | 'pm' } | null) => void;
 }
 
-// Default times if not provided
 const DEFAULT_TIMES: ModeTimes = {
   car: '30m',
   shuttle: '50m',
@@ -39,7 +40,6 @@ const DEFAULT_TIMES: ModeTimes = {
   bike: '30m',
 };
 
-// Icon sources for each mode
 const MODE_ICONS: Record<TransportMode, any> = {
   car: require('../assets/icons/new/newCar.png'),
   shuttle: require('../assets/icons/new/newShuttle.png'),
@@ -47,17 +47,66 @@ const MODE_ICONS: Record<TransportMode, any> = {
   bike: require('../assets/icons/new/newBike.png'),
 };
 
+function formatDepartureLabel(time: { hour: number; minute: number; period: 'am' | 'pm' } | null | undefined): string {
+  if (!time) return 'Now ▾';
+  const min = time.minute.toString().padStart(2, '0');
+  return `${time.hour}:${min} ${time.period.toUpperCase()} ▾`;
+}
+
 export function RouteHeader({
   onBackPress,
   activeMode,
   onModeChange,
   modeTimes = DEFAULT_TIMES,
   style,
+  departureTime,
+  onDepartureTimeChange,
 }: RouteHeaderProps) {
   const { activeTheme } = useTheme();
   const c = activeTheme.colors;
 
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pendingTime, setPendingTime] = useState<{ hour: number; minute: number; period: 'am' | 'pm' } | null>(null);
+
   const modes: TransportMode[] = ['car', 'shuttle', 'transit', 'bike'];
+  const isNow = !departureTime;
+
+  const getNowPlus5 = () => {
+    const snapped = new Date(Date.now() + 5 * 60 * 1000);
+    let h = snapped.getHours() % 12 || 12;
+    let m = Math.ceil(snapped.getMinutes() / 5) * 5;
+    if (m === 60) { m = 0; h = (h % 12) + 1; }
+    const p: 'am' | 'pm' = snapped.getHours() >= 12 ? 'pm' : 'am';
+    return { hour: h, minute: m, period: p };
+  };
+
+  // Earliest selectable time — now rounded up to next 5 min
+  const minTime = getNowPlus5();
+
+  const handleOpenPicker = () => {
+    // Always seed with current departureTime, or earliest valid time
+    setPendingTime(departureTime ?? minTime);
+    setPickerVisible(true);
+  };
+
+  const handleConfirm = () => {
+    if (pendingTime && (activeMode === 'transit' || activeMode === 'bike')) {
+      Alert.alert(
+        'Not Available',
+        'Future departure times for public transit and bike are not supported yet. Use shuttle or car for future planning.',
+        [{ text: 'OK' }]
+      );
+      setPickerVisible(false);
+      return;
+    }
+    onDepartureTimeChange?.(pendingTime);
+    setPickerVisible(false);
+  };
+
+  const handleNow = () => {
+    onDepartureTimeChange?.(null);
+    setPickerVisible(false);
+  };
 
   return (
     <View style={[styles.container, style]}>
@@ -66,12 +115,16 @@ export function RouteHeader({
         {modes.map(mode => {
           const isActive = activeMode === mode;
           const time = modeTimes[mode] || DEFAULT_TIMES[mode];
-
           return (
             <TouchableOpacity
               key={mode}
               style={[styles.tab, isActive && styles.activeTabBorder]}
-              onPress={() => onModeChange(mode)}
+              onPress={() => {
+                if ((mode === 'transit' || mode === 'bike') && departureTime) {
+                  onDepartureTimeChange?.(null);
+                }
+                onModeChange(mode);
+              }}
             >
               <Image
                 source={MODE_ICONS[mode]}
@@ -93,16 +146,65 @@ export function RouteHeader({
         })}
       </View>
 
-      {/* Time Selector Row with Back Button */}
-      {/* <View style={styles.timeSelector}>
-        <BackButton onPress={onBackPress} style={styles.backButton} /> */}
-      {/* <TouchableOpacity style={styles.timeButton}>
-          <Text style={styles.timeButtonText}>Now ▼</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.timeButton, styles.timeButtonSpacing]}>
-          <Text style={styles.timeButtonText}>Leave at...</Text>
-        </TouchableOpacity> */}
-      {/* </View> */}
+      {/* Departure Time Row */}
+      <TouchableOpacity
+        style={[styles.departureRow, { borderColor: c.border, backgroundColor: c.backgroundAlt }]}
+        onPress={handleOpenPicker}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.departureLabel, { color: c.text.secondary }]}>Departing</Text>
+        <Text style={[styles.departureValue, { color: isNow ? c.text.primary : '#007AFF' }]}>
+          {formatDepartureLabel(departureTime)}
+        </Text>
+      </TouchableOpacity>
+
+      {/* Picker Modal */}
+      <Modal
+        visible={pickerVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalSheet, { backgroundColor: c.background }]}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                <Text style={[styles.modalCancel, { color: c.text.secondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={[styles.modalTitle, { color: c.text.primary }]}>Departure Time</Text>
+              <TouchableOpacity onPress={handleConfirm}>
+                <Text style={styles.modalDone}>Done</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Now pill */}
+            <TouchableOpacity
+              style={[
+                styles.nowPill,
+                { borderColor: c.border, backgroundColor: isNow ? '#007AFF' : c.backgroundAlt },
+              ]}
+              onPress={handleNow}
+            >
+              <Text style={[styles.nowPillText, { color: isNow ? '#fff' : c.text.primary }]}>
+                Leave Now
+              </Text>
+            </TouchableOpacity>
+
+            <AtmWheelPicker
+              initialHour={pendingTime?.hour}
+              initialMinute={pendingTime?.minute}
+              initialPeriod={pendingTime?.period}
+              onTimeChange={t => setPendingTime(t)}
+              showSelectionOverlay
+              minHour={minTime.hour}
+              minMinute={minTime.minute}
+              minPeriod={minTime.period}
+            />
+
+            <View style={{ height: 32 }} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -112,9 +214,8 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    marginBottom: 25,
+    marginBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1C1C1C',
     paddingBottom: 0.1,
   },
   tab: {
@@ -125,7 +226,6 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
-    // Push content slightly to ensure margin on small screens
     paddingHorizontal: 4,
     marginRight: 5,
   },
@@ -140,13 +240,70 @@ const styles = StyleSheet.create({
   tabTime: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#1C1C1C',
     lineHeight: 14,
   },
   activeTabTime: {
     fontSize: 12,
     fontWeight: '500',
     color: '#0761E0',
+  },
+  departureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  departureLabel: {
+    fontSize: 13,
+  },
+  departureValue: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalSheet: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
+    paddingHorizontal: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  modalTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalCancel: {
+    fontSize: 15,
+  },
+  modalDone: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  nowPill: {
+    alignSelf: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  nowPillText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
 

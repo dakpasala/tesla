@@ -14,6 +14,7 @@ import {
   getMinutesUntil,
   isRideDelayed,
   getOccupancyPercentage,
+  hasShuttleOptions,
 } from '../services/tripshot';
 import { useTheme } from '../context/ThemeContext';
 
@@ -127,6 +128,60 @@ export function RouteDetailView({
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
+          </GHTouchableOpacity>
+          <GHTouchableOpacity
+            style={[styles.altRow, { borderBottomColor: c.border }]}
+            onPress={() => onSetTravelMode('car')}
+          >
+            <Text style={[styles.altText, { color: c.text.primary }]}>Drive (view parking)</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.car || '30m'}</Text>
+          </GHTouchableOpacity>
+        </View>
+      </>
+    );
+  }
+
+  // No-shuttles guard — show a placeholder card instead of an empty route breakdown
+  if (travelMode === 'shuttle' && !hasShuttleOptions(tripshotData)) {
+    return (
+      <>
+        <GHTouchableOpacity
+          style={[styles.routeCard, { backgroundColor: c.card, borderColor: c.border }]}
+          activeOpacity={0.9}
+        >
+          <View style={styles.routeHeader}>
+            <View>
+              <Text style={[styles.routeTitle, { color: c.text.primary }]}>Tesla Shuttle</Text>
+              <Text style={[styles.routeSub]}>No shuttles available</Text>
+            </View>
+          </View>
+          <View style={[styles.divider, { backgroundColor: c.border }]} />
+          <View style={{ alignItems: 'center', paddingVertical: 32, paddingHorizontal: 20 }}>
+            <Text style={{ fontSize: 32, marginBottom: 12 }}>🚌</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: c.text.primary, marginBottom: 6 }}>
+              No Shuttles Right Now
+            </Text>
+            <Text style={{ fontSize: 13, color: c.text.secondary, textAlign: 'center' }}>
+              There are no shuttle routes from your location at this time. Check back later or try another option.
+            </Text>
+          </View>
+        </GHTouchableOpacity>
+
+        <View style={styles.footerLinks}>
+          <Text style={[styles.footerTitle, { color: c.text.secondary }]}>OTHER OPTIONS</Text>
+          <GHTouchableOpacity
+            style={[styles.altRow, { borderBottomColor: c.border }]}
+            onPress={() => onSetTravelMode('transit')}
+          >
+            <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
+          </GHTouchableOpacity>
+          <GHTouchableOpacity
+            style={[styles.altRow, { borderBottomColor: c.border }]}
+            onPress={() => onSetTravelMode('bike')}
+          >
+            <Text style={[styles.altText, { color: c.text.primary }]}>Bike</Text>
+            <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.bike || '30 min'}</Text>
           </GHTouchableOpacity>
           <GHTouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
@@ -335,7 +390,9 @@ export function RouteDetailView({
                 <View style={styles.stepContent}>
                   <Text style={[styles.stepLocation, { color: c.text.primary }]}>Your Location</Text>
                 </View>
-                <Text style={[styles.stepTime, { color: c.text.primary }]}>{departureTime}</Text>
+                <Text style={[styles.stepTime, { color: c.text.primary }]}>
+                  {isFirst ? (googleMapsRoute?.departure_time || departureTime) : departureTime}
+                </Text>
               </View>
             )}
 
@@ -577,14 +634,16 @@ export function RouteDetailView({
                 ? routeInfo?.shortName || 'Tesla Shuttle A'
                 : 'Public Transit'}
             </Text>
-            <Text
-              style={[
-                styles.routeSub,
-                firstRide && isRideDelayed(firstRide) && styles.routeSubDelayed,
-              ]}
-            >
-              {travelMode === 'shuttle' ? getStatusText() : 'On Time · 10 min away'}
-            </Text>
+            {travelMode === 'shuttle' && (
+              <Text
+                style={[
+                  styles.routeSub,
+                  firstRide && isRideDelayed(firstRide) && styles.routeSubDelayed,
+                ]}
+              >
+                {getStatusText()}
+              </Text>
+            )}
           </View>
           <View style={styles.etaBadge}>
             <Text style={[styles.etaText, { color: c.text.primary }]}>
@@ -593,7 +652,16 @@ export function RouteDetailView({
                 : modeTimes.transit || '1h 10m'}
             </Text>
             <Text style={[styles.etaSub, { color: c.text.secondary }]}>
-              {travelMode === 'shuttle' ? `${etaTime} ETA` : 'ETA'}
+              {travelMode === 'shuttle'
+                ? `${etaTime} ETA`
+                : googleMapsRoute?.arrival_time
+                  ? `${googleMapsRoute.arrival_time} ETA`
+                  : (() => {
+                      const bikeRoute = modeTimes.bike;
+                      if (!bikeRoute) return 'ETA';
+                      const eta = new Date(Date.now() + (googleMapsRoute?.duration_sec || 0) * 1000);
+                      return `${eta.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ETA`;
+                    })()}
             </Text>
           </View>
         </View>

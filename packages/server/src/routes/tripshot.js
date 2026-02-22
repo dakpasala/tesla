@@ -28,6 +28,9 @@ const STOPS = {
     name: 'Mountain View Caltrain',
     location: { lt: 37.394358, lg: -122.076307 },
   },
+
+  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
+  
   // SF shuttle stops
   'sf001-4abc-1234-abcd-sf0000000001': {
     name: 'SF Caltrain Station',
@@ -103,6 +106,8 @@ function resolveRoute(startLat, startLng, endLat, endLng) {
   ) {
     return 'mountain-view';
   }
+
+  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
 
   // SF area (covers Union Square, SoMa, Mission, Caltrain station)
   const isSF = (lat, lng) => lat > 37.75 && lat < 37.81 && lng > -122.43 && lng < -122.38;

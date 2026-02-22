@@ -74,6 +74,8 @@ const CAMPUS_QUERIES = [
     endLat: 37.394358,    endLng: -122.076307,
     startName: '1501 Page Mill', endName: 'Mountain View Caltrain',
   },
+
+  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
   {
     // SF Express route
     startLat: 37.776400, startLng: -122.394800,

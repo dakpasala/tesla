@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useTheme } from '../context/ThemeContext';
 
 interface AnnouncementDropDownProps {
   onSelectOption?: (option: string) => void;
@@ -9,6 +10,9 @@ interface AnnouncementDropDownProps {
 export default function AnnouncementDropDown({
   onSelectOption,
 }: AnnouncementDropDownProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [announcementDropdownOpen, setAnnouncementDropdownOpen] =
     useState(false);
 
@@ -60,30 +64,32 @@ export default function AnnouncementDropDown({
       </Pressable>
 
       {announcementDropdownOpen && (
-        <View style={styles.dropdownMenu}>
+        <View style={[styles.dropdownMenu, { backgroundColor: c.card }]}>
           <Pressable
             style={({ pressed }) => [
               styles.dropdownItem,
-              pressed && styles.dropdownItemPressed,
+              { backgroundColor: c.card },
+              pressed && { backgroundColor: c.backgroundAlt },
             ]}
             onPress={() => handleOptionSelect('All Shuttle Routes')}
           >
-            <Text style={styles.dropdownItemText}>All Shuttle Routes</Text>
+            <Text style={[styles.dropdownItemText, { color: c.text.primary }]}>All Shuttle Routes</Text>
           </Pressable>
 
-          <View style={styles.dropdownDivider} />
+          <View style={[styles.dropdownDivider, { backgroundColor: c.border }]} />
 
           <Pressable
             style={({ pressed }) => [
               styles.dropdownItem,
-              pressed && styles.dropdownItemPressed,
+              { backgroundColor: c.card },
+              pressed && { backgroundColor: c.backgroundAlt },
             ]}
             onPress={() => handleOptionSelect('Single Shuttle Route')}
           >
-            <Text style={styles.dropdownItemText}>Single Shuttle Route</Text>
+            <Text style={[styles.dropdownItemText, { color: c.text.primary }]}>Single Shuttle Route</Text>
           </Pressable>
 
-          <View style={styles.dropdownDivider} />
+          <View style={[styles.dropdownDivider, { backgroundColor: c.border }]} />
         </View>
       )}
     </View>

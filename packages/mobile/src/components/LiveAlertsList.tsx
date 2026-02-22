@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import ShuttleListItem from './ShuttleListItem';
 import { Announcement } from '../services/shuttleAlerts';
+import { useTheme } from '../context/ThemeContext';
 
 interface LiveAlertsListProps {
   alerts?: Announcement[];
@@ -18,6 +19,9 @@ export default function LiveAlertsList({
   alerts,
   loading,
 }: LiveAlertsListProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const formatTime = (dateStr: string) =>
     new Date(dateStr).toLocaleTimeString([], {
       hour: 'numeric',
@@ -33,7 +37,7 @@ export default function LiveAlertsList({
   }
 
   if (!alerts || alerts.length === 0) {
-    return <Text style={styles.emptyText}>No active alerts.</Text>;
+    return <Text style={[styles.emptyText, { color: c.text.secondary }]}>No active alerts.</Text>;
   }
 
   return (

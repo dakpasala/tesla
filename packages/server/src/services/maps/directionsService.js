@@ -4,12 +4,18 @@ import { normalizeGoogleRoute } from "./normalizeRoute.js";
 
 const BASE_URL = 'https://maps.googleapis.com/maps/api/directions/json';
 
-export async function getDirections(origin, destination, mode = 'driving') {
+export async function getDirections(origin, destination, mode = 'driving', departureTime = null) {
   const url = new URL(BASE_URL);
   url.searchParams.set('origin', origin);
   url.searchParams.set('destination', destination);
   url.searchParams.set('mode', mode);
   url.searchParams.set('key', GOOGLE_MAPS_API_KEY);
+
+  // departure_time is a unix timestamp (seconds), only valid for future times
+  // Google Maps supports it for driving and transit modes
+  if (departureTime && (mode === 'driving' || mode === 'transit')) {
+    url.searchParams.set('departure_time', departureTime.toString());
+  }
 
   const res = await fetch(url.toString());
   const json = await res.json();
@@ -21,13 +27,13 @@ export async function getDirections(origin, destination, mode = 'driving') {
   return json;
 }
 
-export async function getAllTransportOptions(origin, destination) {
+export async function getAllTransportOptions(origin, destination, departureTime = null) {
   const modes = ["driving", "bicycling", "walking", "transit"];
   const results = [];
 
   for (const mode of modes) {
     try {
-      const googleJson = await getDirections(origin, destination, mode);
+      const googleJson = await getDirections(origin, destination, mode, departureTime);
       const normalized = normalizeGoogleRoute(mode, googleJson);
 
       if (normalized) {

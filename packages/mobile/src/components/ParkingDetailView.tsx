@@ -7,6 +7,7 @@ import { getForecastText } from '../helpers/mapUtils';
 import { ModeTimes } from './RouteHeader';
 import { TravelMode } from '../context/RideContext';
 import OptionsCard from './OptionsCard';
+import { useTheme } from '../context/ThemeContext';
 
 interface ParkingDetailViewProps {
   selectedLot: ParkingLot | undefined;
@@ -35,6 +36,9 @@ export function ParkingDetailView({
   onOpenInGoogleMaps,
   onPressOtherLots,
 }: ParkingDetailViewProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const lot = selectedLot;
 
   /**
@@ -76,16 +80,16 @@ export function ParkingDetailView({
         <View style={styles.detailHeaderRow}>
           <Image
             source={require('../assets/icons/new/parkCar.png')}
-            style={styles.iconLarge}
+            style={[styles.iconLarge, { tintColor: c.text.primary }]}
           />
-          <Text style={styles.detailTitle}>{lot?.name || 'Loading...'}</Text>
-          <Text style={styles.detailUpdateText}>Updated recently</Text>
+          <Text style={[styles.detailTitle, { color: c.text.primary }]}>{lot?.name || 'Loading...'}</Text>
+          <Text style={[styles.detailUpdateText, { color: c.text.secondary }]}>Updated recently</Text>
         </View>
         <View style={styles.statusSection}>
           <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>CURRENTLY</Text>
+            <Text style={[styles.statusLabel, { color: c.text.secondary }]}>CURRENTLY</Text>
             <View style={getDotStyle(currentFullness)} />
-            <Text style={styles.statusValue}>
+            <Text style={[styles.statusValue, { color: c.text.primary }]}>
               {sublots.length > 0 && selectedSublot
                 ? (() => {
                     const selected = sublots.find(s => s.lot_name === selectedSublot);
@@ -124,9 +128,9 @@ export function ParkingDetailView({
             
             return (
               <View style={styles.statusRow}>
-                <Text style={styles.statusLabel}>FORECAST</Text>
+                <Text style={[styles.statusLabel, { color: c.text.secondary }]}>FORECAST</Text>
                 <View style={getDotStyle(futurePercent)} />
-                <Text style={styles.statusValue}>
+                <Text style={[styles.statusValue, { color: c.text.primary }]}>
                   {currentPercent}% → {futurePercent}%
                 </Text>
               </View>
@@ -183,7 +187,9 @@ export function ParkingDetailView({
                   <GHTouchableOpacity
                     key={`${sublot.location_name}-${sublot.lot_name}-${index}`}
                     style={
-                      isSelected ? styles.sublotRowSelected : styles.sublotRow
+                      isSelected
+                        ? styles.sublotRowSelected
+                        : [styles.sublotRow, { borderColor: c.border }]
                     }
                     onPress={() => onSelectSublot(sublot.lot_name)}
                   >
@@ -191,7 +197,7 @@ export function ParkingDetailView({
                       style={
                         isSelected
                           ? styles.sublotNameSelected
-                          : styles.sublotName
+                          : [styles.sublotName, { color: c.text.primary }]
                       }
                     >
                       {sublot.lot_name}
@@ -202,7 +208,7 @@ export function ParkingDetailView({
                         style={
                           isSelected
                             ? styles.sublotStatsSelected
-                            : styles.sublotStats
+                            : [styles.sublotStats, { color: c.text.secondary }]
                         }
                       >
                         {displayText}
@@ -228,28 +234,30 @@ export function ParkingDetailView({
           </View>
         )}
 
+        {modeTimes.shuttle && modeTimes.shuttle !== '—' && (
         <GHTouchableOpacity
-          style={styles.shuttleSuggestionCard}
+          style={[styles.shuttleSuggestionCard, { backgroundColor: c.backgroundAlt, borderColor: c.border }]}
           onPress={() => onSetTravelMode('shuttle')}
         >
           <Image
             source={require('../assets/icons/new/newShuttle.png')}
-            style={styles.shuttleIcon}
+            style={[styles.shuttleIcon, { tintColor: c.text.primary }]}
           />
           <View style={styles.shuttleTextContainer}>
-            <Text style={styles.sectionHeader}>ALSO CONSIDER SHUTTLE</Text>
-            <Text style={styles.shuttleSuggestionText}>
+            <Text style={[styles.sectionHeader, { color: c.text.secondary }]}>ALSO CONSIDER SHUTTLE</Text>
+            <Text style={[styles.shuttleSuggestionText, { color: c.text.primary }]}>
               {modeTimes.shuttle || '50 min'}
             </Text>
           </View>
           <View style={styles.spacer} />
         </GHTouchableOpacity>
+        )}
         <View style={styles.detailFooterRow}>
           <GHTouchableOpacity
-            style={styles.secondaryButton}
+            style={[styles.secondaryButton, { backgroundColor: c.backgroundAlt, borderColor: c.border }]}
             onPress={onPressOtherLots}
           >
-            <Text style={styles.secondaryButtonText}>Other Lots</Text>
+            <Text style={[styles.secondaryButtonText, { color: c.text.primary }]}>Other Lots</Text>
           </GHTouchableOpacity>
 
           <GHTouchableOpacity

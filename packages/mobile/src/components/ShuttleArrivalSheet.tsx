@@ -1,39 +1,41 @@
 // packages/mobile/src/components/ShuttleArrivalSheet.tsx
 
 import React, { useEffect, useState } from 'react';
-import { Image, Modal } from 'react-native';
-
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   AppState,
+  Image,
+  ScrollView,
 } from 'react-native';
 import {
   LiveStatusResponse,
+  CommutePlanResponse,
   getOccupancyPercentage,
+  hasShuttleOptions,
+  formatTime,
+  getMinutesUntil,
 } from '../services/tripshot';
-import ReportPopupInputs, { ReportPopupOption } from './ReportPopUp';
+import { ReportSheet } from './ReportSheet';
+import { useTheme } from '../context/ThemeContext';
 
 const newShuttleIcon = require('../assets/icons/new/newShuttle.png');
 
 interface ShuttleArrivalSheetProps {
-  stopName: string;
-  etaMinutes: number;
-  etaTime?: string;
-  status: 'On Time' | 'Delayed';
-  occupancy?: number;
-  nextStops?: string[];
   onBack: () => void;
-  onReportIssue: () => void;
+  onReportIssue: (issue: string, details: string) => void;
+  commutePlan?: CommutePlanResponse | null;
   liveStatus?: LiveStatusResponse | null;
   onRefreshStatus?: () => void;
+  loading?: boolean;
 }
+
+type SheetPage = 'arrival' | 'report' | 'confirmation';
 
 const HORIZONTAL_START_RIGHT = -20;
 const HORIZONTAL_LENGTH = 85;
-
 const VERTICAL_START_TOP = 22;
 const VERTICAL_LENGTH = 80;
 
@@ -41,117 +43,19 @@ function clamp01(value: number) {
   return Math.max(0, Math.min(1, value));
 }
 
-const REPORT_OPTIONS: ReportPopupOption[] = [
-  { id: 'late', label: 'Shuttle is running late' },
-  { id: 'full', label: 'Shuttle is too full' },
-  { id: 'no-show', label: 'Shuttle didn\'t arrive' },
-  { id: 'safety', label: 'Safety concern' },
-  { id: 'other', label: 'Other issue' },
-];
+// ── Route Progress Mini-Map ───────────────────────────────────────────────────
 
-export function ShuttleArrivalSheet({
-  stopName,
-  etaMinutes,
-  etaTime,
-  status,
-  occupancy = 75,
-  nextStops = ['Stevens Creek', 'Sunnyvale', 'Mountain View'],
-  onBack,
-  onReportIssue,
-  liveStatus,
-  onRefreshStatus,
-}: ShuttleArrivalSheetProps) {
-  const [appState, setAppState] = useState(AppState.currentState);
-  const [showReportModal, setShowReportModal] = useState(false);
-  const [selectedReportOption, setSelectedReportOption] = useState<string | undefined>(undefined);
-
-  /**
-   * ======================================================
-   * MOCK DATA (UNCHANGED)
-   * ======================================================
-   */
-
-  const MOCK_MODE = true;
-
-  const mockLiveStatus: LiveStatusResponse = {
-    rides: [
-      {
-        rideId: 'mock',
-        routeId: 'mock',
-        routeName: 'Mock Route',
-        shortName: 'Tesla HQ Deer Creek Shuttle A',
-        vehicleName: 'Mock Vehicle',
-        vehicleShortName: 'M1',
-        color: '#BF40BF',
-        state: {},
-        lateBySec: 200,
-        riderCount: 5,
-        vehicleCapacity: 20,
-        lastEtaUpdate: new Date().toISOString(),
-        lastMonitorUpdate: new Date().toISOString(),
-        stopStatus: [
-          {
-            Awaiting: {
-              stopId: '1',
-              expectedArrivalTime: new Date(
-                Date.now() + 2 * 60000
-              ).toISOString(),
-              scheduledDepartureTime: new Date(
-                Date.now() - 2 * 60000
-              ).toISOString(),
-              riderStatus: 'OnTime',
-            },
-          },
-          {
-            Awaiting: {
-              stopId: '2',
-              expectedArrivalTime: new Date(
-                Date.now() + 10 * 60000
-              ).toISOString(),
-              scheduledDepartureTime: new Date(
-                Date.now() + 10 * 60000
-              ).toISOString(),
-              riderStatus: 'OnTime',
-            },
-          },
-        ],
-      },
-    ],
-    timestamp: new Date().toISOString(),
-  };
-
-  const effectiveLiveStatus = MOCK_MODE ? mockLiveStatus : liveStatus;
-
-  const firstRide = effectiveLiveStatus?.rides?.[0];
-
-  /**
-   * ======================================================
-   * DELAY STATUS
-   * ======================================================
-   */
-
-  const lateSec = firstRide?.lateBySec ?? 0;
-
-  let statusText = 'On Time';
-  let statusColor = '#34C759';
-
-  if (lateSec > 0) {
-    const lateMin = Math.ceil(lateSec / 60);
-    statusText = `Late by ${lateMin} Min`;
-    statusColor = '#FF3B30';
-  }
-
-  const actualOccupancy = firstRide
-    ? getOccupancyPercentage(firstRide)
-    : occupancy;
-
-  /**
-   * ======================================================
-   * STOP STATE PROCESSING
-   * ======================================================
-   */
-
-  const stopStatus = firstRide?.stopStatus ?? [];
+function RouteProgressMap({
+  stopStatus,
+  nextStops,
+  c,
+}: {
+  stopStatus: any[];
+  nextStops: string[];
+  c: any;
+}) {
+  const LINE = '#D1D1D6';
+  const BLUE = '#007AFF';
 
   const getStopState = (stop: any) => {
     if ('Awaiting' in stop) return 'Awaiting';
@@ -161,110 +65,108 @@ export function ShuttleArrivalSheet({
     return 'Unknown';
   };
 
-  const reachedStops = stopStatus.map((stop, index) => {
+  const reachedStops = stopStatus.map((stop) => {
     const state = getStopState(stop);
-    return {
-      index,
-      state,
-      reached:
-        state === 'Arrived' || state === 'Departed' || state === 'Skipped',
-    };
+    return state === 'Arrived' || state === 'Departed' || state === 'Skipped';
   });
 
-  // First stop is always visually "active"
   const isUiStopReached = (uiIndex: number) => {
     if (uiIndex === 0) return true;
-    return reachedStops[uiIndex]?.reached ?? false;
+    return reachedStops[uiIndex] ?? false;
   };
 
-  /**
-   * ======================================================
-   * ROUTE PROGRESS
-   * ======================================================
-   */
-
-  const totalStops = stopStatus.length;
-  const totalSegments = Math.max(totalStops - 1, 1);
-
-  const currentStopIndex = stopStatus.findIndex(
-    s => getStopState(s) === 'Awaiting'
-  );
-
+  const totalSegments = Math.max(stopStatus.length - 1, 1);
+  const currentStopIndex = stopStatus.findIndex(s => getStopState(s) === 'Awaiting');
   const previousIndex = currentStopIndex > 0 ? currentStopIndex - 1 : 0;
 
   let SEGMENT_PROGRESS = 0;
-
   if (
     currentStopIndex >= 0 &&
     stopStatus[currentStopIndex] &&
     'Awaiting' in stopStatus[currentStopIndex]
   ) {
     const awaiting = stopStatus[currentStopIndex].Awaiting;
-
     const now = Date.now();
     const departure = new Date(awaiting.scheduledDepartureTime).getTime();
     const arrival = new Date(awaiting.expectedArrivalTime).getTime();
-
     if (arrival > departure) {
       SEGMENT_PROGRESS = clamp01((now - departure) / (arrival - departure));
     }
   }
 
   const ROUTE_PROGRESS = (previousIndex + SEGMENT_PROGRESS) / totalSegments;
-
   const APPROACH_RATIO = 0.2;
 
-  const horizontalProgress =
-    ROUTE_PROGRESS < APPROACH_RATIO
-      ? clamp01(ROUTE_PROGRESS / APPROACH_RATIO)
-      : 1;
-
-  const verticalProgress =
-    ROUTE_PROGRESS > APPROACH_RATIO
-      ? clamp01((ROUTE_PROGRESS - APPROACH_RATIO) / (1 - APPROACH_RATIO))
-      : 0;
-
+  const horizontalProgress = ROUTE_PROGRESS < APPROACH_RATIO
+    ? clamp01(ROUTE_PROGRESS / APPROACH_RATIO) : 1;
+  const verticalProgress = ROUTE_PROGRESS > APPROACH_RATIO
+    ? clamp01((ROUTE_PROGRESS - APPROACH_RATIO) / (1 - APPROACH_RATIO)) : 0;
   const reachedCorner = ROUTE_PROGRESS >= APPROACH_RATIO;
 
-  const carRight =
-    HORIZONTAL_START_RIGHT + HORIZONTAL_LENGTH * horizontalProgress;
-
+  const carRight = HORIZONTAL_START_RIGHT + HORIZONTAL_LENGTH * horizontalProgress;
   const carTop = VERTICAL_START_TOP - 22 + VERTICAL_LENGTH * verticalProgress;
 
-  const progressHorizontalWidth = HORIZONTAL_LENGTH * horizontalProgress;
+  return (
+    <View style={styles.right}>
+      <View style={styles.routeCol}>
+        <View style={[styles.horizontalLine, { backgroundColor: LINE }]} />
+        <View style={[styles.curve, { borderColor: LINE }]} />
+        <View style={[styles.verticalLine, { backgroundColor: LINE }]} />
 
-  const progressVerticalHeight = VERTICAL_LENGTH * verticalProgress;
+        <View style={[styles.progressHorizontal, { width: HORIZONTAL_LENGTH * horizontalProgress, backgroundColor: BLUE }]} />
+        <View style={[styles.progressVertical, { height: VERTICAL_LENGTH * verticalProgress, backgroundColor: BLUE }]} />
+        {reachedCorner && <View style={[styles.progressCurve, { borderColor: BLUE }]} />}
 
-  /**
-   * ======================================================
-   * REPORT HANDLERS
-   * ======================================================
-   */
+        <View style={[styles.car, { backgroundColor: c.card, right: carRight, top: carTop }]}>
+          <Image
+            source={newShuttleIcon}
+            style={[styles.carImage, { tintColor: c.text.primary }]}
+            resizeMode="contain"
+          />
+        </View>
 
-  const handleOpenReportModal = () => {
-    setShowReportModal(true);
-    setSelectedReportOption(undefined);
-  };
+        {([styles.dotTop, styles.dotMiddle, styles.dotBottom] as const).map((dotStyle, i) => (
+          <View
+            key={i}
+            style={[styles.dot, dotStyle, { backgroundColor: isUiStopReached(i) ? BLUE : LINE }]}
+          />
+        ))}
+      </View>
 
-  const handleCloseReportModal = () => {
-    setShowReportModal(false);
-    setSelectedReportOption(undefined);
-  };
+      <View style={styles.labelsCol}>
+        {[0, 1, 2].map(i => (
+          <Text
+            key={i}
+            style={[
+              styles.stopLabel,
+              { color: c.text.primary },
+              isUiStopReached(i) && styles.stopLabelActive,
+            ]}
+          >
+            {nextStops[i] || ''}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
 
-  const handleSubmitReport = () => {
-    if (selectedReportOption) {
-      const selectedOption = REPORT_OPTIONS.find(opt => opt.id === selectedReportOption);
-      console.log('Report submitted:', selectedOption?.label);
-      onReportIssue(); // Call the original handler
-      handleCloseReportModal();
-    }
-  };
+// ── Main Component ────────────────────────────────────────────────────────────
 
-  /**
-   * ======================================================
-   * EFFECTS
-   * ======================================================
-   */
+export function ShuttleArrivalSheet({
+  onBack,
+  onReportIssue,
+  commutePlan,
+  liveStatus,
+  onRefreshStatus,
+  loading = false,
+}: ShuttleArrivalSheetProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
+  const [appState, setAppState] = useState(AppState.currentState);
+  const [page, setPage] = useState<SheetPage>('arrival');
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useEffect(() => {
     if (!onRefreshStatus) return;
@@ -283,187 +185,213 @@ export function ShuttleArrivalSheet({
     return () => subscription.remove();
   }, [appState, onRefreshStatus]);
 
-  /**
-   * ======================================================
-   * RENDER
-   * ======================================================
-   */
+  // ── Report page ────────────────────────────────────────────────────────────
+
+  if (page === 'report') {
+    return (
+      <ReportSheet
+        onBack={() => setPage('arrival')}
+        onSubmit={(issue, details) => {
+          setPage('arrival');
+          onReportIssue(issue, details);
+        }}
+      />
+    );
+  }
+
+  if (page === 'confirmation') {
+    return (
+      <View style={[styles.container, { backgroundColor: c.background }]}>
+        <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8, color: c.text.primary }}>
+          Thanks for reporting
+        </Text>
+        <Text style={{ fontSize: 13, color: c.text.secondary, marginBottom: 16 }}>
+          We'll look into it as soon as possible.
+        </Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#007AFF', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}
+          onPress={() => setPage('arrival')}
+        >
+          <Text style={{ color: '#FFF', fontWeight: '600' }}>Done</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // ── Loading ────────────────────────────────────────────────────────────────
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: c.background }]}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
+          <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ color: c.text.secondary, fontSize: 14 }}>Loading shuttle info...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── No shuttles ────────────────────────────────────────────────────────────
+
+  if (!hasShuttleOptions(commutePlan)) {
+    return (
+      <View style={[styles.container, { backgroundColor: c.background }]}>
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
+          <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
+        </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text style={{ fontSize: 28, marginBottom: 12 }}>🚌</Text>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: c.text.primary, marginBottom: 6 }}>
+            No Shuttles Available
+          </Text>
+          <Text style={{ fontSize: 13, color: c.text.secondary, textAlign: 'center', paddingHorizontal: 24 }}>
+            No shuttle routes from your location right now. Check back later.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Build shuttle cards from commutePlan options ───────────────────────────
+
+  const rides = liveStatus?.rides ?? [];
+  const options = commutePlan!.options;
+  const stops = commutePlan!.stops ?? [];
+  const routes = commutePlan!.routes;
+
+  const shuttleCards = options.map((option, idx) => {
+    const onRouteStep = option.steps.find(s => 'OnRouteScheduledStep' in s);
+    const rideId = onRouteStep && 'OnRouteScheduledStep' in onRouteStep
+      ? onRouteStep.OnRouteScheduledStep.rideId : null;
+    const routeId = onRouteStep && 'OnRouteScheduledStep' in onRouteStep
+      ? onRouteStep.OnRouteScheduledStep.routeId : null;
+
+    const liveRide = rides.find(r => r.rideId === rideId) ?? rides[0] ?? null;
+    const route = routes.find(r => r.routeId === routeId) ?? routes[0];
+
+    const etaMinutes = Math.max(0, getMinutesUntil(option.travelStart));
+    const etaTime = formatTime(option.travelEnd);
+    const lateSec = liveRide?.lateBySec ?? 0;
+    const isDelayed = lateSec > 60;
+    const statusText = isDelayed ? `Late by ${Math.ceil(lateSec / 60)} Min` : 'On Time';
+    const statusColor = isDelayed ? '#FF3B30' : '#34C759';
+
+    const stopStatus = liveRide?.stopStatus ?? [];
+
+    // Resolve stop names from the stops array
+    const nextStopNames = stopStatus.slice(0, 3).map(s => {
+      const stopId =
+        s.Awaiting?.stopId ??
+        s.Arrived?.stopId ??
+        s.Departed?.stopId ??
+        s.Skipped?.stopId ?? '';
+      return stops.find(st => st.stopId === stopId)?.name ?? '';
+    });
+    while (nextStopNames.length < 3) nextStopNames.push('');
+
+    return {
+      idx,
+      routeName: route?.shortName || route?.name || 'Shuttle',
+      etaMinutes,
+      etaTime,
+      statusText,
+      statusColor,
+      riderCount: liveRide?.riderCount ?? null,
+      capacity: liveRide?.vehicleCapacity ?? null,
+      stopStatus,
+      nextStopNames,
+    };
+  });
+
+  const selected = shuttleCards[selectedIndex] ?? shuttleCards[0];
+
+  // ── Arrival view ───────────────────────────────────────────────────────────
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
+      {/* Back */}
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
-        <Text style={styles.backIcon}>‹</Text>
-        <Text style={styles.backText}>All Routes</Text>
+        <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
+        <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
       </TouchableOpacity>
 
+      {/* Departure time selector tabs — only shown when multiple options */}
+      {shuttleCards.length > 1 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabsRow}
+          contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+        >
+          {shuttleCards.map((card, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[
+                styles.tabPill,
+                { backgroundColor: c.backgroundAlt, borderColor: c.border },
+                selectedIndex === i && styles.tabPillActive,
+              ]}
+              onPress={() => setSelectedIndex(i)}
+            >
+              <Text style={[
+                styles.tabPillText,
+                { color: c.text.secondary },
+                selectedIndex === i && styles.tabPillTextActive,
+              ]}>
+                {card.etaMinutes <= 1 ? 'Now' : `${card.etaMinutes}m`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Main row */}
       <View style={styles.mainRow}>
         <View style={styles.left}>
-          <Text style={styles.arrivalTitle}>Arriving In {etaMinutes} Min</Text>
+          <Text style={[styles.arrivalTitle, { color: c.text.primary }]}>
+            {selected.etaMinutes <= 1 ? 'Boarding Now' : `Arriving In ${selected.etaMinutes} Min`}
+          </Text>
 
-          <Text style={styles.subLine}>
-            {etaTime ? `${etaTime} ETA · ` : ''}
-            <Text style={[styles.statusOnTime, { color: statusColor }]}>
-              {statusText}
+          <Text style={[styles.subLine, { color: c.text.secondary }]}>
+            {selected.etaTime ? `${selected.etaTime} ETA · ` : ''}
+            <Text style={{ fontWeight: '600', color: selected.statusColor }}>
+              {selected.statusText}
             </Text>
           </Text>
 
-          <View style={styles.occupancyRow}>
-            <Text style={styles.occupancyIcon}>👥</Text>
-            <Text style={styles.occupancyText}>{actualOccupancy}% Full</Text>
-          </View>
+          {selected.riderCount !== null && (
+            <View style={styles.occupancyRow}>
+              <Text>👥</Text>
+              <Text style={[styles.occupancyText, { color: c.text.secondary }]}>
+                {selected.riderCount}/{selected.capacity} riders
+              </Text>
+            </View>
+          )}
 
-          {/* Report issue link */}
-          <TouchableOpacity
-            style={styles.reportContainer}
-            onPress={handleOpenReportModal}
-          >
-            <Text style={styles.reportText}>
+          <TouchableOpacity style={styles.reportContainer} onPress={() => setPage('report')}>
+            <Text style={[styles.reportText, { color: c.text.secondary }]}>
               See something off?{' '}
               <Text style={styles.reportLink}>Report it</Text>
             </Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.right}>
-          <View style={styles.routeCol}>
-            <View style={styles.horizontalLine} />
-            <View style={styles.curve} />
-            <View style={styles.verticalLine} />
-
-            <View
-              style={[
-                styles.progressHorizontal,
-                { width: progressHorizontalWidth },
-              ]}
-            />
-            <View
-              style={[
-                styles.progressVertical,
-                { height: progressVerticalHeight },
-              ]}
-            />
-
-            {reachedCorner && <View style={styles.progressCurve} />}
-
-            <View style={[styles.car, { right: carRight, top: carTop }]}>
-              <Image
-                source={newShuttleIcon}
-                style={styles.carImage}
-                resizeMode="contain"
-              />
-            </View>
-
-            {/* DOTS */}
-            <View
-              style={[
-                styles.dot,
-                styles.dotTop,
-                {
-                  backgroundColor: isUiStopReached(0) ? BLUE : LINE,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.dot,
-                styles.dotMiddle,
-                {
-                  backgroundColor: isUiStopReached(1) ? BLUE : LINE,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.dot,
-                styles.dotBottom,
-                {
-                  backgroundColor: isUiStopReached(2) ? BLUE : LINE,
-                },
-              ]}
-            />
-          </View>
-
-          <View style={styles.labelsCol}>
-            <Text
-              style={[
-                styles.stopLabel,
-                isUiStopReached(0) && styles.stopLabelActive,
-              ]}
-            >
-              {nextStops[0]}
-            </Text>
-            <Text
-              style={[
-                styles.stopLabel,
-                isUiStopReached(1) && styles.stopLabelActive,
-              ]}
-            >
-              {nextStops[1]}
-            </Text>
-            <Text
-              style={[
-                styles.stopLabel,
-                isUiStopReached(2) && styles.stopLabelActive,
-              ]}
-            >
-              {nextStops[2]}
-            </Text>
-          </View>
-        </View>
+        {selected.stopStatus.length > 0 && (
+          <RouteProgressMap
+            stopStatus={selected.stopStatus}
+            nextStops={selected.nextStopNames}
+            c={c}
+          />
+        )}
       </View>
-
-      {/* Report Modal */}
-      <Modal
-        visible={showReportModal}
-        transparent
-        animationType="fade"
-        onRequestClose={handleCloseReportModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Report an Issue</Text>
-            <Text style={styles.modalSubtitle}>What happened?</Text>
-
-            <ReportPopupInputs
-              options={REPORT_OPTIONS}
-              selectedId={selectedReportOption}
-              onSelect={(option) => setSelectedReportOption(option.id)}
-              layout="column"
-              style={styles.reportOptions}
-            />
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCloseReportModal}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.submitButton,
-                  !selectedReportOption && styles.submitButtonDisabled,
-                ]}
-                onPress={handleSubmitReport}
-                disabled={!selectedReportOption}
-              >
-                <Text style={[
-                  styles.submitButtonText,
-                  !selectedReportOption && styles.submitButtonTextDisabled,
-                ]}>
-                  Submit
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
 
-const LINE = '#D1D1D6';
 const BLUE = '#007AFF';
 
 const styles = StyleSheet.create({
@@ -478,10 +406,31 @@ const styles = StyleSheet.create({
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   backIcon: { fontSize: 18, marginRight: 6 },
   backText: { fontSize: 12 },
+  tabsRow: {
+    flexGrow: 0,
+    marginBottom: 8,
+  },
+  tabPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  tabPillActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  tabPillText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tabPillTextActive: {
+    color: '#fff',
+  },
   mainRow: { flexDirection: 'row' },
   left: { flex: 1, paddingRight: 8 },
   arrivalTitle: {
@@ -494,19 +443,15 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginTop: 4,
   },
-  statusOnTime: {
-    color: '#34C759',
-    fontWeight: '600',
-  },
   occupancyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 10,
   },
-  occupancyIcon: { marginRight: 6 },
   occupancyText: {
     fontSize: 13,
     color: '#8E8E93',
+    marginLeft: 4,
   },
   reportText: {
     marginTop: 10,
@@ -516,6 +461,10 @@ const styles = StyleSheet.create({
   reportLink: {
     color: BLUE,
     fontWeight: '500',
+  },
+  reportContainer: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
   },
   right: {
     flexDirection: 'row',
@@ -534,7 +483,6 @@ const styles = StyleSheet.create({
     right: HORIZONTAL_START_RIGHT,
     width: HORIZONTAL_LENGTH,
     height: 2,
-    backgroundColor: LINE,
   },
   curve: {
     position: 'absolute',
@@ -544,7 +492,6 @@ const styles = StyleSheet.create({
     height: 14,
     borderTopWidth: 2,
     borderLeftWidth: 2,
-    borderColor: LINE,
     borderTopLeftRadius: 8,
   },
   verticalLine: {
@@ -553,14 +500,12 @@ const styles = StyleSheet.create({
     right: 76,
     width: 2,
     height: VERTICAL_LENGTH,
-    backgroundColor: LINE,
   },
   progressHorizontal: {
     position: 'absolute',
     top: 8,
     right: HORIZONTAL_START_RIGHT,
     height: 2,
-    backgroundColor: BLUE,
   },
   progressCurve: {
     position: 'absolute',
@@ -570,7 +515,6 @@ const styles = StyleSheet.create({
     height: 14,
     borderTopWidth: 2,
     borderLeftWidth: 2,
-    borderColor: BLUE,
     borderTopLeftRadius: 8,
   },
   progressVertical: {
@@ -578,22 +522,19 @@ const styles = StyleSheet.create({
     top: VERTICAL_START_TOP,
     right: 76,
     width: 2,
-    backgroundColor: BLUE,
   },
   car: {
     position: 'absolute',
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 0,
   },
-  carIcon: { fontSize: 14 },
   dot: {
     position: 'absolute',
     width: 8,
     height: 8,
     borderRadius: 4,
   },
-  dotTop: { top: 12, right: 73 },
+  dotTop:    { top: 12, right: 73 },
   dotMiddle: { top: 52, right: 73 },
   dotBottom: { top: 92, right: 73 },
   labelsCol: { paddingLeft: 12, paddingTop: 20 },
@@ -606,76 +547,8 @@ const styles = StyleSheet.create({
     color: BLUE,
     fontWeight: '600',
   },
-  reportContainer: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
   carImage: {
     width: 25,
     height: 25,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 8,
-  },
-  modalSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 20,
-  },
-  reportOptions: {
-    marginBottom: 24,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#DADADA',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#000',
-  },
-  submitButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: BLUE,
-    alignItems: 'center',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-  },
-  submitButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  submitButtonTextDisabled: {
-    color: '#999',
   },
 });

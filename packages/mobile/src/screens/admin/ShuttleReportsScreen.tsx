@@ -21,12 +21,15 @@ import {
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function ShuttleReportsScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const { shuttleName } = route.params as { shuttleName: string };
   const announcementModalRef = useRef<Modalize>(null);
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
 
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,7 +85,7 @@ export default function ShuttleReportsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -94,7 +97,7 @@ export default function ShuttleReportsScreen() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.title}>{displayName}</Text>
+        <Text style={[styles.title, { color: c.text.primary }]}>{displayName}</Text>
 
         {/* Announcement Dropdown */}
         <View style={styles.announcementWrapper}>
@@ -115,7 +118,7 @@ export default function ShuttleReportsScreen() {
         {loading ? (
           <ActivityIndicator style={{ marginTop: 40 }} />
         ) : reports.length === 0 ? (
-          <Text style={styles.emptyText}>No reports found.</Text>
+          <Text style={[styles.emptyText, { color: c.text.secondary }]}>No reports found.</Text>
         ) : (
           <FlatList
             data={reports}

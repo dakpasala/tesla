@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface AdminStatsCardProps {
   title: string;
@@ -18,15 +19,19 @@ export default function AdminStatsCard({
   trendValue,
   style,
 }: AdminStatsCardProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
-    <View style={[styles.card, style]}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.value}>{value}</Text>
+    <View style={[styles.card, { backgroundColor: c.card }, style]}>
+      <Text style={[styles.title, { color: c.text.secondary }]}>{title}</Text>
+      <Text style={[styles.value, { color: c.text.primary }]}>{value}</Text>
       {trendValue && (
         <View style={styles.trendContainer}>
           <Text
             style={[
               styles.trendText,
+              { color: c.text.secondary },
               trend === 'up' && styles.trendUp,
               trend === 'down' && styles.trendDown,
             ]}

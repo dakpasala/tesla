@@ -3,6 +3,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import Svg, { Circle, Path, G } from 'react-native-svg';
+import { useTheme } from '../context/ThemeContext';
 
 interface LocationBoxProps {
   currentLocation?: string;
@@ -19,9 +20,12 @@ export function LocationBox({
   destination,
   style,
 }: LocationBoxProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: c.card }]}>
         {/* Row 1: Current Location */}
         <View style={styles.rowItem}>
           <View style={styles.iconCol}>
@@ -29,11 +33,11 @@ export function LocationBox({
               <Circle cx={8} cy={8} r={6} fill="#007AFF" />
             </Svg>
           </View>
-          <Text style={styles.locationText}>{currentLocation}</Text>
+          <Text style={[styles.locationText, { color: c.text.primary }]}>{currentLocation}</Text>
         </View>
 
         {/* Divider */}
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: c.border }]} />
 
         {/* Row 2: Destination */}
         <View style={styles.rowItem}>
@@ -48,7 +52,7 @@ export function LocationBox({
               </G>
             </Svg>
           </View>
-          <Text style={styles.locationText}>{destination}</Text>
+          <Text style={[styles.locationText, { color: c.text.primary }]}>{destination}</Text>
         </View>
       </View>
     </View>

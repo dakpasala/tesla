@@ -7,6 +7,7 @@ import { FavoriteIcon } from './FavoriteIcon';
 import { getUserHomeAddress, getUserWorkAddress, getUserFavorites, addUserFavorite, removeUserFavorite } from '../services/users';
 import { getAllLocations } from '../services/parkings';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 import {
   View,
@@ -43,6 +44,9 @@ const RowItem = memo(function RowItem({
   onPressRow,
   onToggleStar,
 }: RowItemProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
     <View style={styles.row}>
       <GHTouchableOpacity
@@ -56,7 +60,7 @@ const RowItem = memo(function RowItem({
           ) : (
             <Image
               source={require('../assets/images/fav_icon_deactivate.png')}
-              style={styles.starIcon}
+              style={[styles.starIcon, { tintColor: c.text.secondary }]}
               resizeMode="contain"
             />
           )}
@@ -69,10 +73,10 @@ const RowItem = memo(function RowItem({
         onPress={() => onPressRow(item.id)}
       >
         <View style={styles.rowTextContainer}>
-          <Text style={styles.rowText}>{item.title}</Text>
-          <Text style={styles.placeSub}>{item.subtitle}</Text>
+          <Text style={[styles.rowText, { color: c.text.primary }]}>{item.title}</Text>
+          <Text style={[styles.placeSub, { color: c.text.secondary }]}>{item.subtitle}</Text>
         </View>
-        <Text style={styles.milesText}>{item.miles}</Text>
+        <Text style={[styles.milesText, { color: c.text.secondary }]}>{item.miles}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -96,20 +100,23 @@ const QuickItem = memo(function QuickItem({
   onLongPress,
   style,
 }: QuickItemProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
     <TouchableOpacity
-      style={[styles.quickItem, style]}
+      style={[styles.quickItem, { backgroundColor: c.background }, style]}
       activeOpacity={0.85}
       onPress={onPress}
       onLongPress={onLongPress}
       delayLongPress={500}
     >
-      <View style={styles.quickCircle}>
-        <Image source={icon} style={styles.quickCircleIcon} />
+      <View style={[styles.quickCircle, { backgroundColor: c.card }]}>
+        <Image source={icon} style={[styles.quickCircleIcon, { tintColor: c.text.primary }]} />
       </View>
       <View style={styles.quickTextWrap}>
-        <Text style={styles.quickTitle}>{title}</Text>
-        <Text style={styles.sub}>{subtitle}</Text>
+        <Text style={[styles.quickTitle, { color: c.text.primary }]}>{title}</Text>
+        <Text style={[styles.sub, { color: c.text.secondary }]}>{subtitle}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -144,6 +151,9 @@ function SearchBar({
   onWorkLongPress,
 }: Props) {
   const { userId } = useAuth();
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const [sort, setSort] = useState<'A-Z' | 'Z-A'>('A-Z');
   const [searchText, setSearchText] = useState('');
   const [locations, setLocations] = useState<RowData[]>([]);
@@ -309,9 +319,9 @@ function SearchBar({
         />
       </View>
 
-      <Text style={styles.section}>My Favorites</Text>
+      <Text style={[styles.section, { color: c.text.secondary }]}>My Favorites</Text>
       {filteredFavorites.length === 0 ? (
-        <Text style={styles.emptyText}>
+        <Text style={[styles.emptyText, { color: c.text.secondary }]}>
           {searchText.trim() ? 'No matching favorites' : 'No favorites yet'}
         </Text>
       ) : (
@@ -326,7 +336,7 @@ function SearchBar({
       )}
 
       <View style={styles.sectionRow}>
-        <Text style={styles.section}>All Offices</Text>
+        <Text style={[styles.section, { color: c.text.secondary }]}>All Offices</Text>
         <TouchableOpacity
           style={styles.sortBtn}
           activeOpacity={0.8}
@@ -338,7 +348,7 @@ function SearchBar({
       </View>
 
       {filteredOffices.length === 0 ? (
-        <Text style={styles.emptyText}>
+        <Text style={[styles.emptyText, { color: c.text.secondary }]}>
           {searchText.trim() ? 'No matching offices' : 'No offices'}
         </Text>
       ) : (
@@ -355,9 +365,9 @@ function SearchBar({
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Search Input Row - Always visible to prevent flash */}
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, { backgroundColor: c.backgroundAlt }]}>
         <TouchableOpacity
           activeOpacity={1}
           onPress={!expanded ? onExpand : undefined}
@@ -365,7 +375,7 @@ function SearchBar({
         />
         <Image
           source={require('../assets/images/search.png')}
-          style={styles.searchIcon}
+          style={[styles.searchIcon, { tintColor: c.text.primary }]}
         />
 
         <TextInput
@@ -373,8 +383,8 @@ function SearchBar({
           onChangeText={handleSearchChange}
           onFocus={onFocus}
           placeholder="Search Here"
-          placeholderTextColor={theme.colors.text.light}
-          style={styles.input}
+          placeholderTextColor={c.text.secondary}
+          style={[styles.input, { color: c.text.primary }]}
           autoCapitalize="none"
           autoCorrect={false}
         />

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   size?: number;
@@ -7,6 +8,9 @@ type Props = {
 };
 
 export function FavoriteIcon({ size = 18, onPress }: Props) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
     <Pressable
       onPress={onPress}
@@ -16,7 +20,7 @@ export function FavoriteIcon({ size = 18, onPress }: Props) {
     >
       <Image
         source={require('../assets/images/fav_star.png')}
-        style={{ width: size, height: size }}
+        style={{ width: size, height: size, tintColor: c.text.primary }}
         resizeMode="contain"
       />
     </Pressable>

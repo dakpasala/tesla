@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 type StatusColor = 'green' | 'red' | 'orange' | 'blue' | 'grey';
 
@@ -30,6 +31,9 @@ export default function ShuttleListItem({
   onPress,
   showSeparator = true,
 }: ShuttleListItemProps) {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   const Wrapper = onPress ? TouchableOpacity : View;
 
   return (
@@ -39,17 +43,17 @@ export default function ShuttleListItem({
         {...(onPress ? { onPress, activeOpacity: 0.6 } : {})}
       >
         <View style={styles.textContainer}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
-          <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+          <Text style={[styles.title, { color: c.text.primary }]} numberOfLines={1}>{title}</Text>
+          <Text style={[styles.subtitle, { color: c.text.secondary }]} numberOfLines={1}>{subtitle}</Text>
         </View>
         <View style={styles.rightContainer}>
-          {rightText ? <Text style={styles.rightText}>{rightText}</Text> : null}
+          {rightText ? <Text style={[styles.rightText, { color: c.text.secondary }]}>{rightText}</Text> : null}
           <View
             style={[styles.statusDot, { backgroundColor: STATUS_COLORS[statusColor] }]}
           />
         </View>
       </Wrapper>
-      {showSeparator && <View style={styles.separator} />}
+      {showSeparator && <View style={[styles.separator, { backgroundColor: c.border }]} />}
     </>
   );
 }

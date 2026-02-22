@@ -16,15 +16,22 @@ import {
   getAnnouncements,
   getAllReports,
 } from '../../services/shuttleAlerts';
-import { getLiveStatus } from '../../services/tripshot';
+import {
+  getCommutePlan,
+  getLiveStatus,
+  extractRideIds,
+  hasShuttleOptions,
+  getOccupancyPercentage,
+  isRideDelayed,
+  getDelayText,
+} from '../../services/tripshot';
 import ActionRequiredCard from '../../components/ActionRequiredCard';
 import ShuttleListItem from '../../components/ShuttleListItem';
 import AnnouncementDropDown from '../../components/AnnouncementDropdown';
 import LiveAlertCard from '../../components/LiveAlertCard';
 import StatBox from '../../components/StatBox';
 import CreateNewAnnouncement from '../../components/CreateNewAnnouncement';
-
-// Extracted Lists
+import { useTheme } from '../../context/ThemeContext';
 import ShuttleReportsList from '../../components/ShuttleReportsList';
 import LiveAlertsList from '../../components/LiveAlertsList';
 import ActiveShuttlesList from '../../components/ActiveShuttlesList';
@@ -39,40 +46,82 @@ type ActionRequiredShuttle = {
   severity: 'high' | 'medium' | 'low';
 };
 
+type ActiveShuttle = {
+  id: string;
+  name: string;
+  route: string;
+  color: 'red' | 'blue' | 'green' | 'orange' | 'grey';
+  occupancy?: number;
+  riderCount?: number;
+  capacity?: number;
+  delayText?: string;
+  isDelayed?: boolean;
+  vehicleName?: string;
+};
+
 type DashboardTab = 'reports' | 'alerts' | 'active' | null;
+
+// ── Known campus coords to discover active rideIds ───────────────────────────
+// Two known route pairs cover all current Tesla shuttle routes
+const CAMPUS_QUERIES = [
+  {
+    startLat: 37.4142218, startLng: -122.1492233,
+    endLat: 37.3945701,   endLng: -122.1501086,
+    startName: '1501 Page Mill', endName: '3500 Deer Creek',
+  },
+  {
+    startLat: 37.4142218, startLng: -122.1492233,
+    endLat: 37.394358,    endLng: -122.076307,
+    startName: '1501 Page Mill', endName: 'Mountain View Caltrain',
+  },
+
+  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
+  {
+    // SF Express route
+    startLat: 37.776400, startLng: -122.394800,
+    endLat: 37.3945701,  endLng: -122.1501086,
+    startName: 'SF Caltrain Station', endName: '3500 Deer Creek',
+  },
+];
+
+function colorFromHex(hex: string, fallback: number): ActiveShuttle['color'] {
+  const map: Record<string, ActiveShuttle['color']> = {
+    '#FF0000': 'red', '#FF3B30': 'red',
+    '#0000FF': 'blue', '#007AFF': 'blue', '#0761E0': 'blue',
+    '#00FF00': 'green', '#34C759': 'green',
+    '#FFA500': 'orange', '#FF9500': 'orange',
+    '#BF40BF': 'grey',
+  };
+  return map[hex] ?? (['red', 'blue', 'green', 'orange'] as const)[fallback % 4];
+}
 
 // ── Main Dashboard ──────────────────────────────────────────────────────────
 
 export default function ShuttleDashboardScreen() {
   const navigation = useNavigation();
   const announcementModalRef = useRef<Modalize>(null);
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
 
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(true);
 
-  // Reports State
   const [reports, setReports] = useState<any[]>([]);
   const [reportsLoading, setReportsLoading] = useState(true);
 
-  // Active Shuttles State
-  const [activeShuttles, setActiveShuttles] = useState<any[]>([]);
+  const [activeShuttles, setActiveShuttles] = useState<ActiveShuttle[]>([]);
   const [shuttlesLoading, setShuttlesLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>(
-    []
-  );
+  const [actionRequired, setActionRequired] = useState<ActionRequiredShuttle[]>([]);
 
-  // Filter State
   const [selectedTab, setSelectedTab] = useState<DashboardTab>(null);
-  
-  // Announcement Type State
   const [announcementType, setAnnouncementType] = useState<'single' | 'all'>('single');
 
   const fetchDashboardData = async () => {
+    // ── Alerts ───────────────────────────────────────────────────────────
     try {
-      // Fetch live alerts (announcements)
       const alertsData = await getAnnouncements();
       setAlerts(alertsData);
     } catch (err) {
@@ -81,59 +130,74 @@ export default function ShuttleDashboardScreen() {
       setAlertsLoading(false);
     }
 
+    // ── Active Shuttles: commutePlan → extract rideIds → liveStatus ──────
     try {
-      // Fetch active shuttles from Tripshot API
-      // TODO: In production, you would get actual ride IDs from another endpoint
-      // For now, using mock ride IDs to fetch shuttle data
-      const mockRideIds = [
-        '1ca7a65e-88f0-4505-a28e-fe7130c341a9:2026-02-08',
-        '2db8b76f-99g1-5616-b39f-gf8241d452b0:2026-02-08',
-        '3ec9c87g-00h2-6727-c40g-hg9352e563c1:2026-02-08',
-        '4fd0d98h-11i3-7838-d51h-ih0463f674d2:2026-02-08',
-      ];
-      
-      const liveStatus = await getLiveStatus(mockRideIds);
-      
-      // Transform the rides data into the format expected by the UI
-      const shuttlesData = liveStatus.rides.map((ride, index) => {
-        // Map color from API to component color options
-        const getColorName = (hexColor: string): 'red' | 'blue' | 'green' | 'orange' => {
-          // You can enhance this mapping based on your actual color codes
-          const colorMap: Record<string, 'red' | 'blue' | 'green' | 'orange'> = {
-            '#FF0000': 'red',
-            '#0000FF': 'blue',
-            '#00FF00': 'green',
-            '#FFA500': 'orange',
-            '#BF40BF': 'orange', // Purple maps to orange for now
-          };
-          return colorMap[hexColor] || (['red', 'blue', 'green', 'orange'] as const)[index % 4];
-        };
+      const today = new Date().toISOString().split('T')[0];
+      const time = new Date().toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
 
-        return {
+      // Fan out to all campus queries in parallel, collect unique rideIds
+      const allRideIds: string[] = [];
+      await Promise.allSettled(
+        CAMPUS_QUERIES.map(async (q) => {
+          const plan = await getCommutePlan({
+            day: today, time,
+            startLat: q.startLat, startLng: q.startLng, startName: q.startName,
+            endLat: q.endLat,     endLng: q.endLng,     endName: q.endName,
+            travelMode: 'Walking',
+          });
+          if (hasShuttleOptions(plan)) {
+            extractRideIds(plan).forEach(id => {
+              if (!allRideIds.includes(id)) allRideIds.push(id);
+            });
+          }
+        })
+      );
+
+      if (allRideIds.length === 0) {
+        setActiveShuttles([]);
+        setShuttlesLoading(false);
+        return;
+      }
+
+      const liveStatus = await getLiveStatus(allRideIds);
+
+      // Dedupe by routeId — 2 departure options per route come back,
+      // we only want one card per route in the dashboard
+      const seenRouteIds = new Set<string>();
+      const shuttlesData: ActiveShuttle[] = [];
+      liveStatus.rides.forEach((ride, index) => {
+        if (seenRouteIds.has(ride.routeId)) return;
+        seenRouteIds.add(ride.routeId);
+        shuttlesData.push({
           id: ride.rideId,
           name: ride.shortName || ride.routeName,
           route: ride.routeName,
-          color: getColorName(ride.color),
-        };
+          color: colorFromHex(ride.color, index),
+          occupancy: getOccupancyPercentage(ride),
+          riderCount: ride.riderCount,
+          capacity: ride.vehicleCapacity,
+          delayText: getDelayText(ride),
+          isDelayed: isRideDelayed(ride),
+          vehicleName: ride.vehicleShortName || ride.vehicleName,
+        });
       });
 
       setActiveShuttles(shuttlesData);
     } catch (err) {
       console.error('Failed to fetch shuttles', err);
-      // Optionally: fall back to empty array or show error state
       setActiveShuttles([]);
     } finally {
       setShuttlesLoading(false);
     }
 
+    // ── Reports & Action Required ────────────────────────────────────────
     try {
-      // Fetch all reports from the backend
       const allReports = await getAllReports();
-      const results: ActionRequiredShuttle[] = [];
-
       const reportsByShuttle: Record<string, any[]> = {};
 
-      // Group by shuttle
       for (const report of allReports) {
         if (!reportsByShuttle[report.shuttleName]) {
           reportsByShuttle[report.shuttleName] = [];
@@ -141,7 +205,7 @@ export default function ShuttleDashboardScreen() {
         reportsByShuttle[report.shuttleName].push(report);
       }
 
-      // Generate Action Required items
+      const results: ActionRequiredShuttle[] = [];
       for (const shuttleName in reportsByShuttle) {
         const r = reportsByShuttle[shuttleName];
         if (r.length > 0) {
@@ -152,25 +216,18 @@ export default function ShuttleDashboardScreen() {
           );
           const newest = sorted[0];
           const minsAgo = newest?.createdAt
-            ? Math.round(
-                (Date.now() - new Date(newest.createdAt).getTime()) / 60000
-              )
+            ? Math.round((Date.now() - new Date(newest.createdAt).getTime()) / 60000)
             : 0;
-          const lastReported = minsAgo < 1 ? 'just now' : `${minsAgo} min ago`;
-          const severity: 'high' | 'medium' | 'low' =
-            r.length >= 5 ? 'high' : r.length >= 2 ? 'medium' : 'low';
-
           results.push({
-            shuttleName: shuttleName,
+            shuttleName,
             reportCount: r.length,
-            lastReported,
+            lastReported: minsAgo < 1 ? 'just now' : `${minsAgo} min ago`,
             lastType: newest?.comment?.split(' ')[0] ?? 'Report',
-            severity,
+            severity: r.length >= 5 ? 'high' : r.length >= 2 ? 'medium' : 'low',
           });
         }
       }
 
-      // Update states
       setReports(allReports);
       setActionRequired(results);
     } catch (err) {
@@ -186,9 +243,7 @@ export default function ShuttleDashboardScreen() {
       await fetchDashboardData();
       if (!cancelled) setLoading(false);
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const onRefresh = async () => {
@@ -198,24 +253,60 @@ export default function ShuttleDashboardScreen() {
   };
 
   const handleTabPress = (tab: DashboardTab) => {
-    if (selectedTab === tab) {
-      setSelectedTab(null); // toggle off
-    } else {
-      setSelectedTab(tab);
-    }
+    setSelectedTab(prev => (prev === tab ? null : tab));
   };
 
   const getTitle = () => {
     if (selectedTab === 'reports') return 'All Shuttle Reports';
-    if (selectedTab === 'alerts') return 'All Live Alerts';
-    if (selectedTab === 'active') return 'All Active Shuttles';
+    if (selectedTab === 'alerts')  return 'All Live Alerts';
+    if (selectedTab === 'active')  return 'All Active Shuttles';
     return 'Shuttle Dashboard';
   };
 
-  // Render Content
+  // ── Shared top controls (title + stats + announcement) ──────────────────
+  const renderTopControls = () => (
+    <>
+      <Text style={[styles.dashTitle, { color: c.text.primary }]}>{getTitle()}</Text>
+      <View style={styles.statsRow}>
+        <StatBox
+          value={loading ? '...' : reports.length}
+          label="New Reports"
+          active={selectedTab === 'reports'}
+          onPress={() => handleTabPress('reports')}
+        />
+        <StatBox
+          value={alertsLoading ? '...' : alerts.length}
+          label="Live Alerts"
+          active={selectedTab === 'alerts'}
+          onPress={() => handleTabPress('alerts')}
+        />
+        <StatBox
+          value={shuttlesLoading ? '...' : activeShuttles.length}
+          label="Shuttles Active"
+          active={selectedTab === 'active'}
+          onPress={() => handleTabPress('active')}
+        />
+      </View>
+      <View style={styles.announcementWrapper}>
+        <AnnouncementDropDown
+          onSelectOption={option => {
+            if (option === 'Single Shuttle Route') {
+              setAnnouncementType('single');
+              announcementModalRef.current?.open();
+            } else if (option === 'All Shuttle Routes') {
+              setAnnouncementType('all');
+              announcementModalRef.current?.open();
+            } else {
+              console.log('Selected:', option);
+            }
+          }}
+        />
+      </View>
+    </>
+  );
 
+  // ── Content ──────────────────────────────────────────────────────────────
   const renderContent = () => {
-    // 1. Detailed Views
     if (selectedTab === 'reports') {
       return (
         <View style={styles.detailedContainer}>
@@ -238,19 +329,16 @@ export default function ShuttleDashboardScreen() {
       );
     }
 
-    // 2. Summary View (Default)
     return (
       <View>
-        {/* Action Required */}
         {actionRequired.length > 0 && (
           <>
             <View style={styles.sectionRow}>
-              <Text style={styles.sectionHeader}>Action Required</Text>
+              <Text style={[styles.sectionHeader, { color: c.text.primary }]}>Action Required</Text>
               <TouchableOpacity onPress={() => setSelectedTab('reports')}>
                 <Text style={styles.viewAllText}>View All</Text>
               </TouchableOpacity>
             </View>
-
             {actionRequired.map(shuttle => (
               <ActionRequiredCard
                 key={shuttle.shuttleName}
@@ -269,38 +357,42 @@ export default function ShuttleDashboardScreen() {
           </>
         )}
 
-        {/* Live Alerts Summary */}
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionHeader}>Live Alerts</Text>
+          <Text style={[styles.sectionHeader, { color: c.text.primary }]}>Live Alerts</Text>
           <TouchableOpacity onPress={() => setSelectedTab('alerts')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
-
         {alerts.slice(0, 3).map(alert => (
           <LiveAlertCard
             key={alert.id}
             shuttleName={alert.shuttleName}
             delayText={`${alert.delayMinutes} MIN DELAY`}
-            timeText={`Sent ${new Date(alert.createdAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`}
+            timeText={`Sent ${new Date(alert.createdAt).toLocaleTimeString([], {
+              hour: 'numeric',
+              minute: '2-digit',
+            })}`}
           />
         ))}
 
-        {/* Shuttles Summary */}
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionHeader}>Shuttles</Text>
+          <Text style={[styles.sectionHeader, { color: c.text.primary }]}>Shuttles</Text>
           <TouchableOpacity onPress={() => setSelectedTab('active')}>
             <Text style={styles.viewAllText}>View All</Text>
           </TouchableOpacity>
         </View>
-
         {activeShuttles.slice(0, 3).map((shuttle, idx) => (
           <ShuttleListItem
             key={shuttle.id}
             title={shuttle.name}
-            subtitle={shuttle.route}
-            statusColor={shuttle.color}
-            showSeparator={idx < 2}
+            subtitle={
+              shuttle.isDelayed
+                ? `${shuttle.delayText} · ${shuttle.riderCount}/${shuttle.capacity} riders`
+                : `On Time · ${shuttle.riderCount ?? '—'}/${shuttle.capacity ?? '—'} riders`
+            }
+            statusColor={shuttle.isDelayed ? 'red' : 'green'}
+            rightText={shuttle.vehicleName}
+            showSeparator={idx < Math.min(activeShuttles.length, 3) - 1}
             onPress={() =>
               (navigation as any).navigate('ShuttleReports', {
                 shuttleName: shuttle.name,
@@ -315,13 +407,9 @@ export default function ShuttleDashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
+    <SafeAreaView style={[styles.container, { backgroundColor: c.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={styles.backText}>{'< '}Home</Text>
         </TouchableOpacity>
         <View style={{ width: 40 }} />
@@ -330,107 +418,22 @@ export default function ShuttleDashboardScreen() {
       {selectedTab === null ? (
         <ScrollView
           contentContainerStyle={styles.content}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <Text style={styles.dashTitle}>{getTitle()}</Text>
-
-          {/* Filter Buttons */}
-          <View style={styles.statsRow}>
-            <StatBox
-              value={loading ? '...' : reports.length}
-              label="New Reports"
-              active={selectedTab === 'reports'}
-              onPress={() => handleTabPress('reports')}
-            />
-            <StatBox
-              value={alertsLoading ? '...' : alerts.length}
-              label="Live Alerts"
-              active={selectedTab === 'alerts'}
-              onPress={() => handleTabPress('alerts')}
-            />
-            <StatBox
-              value={shuttlesLoading ? '...' : activeShuttles.length}
-              label="Shuttles Active"
-              active={selectedTab === 'active'}
-              onPress={() => handleTabPress('active')}
-            />
-          </View>
-
-          <View style={styles.announcementWrapper}>
-            <AnnouncementDropDown
-              onSelectOption={option => {
-                if (option === 'Single Shuttle Route') {
-                  setAnnouncementType('single');
-                  announcementModalRef.current?.open();
-                } else if (option === 'All Shuttle Routes') {
-                  setAnnouncementType('all');
-                  announcementModalRef.current?.open();
-                } else {
-                  console.log('Selected:', option);
-                }
-              }}
-            />
-          </View>
-
+          {renderTopControls()}
           {renderContent()}
         </ScrollView>
       ) : (
         <View style={[styles.content, { flex: 1, paddingBottom: 0 }]}>
-          <Text style={styles.dashTitle}>{getTitle()}</Text>
-
-          {/* Filter Buttons */}
-          <View style={styles.statsRow}>
-            <StatBox
-              value={loading ? '...' : reports.length}
-              label="New Reports"
-              active={selectedTab === 'reports'}
-              onPress={() => handleTabPress('reports')}
-            />
-            <StatBox
-              value={alertsLoading ? '...' : alerts.length}
-              label="Live Alerts"
-              active={selectedTab === 'alerts'}
-              onPress={() => handleTabPress('alerts')}
-            />
-            <StatBox
-              value={shuttlesLoading ? '...' : activeShuttles.length}
-              label="Shuttles Active"
-              active={selectedTab === 'active'}
-              onPress={() => handleTabPress('active')}
-            />
-          </View>
-
-          <View style={styles.announcementWrapper}>
-            <AnnouncementDropDown
-              onSelectOption={option => {
-                if (option === 'Single Shuttle Route') {
-                  setAnnouncementType('single');
-                  announcementModalRef.current?.open();
-                } else if (option === 'All Shuttle Routes') {
-                  setAnnouncementType('all');
-                  announcementModalRef.current?.open();
-                } else {
-                  console.log('Selected:', option);
-                }
-              }}
-            />
-          </View>
-
-          {/* The Detailed content (List) will fill the remaining space */}
+          {renderTopControls()}
           <View style={{ flex: 1 }}>{renderContent()}</View>
         </View>
       )}
 
-      {/* Create Announcement Modal */}
       <CreateNewAnnouncement
         ref={announcementModalRef}
         announcementType={announcementType}
-        onSuccess={() => {
-          // Refresh dashboard data after creating announcement
-          fetchDashboardData();
-        }}
+        onSuccess={() => fetchDashboardData()}
       />
     </SafeAreaView>
   );

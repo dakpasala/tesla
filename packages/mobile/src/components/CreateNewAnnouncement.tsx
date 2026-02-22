@@ -13,6 +13,7 @@ import {
 import { Modalize } from 'react-native-modalize';
 import Svg, { Path } from 'react-native-svg';
 import { createShuttleAlertAdmin } from '../services/shuttleAlerts';
+import { useTheme } from '../context/ThemeContext';
 
 const SHUTTLE_OPTIONS = [
   'Tesla HQ Deer Creek Shuttle A',
@@ -35,6 +36,9 @@ interface CreateNewAnnouncementProps {
 
 const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
   ({ onSuccess, announcementType = 'single' }, ref) => {
+    const { activeTheme } = useTheme();
+    const c = activeTheme.colors;
+
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [selectedShuttle, setSelectedShuttle] = useState(SHUTTLE_OPTIONS[0]);
     const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -100,22 +104,22 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
     };
 
     return (
-      <Modalize ref={ref} modalHeight={538} modalStyle={styles.modalScreen}>
+      <Modalize ref={ref} modalHeight={538} modalStyle={[styles.modalScreen, { backgroundColor: c.card }]}>
         <View style={styles.container}>
           {/* Main Content */}
-          <View style={styles.content}>
+          <View style={[styles.content, { backgroundColor: c.card }]}>
             {/* Title Row */}
             <View style={styles.titleRow}>
-              <Text style={styles.mainTitle}>Create Announcement</Text>
+              <Text style={[styles.mainTitle, { color: c.text.primary }]}>Create Announcement</Text>
 
               {/* Shuttle Dropdown - Only show for single shuttle */}
               {announcementType === 'single' && (
                 <View style={styles.dropdownWrapper}> 
                   <Pressable
-                    style={styles.dropdownButton}
+                    style={[styles.dropdownButton, { backgroundColor: c.card }]}
                     onPress={() => setDropdownOpen(v => !v)}
                   >
-                    <Text style={styles.dropdownText}>
+                    <Text style={[styles.dropdownText, { color: c.text.primary }]}>
                       {selectedShuttle.replace('Tesla HQ Deer Creek ', '')}
                     </Text>
                     <Svg
@@ -123,7 +127,7 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
                       height={20}
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="#666"
+                      stroke={c.text.secondary}
                     >
                       <Path
                         d={dropdownOpen ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
@@ -136,19 +140,19 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
 
                   {dropdownOpen && (
                     <ScrollView
-                      style={styles.dropdownMenu}
+                      style={[styles.dropdownMenu, { backgroundColor: c.card, borderColor: c.border }]}
                       nestedScrollEnabled={true}
                     >
                       {SHUTTLE_OPTIONS.map(shuttle => (
                         <Pressable
                           key={shuttle}
-                          style={styles.dropdownItem}
+                          style={[styles.dropdownItem, { backgroundColor: c.card }]}
                           onPress={() => {
                             setSelectedShuttle(shuttle);
                             setDropdownOpen(false);
                           }}
                         >
-                          <Text style={styles.dropdownItemText}>
+                          <Text style={[styles.dropdownItemText, { color: c.text.primary }]}>
                             {shuttle.replace('Tesla HQ Deer Creek ', '')}
                           </Text>
                         </Pressable>
@@ -161,7 +165,7 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
 
             {/* Announcement Type Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Announcement Type</Text>
+              <Text style={[styles.sectionTitle, { color: c.text.primary }]}>Announcement Type</Text>
 
               <View style={styles.typeGrid}>
                 {ANNOUNCEMENT_TYPES.map(type => (
@@ -170,12 +174,12 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
                     style={styles.radioRow}
                     onPress={() => setSelectedType(type.id)}
                   >
-                    <View style={styles.radioButton}>
+                    <View style={[styles.radioButton, { borderColor: c.border }]}>
                       {selectedType === type.id && (
                         <View style={styles.radioButtonInner} />
                       )}
                     </View>
-                    <Text style={styles.radioLabel}>{type.label}</Text>
+                    <Text style={[styles.radioLabel, { color: c.text.primary }]}>{type.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -184,9 +188,9 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
             {/* Details Text Area */}
             <View style={styles.section}>
               <TextInput
-                style={styles.textArea}
+                style={[styles.textArea, { borderColor: c.border, color: c.text.primary, backgroundColor: c.backgroundAlt }]}
                 placeholder="Add more details (optional)"
-                placeholderTextColor="#C7C7C7"
+                placeholderTextColor={c.text.secondary}
                 multiline
                 value={details}
                 onChangeText={setDetails}
@@ -196,23 +200,23 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
 
             {/* Delay Section */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Delay</Text>
+              <Text style={[styles.sectionTitle, { color: c.text.primary }]}>Delay</Text>
 
-              <View style={styles.delayControl}>
+              <View style={[styles.delayControl, { backgroundColor: c.backgroundAlt }]}>
                 <Pressable
-                  style={styles.delayButton}
+                  style={[styles.delayButton, { backgroundColor: c.backgroundAlt }]}
                   onPress={() => setDelay(Math.max(0, delay - 5))}
                 >
-                  <Text style={styles.delayButtonText}>−</Text>
+                  <Text style={[styles.delayButtonText, { color: c.text.secondary }]}>−</Text>
                 </Pressable>
 
-                <Text style={styles.delayValue}>{delay}</Text>
+                <Text style={[styles.delayValue, { color: c.text.primary, backgroundColor: c.card, borderColor: c.backgroundAlt }]}>{delay}</Text>
 
                 <Pressable
-                  style={styles.delayButton}
+                  style={[styles.delayButton, { backgroundColor: c.backgroundAlt }]}
                   onPress={() => setDelay(delay + 5)}
                 >
-                  <Text style={styles.delayButtonText}>+</Text>
+                  <Text style={[styles.delayButtonText, { color: c.text.secondary }]}>+</Text>
                 </Pressable>
               </View>
             </View>

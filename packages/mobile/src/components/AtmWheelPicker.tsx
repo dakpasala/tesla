@@ -1,3 +1,5 @@
+// doesn't have dark mode implemented
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
@@ -20,6 +22,10 @@ interface AtmWheelPickerProps {
     period: 'am' | 'pm';
   }) => void;
   showSelectionOverlay?: boolean;
+  // Minimum selectable time — items before this are hidden
+  minHour?: number;
+  minMinute?: number;
+  minPeriod?: 'am' | 'pm';
 }
 
 const ITEM_HEIGHT = 36;
@@ -37,22 +43,22 @@ const PERIODS_LENGTH = 32;
 const MID_AM_INDEX = PERIODS_LENGTH / 2 - 1;
 const MID_PM_INDEX = PERIODS_LENGTH / 2;
 
-const getCurrentTime = (): {
-  hour: number;
-  minute: number;
-  period: 'am' | 'pm';
-} => {
+const getCurrentTime = (): { hour: number; minute: number; period: 'am' | 'pm' } => {
   const now = new Date();
   let hour = now.getHours();
   const minute = now.getMinutes();
   const period: 'am' | 'pm' = hour >= 12 ? 'pm' : 'am';
-
   hour = hour % 12 || 12;
-
   const roundedMinute = Math.min(55, Math.round(minute / 5) * 5);
-
   return { hour, minute: roundedMinute, period };
 };
+
+/** Convert 12h time to minutes-since-midnight for comparison */
+function toMinutes(hour: number, minute: number, period: 'am' | 'pm'): number {
+  let h = hour % 12;
+  if (period === 'pm') h += 12;
+  return h * 60 + minute;
+}
 
 const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   initialHour,
@@ -60,63 +66,47 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   initialPeriod,
   onTimeChange,
   showSelectionOverlay = false,
+  minHour,
+  minMinute = 0,
+  minPeriod = 'am',
 }) => {
   const currentTime = getCurrentTime();
-
   const defaultHour = initialHour ?? currentTime.hour;
   const defaultMinute = initialMinute ?? currentTime.minute;
   const defaultPeriod = initialPeriod ?? currentTime.period;
   const colorScheme = useColorScheme();
   const isDarkMode = colorScheme === 'dark';
 
+  // Min threshold in minutes-since-midnight (0 if no min set)
+  const minTotalMinutes = minHour !== undefined
+    ? toMinutes(minHour, minMinute, minPeriod)
+    : 0;
+
   const baseHours = Array.from({ length: HOUR_CYCLE_LENGTH }, (_, i) => i + 1);
-  const baseMinutes = Array.from(
-    { length: MINUTE_CYCLE_LENGTH },
-    (_, i) => i * 5
-  );
+  const baseMinutes = Array.from({ length: MINUTE_CYCLE_LENGTH }, (_, i) => i * 5);
 
   const hourBaseIndex = baseHours.indexOf(defaultHour);
   const minuteBaseIndex = baseMinutes.indexOf(defaultMinute);
 
-  const defaultHourIndex =
-    (hourBaseIndex === -1 ? 0 : hourBaseIndex) + HOUR_MID_START;
-  const defaultMinuteIndex =
-    (minuteBaseIndex === -1 ? 0 : minuteBaseIndex) + MINUTE_MID_START;
-  const defaultPeriodIndex =
-    defaultPeriod === 'am' ? MID_AM_INDEX : MID_PM_INDEX;
+  const defaultHourIndex = (hourBaseIndex === -1 ? 0 : hourBaseIndex) + HOUR_MID_START;
+  const defaultMinuteIndex = (minuteBaseIndex === -1 ? 0 : minuteBaseIndex) + MINUTE_MID_START;
+  const defaultPeriodIndex = defaultPeriod === 'am' ? MID_AM_INDEX : MID_PM_INDEX;
 
-  const hours = Array.from(
-    { length: HOURS_LENGTH },
-    (_, i) => baseHours[i % baseHours.length]
-  );
-
-  const minutes = Array.from(
-    { length: MINUTES_LENGTH },
-    (_, i) => baseMinutes[i % baseMinutes.length]
-  );
+  const hours = Array.from({ length: HOURS_LENGTH }, (_, i) => baseHours[i % baseHours.length]);
+  const minutes = Array.from({ length: MINUTES_LENGTH }, (_, i) => baseMinutes[i % baseMinutes.length]);
 
   const [selectedHour, setSelectedHour] = useState(defaultHour);
   const [selectedMinute, setSelectedMinute] = useState(defaultMinute);
-  const [selectedPeriod, setSelectedPeriod] = useState<'am' | 'pm'>(
-    defaultPeriod
-  );
+  const [selectedPeriod, setSelectedPeriod] = useState<'am' | 'pm'>(defaultPeriod);
   const [selectedHourIndex, setSelectedHourIndex] = useState(defaultHourIndex);
-  const [selectedMinuteIndex, setSelectedMinuteIndex] =
-    useState(defaultMinuteIndex);
-  const [selectedPeriodIndex, setSelectedPeriodIndex] =
-    useState(defaultPeriodIndex);
+  const [selectedMinuteIndex, setSelectedMinuteIndex] = useState(defaultMinuteIndex);
+  const [selectedPeriodIndex, setSelectedPeriodIndex] = useState(defaultPeriodIndex);
 
   const [hourScrollOffset, setHourScrollOffset] = useState(0);
   const [minuteScrollOffset, setMinuteScrollOffset] = useState(0);
   const [periodScrollOffset, setPeriodScrollOffset] = useState(0);
 
   const periods = useMemo(() => {
-    console.log(
-      '[PERIODS_MEMOIZED] Periods array recalculated - selectedPeriod:',
-      selectedPeriod,
-      'selectedPeriodIndex:',
-      selectedPeriodIndex
-    );
     return Array.from({ length: PERIODS_LENGTH }, (_, i) => {
       if (selectedPeriod === 'am') {
         return i <= selectedPeriodIndex ? 'am' : 'pm';
@@ -131,108 +121,39 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   const periodScrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    const hourIndex = defaultHourIndex;
-    const minuteIndex = defaultMinuteIndex;
-    const periodIndex = defaultPeriodIndex;
-
-    const safeHourIndex = Math.max(0, hourIndex);
-    const safeMinuteIndex = Math.max(0, minuteIndex);
-    const safePeriodIndex = Math.max(0, periodIndex);
-
-    const scrollToIndex = (
-      ref: React.RefObject<ScrollView | null>,
-      index: number
-    ) => {
-      ref.current?.scrollTo({ y: index * ITEM_HEIGHT, animated: false });
-    };
+    const safeHourIndex = Math.max(0, defaultHourIndex);
+    const safeMinuteIndex = Math.max(0, defaultMinuteIndex);
+    const safePeriodIndex = Math.max(0, defaultPeriodIndex);
 
     requestAnimationFrame(() => {
-      const hourOffset = safeHourIndex * ITEM_HEIGHT;
-      const minuteOffset = safeMinuteIndex * ITEM_HEIGHT;
-      const periodOffset = safePeriodIndex * ITEM_HEIGHT;
-
-      scrollToIndex(hourScrollRef, safeHourIndex);
-      scrollToIndex(minuteScrollRef, safeMinuteIndex);
-      scrollToIndex(periodScrollRef, safePeriodIndex);
-
-      setHourScrollOffset(hourOffset);
-      setMinuteScrollOffset(minuteOffset);
-      setPeriodScrollOffset(periodOffset);
+      hourScrollRef.current?.scrollTo({ y: safeHourIndex * ITEM_HEIGHT, animated: false });
+      minuteScrollRef.current?.scrollTo({ y: safeMinuteIndex * ITEM_HEIGHT, animated: false });
+      periodScrollRef.current?.scrollTo({ y: safePeriodIndex * ITEM_HEIGHT, animated: false });
+      setHourScrollOffset(safeHourIndex * ITEM_HEIGHT);
+      setMinuteScrollOffset(safeMinuteIndex * ITEM_HEIGHT);
+      setPeriodScrollOffset(safePeriodIndex * ITEM_HEIGHT);
     });
   }, [defaultHour, defaultMinute, defaultPeriod]);
 
-  const snapToItem = (
-    offset: number,
-    itemCount: number,
-    setter: (value: any) => void,
-    values: any[]
-  ) => {
-    const index = Math.round(offset / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(index, itemCount - 1));
-    setter(values[clampedIndex]);
-    return clampedIndex;
-  };
-
-  const handleHourScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const index = Math.round(offsetY / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(index, hours.length - 1));
-    const value = hours[clampedIndex];
-
-    setSelectedHour(value);
-    setSelectedHourIndex(clampedIndex);
-
-    recenterHourIfNeeded(offsetY);
-
-    if (onTimeChange) {
-      onTimeChange({
-        hour: value,
-        minute: selectedMinute,
-        period: selectedPeriod,
-      });
-    }
-  };
-
-  const handleMinuteScroll = (
-    event: NativeSyntheticEvent<NativeScrollEvent>
-  ) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const index = Math.round(offsetY / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(index, minutes.length - 1));
-    const value = minutes[clampedIndex];
-
-    setSelectedMinute(value);
-    setSelectedMinuteIndex(clampedIndex);
-
-    recenterMinuteIfNeeded(offsetY);
-
-    if (onTimeChange) {
-      onTimeChange({
-        hour: selectedHour,
-        minute: value,
-        period: selectedPeriod,
-      });
-    }
+  /** Check if a given time combination is before the minimum */
+  const isBeforeMin = (h: number, m: number, p: 'am' | 'pm') => {
+    if (minHour === undefined) return false;
+    return toMinutes(h, m, p) < minTotalMinutes;
   };
 
   const recenterHourIfNeeded = (offsetY: number) => {
     const index = Math.round(offsetY / ITEM_HEIGHT);
-    const topThreshold = 6;
-    const bottomThreshold = hours.length - 7;
-
-    if (index <= topThreshold) {
+    if (index <= 6) {
       const newIndex = index + HOUR_CYCLE_LENGTH;
-      const newValue = hours[newIndex];
       setSelectedHourIndex(newIndex);
-      setSelectedHour(newValue);
+      setSelectedHour(hours[newIndex]);
       const y = newIndex * ITEM_HEIGHT;
       setHourScrollOffset(y);
       hourScrollRef.current?.scrollTo({ y, animated: false });
-    } else if (index >= bottomThreshold) {
+    } else if (index >= hours.length - 7) {
       const newIndex = index - HOUR_CYCLE_LENGTH;
-      const newValue = hours[newIndex];
       setSelectedHourIndex(newIndex);
-      setSelectedHour(newValue);
+      setSelectedHour(hours[newIndex]);
       const y = newIndex * ITEM_HEIGHT;
       setHourScrollOffset(y);
       hourScrollRef.current?.scrollTo({ y, animated: false });
@@ -241,77 +162,89 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
 
   const recenterMinuteIfNeeded = (offsetY: number) => {
     const index = Math.round(offsetY / ITEM_HEIGHT);
-    const topThreshold = 6;
-    const bottomThreshold = minutes.length - 7;
-
-    if (index <= topThreshold) {
+    if (index <= 6) {
       const newIndex = index + MINUTE_CYCLE_LENGTH;
-      const newValue = minutes[newIndex];
       setSelectedMinuteIndex(newIndex);
-      setSelectedMinute(newValue);
+      setSelectedMinute(minutes[newIndex]);
       const y = newIndex * ITEM_HEIGHT;
       setMinuteScrollOffset(y);
       minuteScrollRef.current?.scrollTo({ y, animated: false });
-    } else if (index >= bottomThreshold) {
+    } else if (index >= minutes.length - 7) {
       const newIndex = index - MINUTE_CYCLE_LENGTH;
-      const newValue = minutes[newIndex];
       setSelectedMinuteIndex(newIndex);
-      setSelectedMinute(newValue);
+      setSelectedMinute(minutes[newIndex]);
       const y = newIndex * ITEM_HEIGHT;
       setMinuteScrollOffset(y);
       minuteScrollRef.current?.scrollTo({ y, animated: false });
     }
   };
 
-  const recenterPeriodIfNeeded = (
-    offsetY: number,
-    currentPeriod: 'am' | 'pm'
-  ) => {
+  const recenterPeriodIfNeeded = (offsetY: number, currentPeriod: 'am' | 'pm') => {
     const index = Math.round(offsetY / ITEM_HEIGHT);
-    const topThreshold = 6;
-    const bottomThreshold = periods.length - 7;
-
-    if (currentPeriod === 'am' && index <= topThreshold) {
+    if (currentPeriod === 'am' && index <= 6) {
       const newIndex = MID_AM_INDEX;
       setSelectedPeriodIndex(newIndex);
       setPeriodScrollOffset(newIndex * ITEM_HEIGHT);
-      periodScrollRef.current?.scrollTo({
-        y: newIndex * ITEM_HEIGHT,
-        animated: false,
-      });
+      periodScrollRef.current?.scrollTo({ y: newIndex * ITEM_HEIGHT, animated: false });
     }
-
-    if (currentPeriod === 'pm' && index >= bottomThreshold) {
+    if (currentPeriod === 'pm' && index >= periods.length - 7) {
       const newIndex = MID_PM_INDEX;
       setSelectedPeriodIndex(newIndex);
       setPeriodScrollOffset(newIndex * ITEM_HEIGHT);
-      periodScrollRef.current?.scrollTo({
-        y: newIndex * ITEM_HEIGHT,
-        animated: false,
-      });
+      periodScrollRef.current?.scrollTo({ y: newIndex * ITEM_HEIGHT, animated: false });
     }
   };
 
-  const handlePeriodScroll = (
-    event: NativeSyntheticEvent<NativeScrollEvent>
-  ) => {
+  const handleHourScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, hours.length - 1));
+    const value = hours[clampedIndex];
+    setSelectedHour(value);
+    setSelectedHourIndex(clampedIndex);
+    recenterHourIfNeeded(offsetY);
+
+    // If the current minute is now before the min, snap minute forward to minMinute
+    let effectiveMinute = selectedMinute;
+    if (
+      minHour !== undefined &&
+      selectedPeriod === minPeriod &&
+      value === minHour &&
+      selectedMinute < minMinute
+    ) {
+      effectiveMinute = minMinute;
+      const minMinuteBaseIndex = baseMinutes.indexOf(minMinute);
+      const newMinuteIndex = (minMinuteBaseIndex === -1 ? 0 : minMinuteBaseIndex) + MINUTE_MID_START;
+      setSelectedMinute(minMinute);
+      setSelectedMinuteIndex(newMinuteIndex);
+      const y = newMinuteIndex * ITEM_HEIGHT;
+      setMinuteScrollOffset(y);
+      minuteScrollRef.current?.scrollTo({ y, animated: true });
+    }
+
+    onTimeChange?.({ hour: value, minute: effectiveMinute, period: selectedPeriod });
+  };
+
+  const handleMinuteScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    const index = Math.round(offsetY / ITEM_HEIGHT);
+    const clampedIndex = Math.max(0, Math.min(index, minutes.length - 1));
+    const value = minutes[clampedIndex];
+    setSelectedMinute(value);
+    setSelectedMinuteIndex(clampedIndex);
+    recenterMinuteIfNeeded(offsetY);
+    onTimeChange?.({ hour: selectedHour, minute: value, period: selectedPeriod });
+  };
+
+  const handlePeriodScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     const index = Math.round(offsetY / ITEM_HEIGHT);
     const clampedIndex = Math.max(0, Math.min(index, periods.length - 1));
-
     const newPeriod = periods[clampedIndex] as 'am' | 'pm';
     setSelectedPeriod(newPeriod);
     setSelectedPeriodIndex(clampedIndex);
-
     recenterPeriodIfNeeded(offsetY, newPeriod);
-
-    if (onTimeChange) {
-      onTimeChange({
-        hour: selectedHour,
-        minute: selectedMinute,
-        period: newPeriod,
-      });
-    }
+    onTimeChange?.({ hour: selectedHour, minute: selectedMinute, period: newPeriod });
   };
 
   const renderColumn = (
@@ -323,11 +256,11 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     scrollOffset: number = 0,
     onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void,
     selectedIndex?: number,
-    columnPosition: 'left' | 'center' | 'right' = 'center'
+    columnPosition: 'left' | 'center' | 'right' = 'center',
+    isPastFn?: (item: number | string, index: number) => boolean
   ) => {
     const defaultSelectedIndex = items.findIndex(i => i === selectedValue);
-    const actualSelectedIndex =
-      selectedIndex !== undefined ? selectedIndex : defaultSelectedIndex;
+    const actualSelectedIndex = selectedIndex !== undefined ? selectedIndex : defaultSelectedIndex;
     const centerPosition = scrollOffset / ITEM_HEIGHT;
 
     return (
@@ -349,27 +282,17 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
             const normEdge = Math.min(distance / 4.5, 1);
             const scale = Math.max(0.35, 1 - Math.pow(normEdge, 1.8) * 0.7);
             const tilt = (index - centerPosition) * 13;
-
-            const shiftMagnitude = Math.pow(normEdge, 1.3) * 10; // grows with distance
-            const translateX =
-              columnPosition === 'left'
-                ? shiftMagnitude
-                : columnPosition === 'right'
-                  ? -shiftMagnitude
-                  : 0;
-
-            const compressionFactor =
-              distance > 0 ? Math.pow(distance, 2.2) * 2.2 : 0;
-            const translateY =
-              -compressionFactor * Math.sign(index - centerPosition);
-
+            const shiftMagnitude = Math.pow(normEdge, 1.3) * 10;
+            const translateX = columnPosition === 'left' ? shiftMagnitude : columnPosition === 'right' ? -shiftMagnitude : 0;
+            const compressionFactor = distance > 0 ? Math.pow(distance, 2.2) * 2.2 : 0;
+            const translateY = -compressionFactor * Math.sign(index - centerPosition);
             const maxVisibleTilt = 70;
-            const opacity =
-              Math.abs(tilt) > maxVisibleTilt
-                ? 0
-                : 1 - Math.max(0, (Math.abs(tilt) - 50) / 20);
-
+            const opacity = Math.abs(tilt) > maxVisibleTilt ? 0 : 1 - Math.max(0, (Math.abs(tilt) - 50) / 20);
             const isSelected = index === actualSelectedIndex;
+
+            // Hide items that are before the minimum time
+            const isPast = isPastFn ? isPastFn(item, index) : false;
+            if (isPast) return <View key={index} style={{ height: ITEM_HEIGHT }} />;
 
             return (
               <View key={index} style={styles.itemContainer}>
@@ -408,61 +331,56 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     return num.toString().padStart(2, '0');
   };
 
+  // isPast functions per column — hide items before min time
+  const isHourPast = (item: number | string, index: number) => {
+    if (minHour === undefined) return false;
+    const h = typeof item === 'number' ? item : parseInt(item as string);
+    // For the current period, check if hour is before min hour
+    // Use selectedPeriod context — if period is different from minPeriod, no restriction
+    if (selectedPeriod !== minPeriod) return false;
+    return toMinutes(h, 0, selectedPeriod) < toMinutes(minHour, 0, minPeriod);
+  };
+
+  const isMinutePast = (item: number | string, index: number) => {
+    if (minHour === undefined) return false;
+    const m = typeof item === 'number' ? item : parseInt(item as string);
+    // Only restrict minutes if on the same hour and period as min
+    if (selectedPeriod !== minPeriod) return false;
+    if (selectedHour !== minHour) return false;
+    return m < minMinute;
+  };
+
+  const isPeriodPast = (item: number | string, index: number) => {
+    if (minHour === undefined) return false;
+    const p = item as 'am' | 'pm';
+    // Hide 'am' if min period is 'pm'
+    return minPeriod === 'pm' && p === 'am';
+  };
+
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       {showSelectionOverlay && (
-        <View
-          style={[
-            styles.selectionOverlay,
-            isDarkMode && styles.selectionOverlayDark,
-          ]}
-        />
+        <View style={[styles.selectionOverlay, isDarkMode && styles.selectionOverlayDark]} />
       )}
 
       <View style={styles.columnsContainer}>
         {renderColumn(
-          hours,
-          selectedHour,
-          hourScrollRef,
-          handleHourScroll,
-          undefined,
-          hourScrollOffset,
-          e => {
-            const y = e.nativeEvent.contentOffset.y;
-            setHourScrollOffset(y);
-          },
-          selectedHourIndex,
-          'left'
+          hours, selectedHour, hourScrollRef, handleHourScroll,
+          undefined, hourScrollOffset,
+          e => { setHourScrollOffset(e.nativeEvent.contentOffset.y); },
+          selectedHourIndex, 'left', isHourPast
         )}
-
         {renderColumn(
-          minutes,
-          selectedMinute,
-          minuteScrollRef,
-          handleMinuteScroll,
-          formatMinute,
-          minuteScrollOffset,
-          e => {
-            const y = e.nativeEvent.contentOffset.y;
-            setMinuteScrollOffset(y);
-          },
-          selectedMinuteIndex,
-          'center'
+          minutes, selectedMinute, minuteScrollRef, handleMinuteScroll,
+          formatMinute, minuteScrollOffset,
+          e => { setMinuteScrollOffset(e.nativeEvent.contentOffset.y); },
+          selectedMinuteIndex, 'center', isMinutePast
         )}
-
         {renderColumn(
-          periods,
-          selectedPeriod,
-          periodScrollRef,
-          handlePeriodScroll,
-          undefined,
-          periodScrollOffset,
-          e => {
-            const y = e.nativeEvent.contentOffset.y;
-            setPeriodScrollOffset(y);
-          },
-          selectedPeriodIndex,
-          'right'
+          periods, selectedPeriod, periodScrollRef, handlePeriodScroll,
+          undefined, periodScrollOffset,
+          e => { setPeriodScrollOffset(e.nativeEvent.contentOffset.y); },
+          selectedPeriodIndex, 'right', isPeriodPast
         )}
       </View>
     </View>

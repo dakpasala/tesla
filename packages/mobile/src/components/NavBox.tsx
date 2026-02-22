@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Image, Pressable, Text, TextInput } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 
 interface NavBoxProps {
@@ -19,31 +20,33 @@ interface NavBoxProps {
     onCurrentLocationChange,
     onDestinationChange 
   }: NavBoxProps) {
-    return (
-      <View style={styles.inputContainer}>
+    const { activeTheme } = useTheme();
+    const c = activeTheme.colors;
 
+    return (
+      <View style={[styles.inputContainer, { backgroundColor: c.card, borderColor: c.border }]}>
 
         <View style={styles.inputRow}>
-        <Image source={currentLocationIcon} style={styles.icon} />
+        <Image source={currentLocationIcon} style={[styles.icon, { tintColor: c.text.primary }]} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: c.text.primary }]}
           onChangeText={onCurrentLocationChange}
           value={currentLocation}
           placeholder="Current Location"
           keyboardType="default"
-          placeholderTextColor="#999999"
+          placeholderTextColor={c.text.secondary}
         />
         </View>
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: c.border }]} />
         <View style={styles.inputRow}>
-            <Image source={destinationIcon} style={styles.icon} />
+            <Image source={destinationIcon} style={[styles.icon, { tintColor: c.text.primary }]} />
             <TextInput
-            style={styles.input}
+            style={[styles.input, { color: c.text.primary }]}
             onChangeText={onDestinationChange}
             value={destination}
             placeholder="Destination"
             keyboardType="default"
-            placeholderTextColor="#999999"
+            placeholderTextColor={c.text.secondary}
             />
         </View>
       </View>

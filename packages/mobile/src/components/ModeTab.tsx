@@ -1,3 +1,5 @@
+// no dark mode
+
 import React from 'react';
 import { Image, ImageStyle, StyleProp, TouchableOpacity } from 'react-native';
 

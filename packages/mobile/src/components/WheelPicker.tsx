@@ -1,3 +1,5 @@
+// no dark mode
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,

@@ -2,18 +2,22 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SplashScreen() {
+  const { activeTheme } = useTheme();
+  const c = activeTheme.colors;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: c.background }]}>
       {/* Tesla Logo */}
       <Image
         source={require('../assets/teslaicon.png')}
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Tesla</Text>
-      <Text style={styles.subtitle}>Trip Planner</Text>
+      <Text style={[styles.title, { color: c.text.primary }]}>Tesla</Text>
+      <Text style={[styles.subtitle, { color: c.text.secondary }]}>Trip Planner</Text>
       
       <ActivityIndicator 
         size="large" 

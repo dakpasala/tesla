@@ -3,6 +3,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
+import { TouchableOpacity } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { TravelMode } from '../context/RideContext';
 import { ModeTimes } from './RouteHeader';
@@ -87,10 +88,8 @@ export function RouteDetailView({
   if (travelMode === 'bike') {
     return (
       <>
-        <GHTouchableOpacity
+        <View
           style={[styles.routeCard, { backgroundColor: c.card, borderColor: c.border }]}
-          activeOpacity={0.9}
-          onPress={onOpenInGoogleMaps}
         >
           <View style={styles.routeHeader}>
             <View>
@@ -104,38 +103,38 @@ export function RouteDetailView({
           </View>
 
           <View style={styles.actionRow}>
-            <GHTouchableOpacity
+            <TouchableOpacity
               style={styles.startButton}
               onPress={onOpenInGoogleMaps}
             >
               <Text style={styles.startButtonText}>Start</Text>
-            </GHTouchableOpacity>
+            </TouchableOpacity>
           </View>
-        </GHTouchableOpacity>
+        </View>
 
         <View style={styles.footerLinks}>
           <Text style={[styles.footerTitle, { color: c.text.secondary }]}>OTHER OPTIONS</Text>
-          <GHTouchableOpacity
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('shuttle')}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Tesla Shuttle</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.shuttle || '50 min'}</Text>
-          </GHTouchableOpacity>
-          <GHTouchableOpacity
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('transit')}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
-          </GHTouchableOpacity>
-          <GHTouchableOpacity
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('car')}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Drive (view parking)</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.car || '30m'}</Text>
-          </GHTouchableOpacity>
+          </TouchableOpacity>
         </View>
       </>
     );
@@ -145,9 +144,8 @@ export function RouteDetailView({
   if (travelMode === 'shuttle' && !hasShuttleOptions(tripshotData)) {
     return (
       <>
-        <GHTouchableOpacity
+        <View
           style={[styles.routeCard, { backgroundColor: c.card, borderColor: c.border }]}
-          activeOpacity={0.9}
         >
           <View style={styles.routeHeader}>
             <View>
@@ -165,31 +163,31 @@ export function RouteDetailView({
               There are no shuttle routes from your location at this time. Check back later or try another option.
             </Text>
           </View>
-        </GHTouchableOpacity>
+        </View>
 
         <View style={styles.footerLinks}>
           <Text style={[styles.footerTitle, { color: c.text.secondary }]}>OTHER OPTIONS</Text>
-          <GHTouchableOpacity
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('transit')}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
-          </GHTouchableOpacity>
-          <GHTouchableOpacity
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('bike')}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Bike</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.bike || '30 min'}</Text>
-          </GHTouchableOpacity>
-          <GHTouchableOpacity
+          </TouchableOpacity>
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => onSetTravelMode('car')}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Drive (view parking)</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.car || '30m'}</Text>
-          </GHTouchableOpacity>
+          </TouchableOpacity>
         </View>
       </>
     );
@@ -627,10 +625,8 @@ export function RouteDetailView({
 
   return (
     <>
-      <GHTouchableOpacity
+      <View
         style={[styles.routeCard, { backgroundColor: c.card, borderColor: c.border }]}
-        activeOpacity={0.9}
-        onPress={onOpenInGoogleMaps}
       >
         <View style={styles.routeHeader}>
           <View style={{ flex: 1, marginRight: 12 }}>
@@ -681,46 +677,46 @@ export function RouteDetailView({
 
         <View style={styles.reportRow}>
           <Text style={[styles.reportText, { color: c.text.primary }]}>See something off? </Text>
-          <GHTouchableOpacity onPress={onReportIssue}>
+          <TouchableOpacity onPress={onReportIssue}>
             <Text style={[styles.reportLink, { color: c.text.primary }]}>Report it</Text>
-          </GHTouchableOpacity>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.actionRow}>
-          <GHTouchableOpacity
+          <TouchableOpacity
             style={styles.startButton}
             onPress={onOpenInGoogleMaps}
           >
             <Text style={styles.startButtonText}>Start</Text>
-          </GHTouchableOpacity>
+          </TouchableOpacity>
         </View>
-      </GHTouchableOpacity>
+      </View>
 
       <View style={styles.footerLinks}>
         <Text style={[styles.footerTitle, { color: c.text.secondary }]}>OTHER OPTIONS</Text>
         {travelMode === 'shuttle' && (
-          <GHTouchableOpacity
+          <TouchableOpacity
             style={[styles.altRow, { borderBottomColor: c.border }]}
             onPress={() => {}}
           >
             <Text style={[styles.altText, { color: c.text.primary }]}>Tesla Shuttle B</Text>
             <Text style={[styles.altTime, { color: c.text.primary }]}>55 min</Text>
-          </GHTouchableOpacity>
+          </TouchableOpacity>
         )}
-        <GHTouchableOpacity
+        <TouchableOpacity
           style={[styles.altRow, { borderBottomColor: c.border }]}
           onPress={() => onSetTravelMode('transit')}
         >
           <Text style={[styles.altText, { color: c.text.primary }]}>Public Transit</Text>
           <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.transit || '1h 10m'}</Text>
-        </GHTouchableOpacity>
-        <GHTouchableOpacity
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.altRow, { borderBottomColor: c.border }]}
           onPress={() => onSetTravelMode('car')}
         >
           <Text style={[styles.altText, { color: c.text.primary }]}>Drive (view parking)</Text>
           <Text style={[styles.altTime, { color: c.text.primary }]}>{modeTimes.car || '30m'}</Text>
-        </GHTouchableOpacity>
+        </TouchableOpacity>
       </View>
     </>
   );

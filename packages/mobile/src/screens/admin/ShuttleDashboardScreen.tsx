@@ -76,12 +76,12 @@ const CAMPUS_QUERIES = [
   },
 
   // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
-  // {
-  //   // SF Express route
-  //   startLat: 37.776400, startLng: -122.394800,
-  //   endLat: 37.3945701,  endLng: -122.1501086,
-  //   startName: 'SF Caltrain Station', endName: '3500 Deer Creek',
-  // },
+  {
+    // SF Express route
+    startLat: 37.776400, startLng: -122.394800,
+    endLat: 37.3945701,  endLng: -122.1501086,
+    startName: 'SF Caltrain Station', endName: '3500 Deer Creek',
+  },
 ];
 
 function colorFromHex(hex: string, fallback: number): ActiveShuttle['color'] {

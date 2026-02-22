@@ -234,6 +234,7 @@ export function ParkingDetailView({
           </View>
         )}
 
+        {modeTimes.shuttle && modeTimes.shuttle !== '—' && (
         <GHTouchableOpacity
           style={[styles.shuttleSuggestionCard, { backgroundColor: c.backgroundAlt, borderColor: c.border }]}
           onPress={() => onSetTravelMode('shuttle')}
@@ -250,6 +251,7 @@ export function ParkingDetailView({
           </View>
           <View style={styles.spacer} />
         </GHTouchableOpacity>
+        )}
         <View style={styles.detailFooterRow}>
           <GHTouchableOpacity
             style={[styles.secondaryButton, { backgroundColor: c.backgroundAlt, borderColor: c.border }]}

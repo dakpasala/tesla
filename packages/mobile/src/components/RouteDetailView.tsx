@@ -371,9 +371,14 @@ export function RouteDetailView({
         const isWalkStep = step.travel_mode === 'WALKING';
         const isTransitStep = step.travel_mode === 'TRANSIT';
         
-        // Parse times if available
-        const departureTime = step.departure_time?.text || '';
-        const arrivalTime = step.arrival_time?.text || '';
+        // TRANSIT steps have departure_time/arrival_time; WALKING steps don't
+        // For transit steps, Google puts times inside transit_details
+        const departureTime = step.transit_details?.departure_time?.text
+          || step.departure_time?.text
+          || '';
+        const arrivalTime = step.transit_details?.arrival_time?.text
+          || step.arrival_time?.text
+          || '';
         const duration = Math.round(step.duration?.value / 60) || 0;
 
         return (
@@ -628,8 +633,12 @@ export function RouteDetailView({
         onPress={onOpenInGoogleMaps}
       >
         <View style={styles.routeHeader}>
-          <View>
-            <Text style={[styles.routeTitle, { color: c.text.primary }]}>
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text
+              style={[styles.routeTitle, { color: c.text.primary }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {travelMode === 'shuttle'
                 ? routeInfo?.shortName || 'Tesla Shuttle A'
                 : 'Public Transit'}
@@ -656,12 +665,7 @@ export function RouteDetailView({
                 ? `${etaTime} ETA`
                 : googleMapsRoute?.arrival_time
                   ? `${googleMapsRoute.arrival_time} ETA`
-                  : (() => {
-                      const bikeRoute = modeTimes.bike;
-                      if (!bikeRoute) return 'ETA';
-                      const eta = new Date(Date.now() + (googleMapsRoute?.duration_sec || 0) * 1000);
-                      return `${eta.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} ETA`;
-                    })()}
+                  : 'ETA'}
             </Text>
           </View>
         </View>

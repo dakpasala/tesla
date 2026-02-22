@@ -28,15 +28,18 @@ const STOPS = {
     name: 'Mountain View Caltrain',
     location: { lt: 37.394358, lg: -122.076307 },
   },
-  // SF shuttle stops
-  'sf001-4abc-1234-abcd-sf0000000001': {
-    name: 'SF Caltrain Station',
-    location: { lt: 37.776400, lg: -122.394800 },
-  },
-  'sf002-4abc-1234-abcd-sf0000000002': {
-    name: 'Union Square / Powell St',
-    location: { lt: 37.787990, lg: -122.407437 },
-  },
+
+  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
+  
+  // // SF shuttle stops
+  // 'sf001-4abc-1234-abcd-sf0000000001': {
+  //   name: 'SF Caltrain Station',
+  //   location: { lt: 37.776400, lg: -122.394800 },
+  // },
+  // 'sf002-4abc-1234-abcd-sf0000000002': {
+  //   name: 'Union Square / Powell St',
+  //   location: { lt: 37.787990, lg: -122.407437 },
+  // },
 };
 
 // ─── ROUTE REGISTRY ──────────────────────────────────────────────────────────
@@ -104,17 +107,19 @@ function resolveRoute(startLat, startLng, endLat, endLng) {
     return 'mountain-view';
   }
 
-  // SF area (covers Union Square, SoMa, Mission, Caltrain station)
-  const isSF = (lat, lng) => lat > 37.75 && lat < 37.81 && lng > -122.43 && lng < -122.38;
+  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
 
-  if (
-    (isSF(startLat, startLng) && isDeerCreek(endLat, endLng)) ||
-    (isDeerCreek(startLat, startLng) && isSF(endLat, endLng)) ||
-    (isSF(startLat, startLng) && isPageMill(endLat, endLng)) ||
-    (isPageMill(startLat, startLng) && isSF(endLat, endLng))
-  ) {
-    return 'sf-palo-alto';
-  }
+  // SF area (covers Union Square, SoMa, Mission, Caltrain station)
+  // const isSF = (lat, lng) => lat > 37.75 && lat < 37.81 && lng > -122.43 && lng < -122.38;
+
+  // if (
+  //   (isSF(startLat, startLng) && isDeerCreek(endLat, endLng)) ||
+  //   (isDeerCreek(startLat, startLng) && isSF(endLat, endLng)) ||
+  //   (isSF(startLat, startLng) && isPageMill(endLat, endLng)) ||
+  //   (isPageMill(startLat, startLng) && isSF(endLat, endLng))
+  // ) {
+  //   return 'sf-palo-alto';
+  // }
 
   return null;
 }

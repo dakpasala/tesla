@@ -6,7 +6,7 @@ import { getShuttleStatus } from '../services/maps/tripshotService.js';
 import { notifyShuttleEvent, notifyShuttleAlert } from '../services/notifications/notificationRouter.js';
 import { getShuttleAlerts } from '../services/redis/shuttleNotification.js';
 
-const POLL_INTERVAL_MS = 5_000; // 1 minute
+const POLL_INTERVAL_MS = 5_000; 
 
 export async function runShuttlePollingJob() {
   setInterval(async () => {

@@ -14,13 +14,26 @@ export type ParkingAlert = {
 
 export type ShuttleAlert = {
   type: 'shuttle';
-  shuttleId: string;
+  shuttleName: string;
+  routeName: string;
+  message: string;
   event: string;
   etaMinutes: number;
   timestamp: number;
 };
 
-export type Alert = ParkingAlert | ShuttleAlert;
+export type ShuttleAdminAlert = {
+  type: 'shuttle_alert';
+  shuttleName: string;
+  alertId: string;
+  alertType: string;
+  reason: string;
+  delayMinutes: number | null;
+  message: string;
+  timestamp: number;
+};
+
+export type Alert = ParkingAlert | ShuttleAlert | ShuttleAdminAlert;
 
 export type AlertsResponse = {
   alerts: Alert[];

@@ -1,4 +1,10 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -334,6 +340,21 @@ router.post('/commutePlan', (req, res) => {
     reservations:        [],
     retrieved_at: new Date().toISOString(),
   });
+});
+
+router.get('/liveStatus', (req, res) => {
+  // Serves static mock data from get-live-status.json in the same directory.
+  // In production, replace this with a proxy to TripShot's region-wide liveStatus endpoint:
+  // GET /api/tripshot/liveStatus with Authorization: Bearer <token>
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(path.join(__dirname, 'get-live-status.json'), 'utf8')
+    );
+    return res.status(200).json(data);
+  } catch (err) {
+    console.error('Failed to read get-live-status.json:', err);
+    return res.status(500).json({ error: 'Failed to load live status data' });
+  }
 });
 
 router.post('/liveStatus', (req, res) => {

@@ -33,6 +33,7 @@ import SearchBar from '../../components/SearchBar';
 import ShuttleNotificationBanner from '../../components/ShuttleNotificationBanner';
 import { useRideContext, TravelMode } from '../../context/RideContext';
 import { useAuth } from '../../context/AuthContext';
+import { unsubscribeFromShuttle } from '../../services/users';
 import { useShuttleNotification } from '../../context/ShuttleNotificationContext';
 import { theme } from '../../theme/theme';
 import { useTheme } from '../../context/ThemeContext';
@@ -99,7 +100,7 @@ function MapScreen() {
   const handleOtherLots = useCallback(() => {
     setPendingParkingId(null);
     setViewMode('options');
-    bottomSheetRef.current?.snapToIndex(2);
+    bottomSheetRef.current?.snapToIndex(1);
   }, []);
 
   // ============ MAIN HOME STATE ============
@@ -121,7 +122,7 @@ function MapScreen() {
   const [departureTime, setDepartureTime] = useState<{ hour: number; minute: number; period: 'am' | 'pm' } | null>(null);
 
   const searchSnapPoints = useMemo(() => ['15%', '45%', '70%', '85%'], []);
-  const quickstartSnapPoints = useMemo(() => ['20%', '50%', '80%'], []);
+  const quickstartSnapPoints = useMemo(() => ['20%', '50%', '75%'], []);
   const snapPoints = mode === 'search' ? searchSnapPoints : quickstartSnapPoints;
 
   const handleBackToSearch = useCallback(() => {
@@ -538,7 +539,15 @@ function MapScreen() {
   const handleBackFromNavigation = useCallback(() => {
     setIsNavigating(false);
     pauseShuttleTracking();
-  }, []);
+    // Unsubscribe from shuttle when user taps "All Routes"
+    const shuttleName = tripshotData?.routes?.[0]?.shortName
+      || tripshotData?.routes?.[0]?.name;
+    if (userId && shuttleName) {
+      unsubscribeFromShuttle(userId, shuttleName).catch(err =>
+        console.error('Failed to unsubscribe from shuttle:', err)
+      );
+    }
+  }, [userId, tripshotData]);
 
   const handleBackFromReport = useCallback(() => {
     setShowingReport(false);
@@ -827,6 +836,7 @@ function MapScreen() {
         backgroundStyle={[styles.bottomSheetBackground, { backgroundColor: c.background }]}
         handleIndicatorStyle={styles.bottomSheetHandle}
         enablePanDownToClose={false}
+        enableOverDrag={false}
       >
         <BottomSheetScrollView
           contentContainerStyle={styles.sheetContent}
@@ -1028,4 +1038,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   errorText: { fontSize: 16, color: '#FF3B30', textAlign: 'center' },
-}); 
+});

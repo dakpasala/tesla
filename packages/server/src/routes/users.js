@@ -339,25 +339,24 @@ export default router;
 // shuttle-subscriptions
 // --------------------
 
-// add user to shuttle
 router.post('/:id/shuttle', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
-  const { shuttleId } = req.body;
+  const { shuttleName } = req.body;
 
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
 
-  if (!shuttleId) {
-    return res.status(400).json({ error: 'shuttleId is required' });
+  if (!shuttleName) {
+    return res.status(400).json({ error: 'shuttleName is required' });
   }
 
   try {
-    await subscribeUserToShuttle(userId, shuttleId);
+    await subscribeUserToShuttle(userId, shuttleName);
 
     res.status(201).json({
       success: true,
-      subscribed: { shuttleId },
+      subscribed: { shuttleName },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -365,24 +364,24 @@ router.post('/:id/shuttle', async (req, res) => {
 });
 
 // remove user from shuttle
-router.delete('/:id/shuttle/:shuttleId', async (req, res) => {
+router.delete('/:id/shuttle/:shuttleName', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
-  const { shuttleId } = req.params;
+  const { shuttleName } = req.params;
 
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
 
-  if (!shuttleId) {
-    return res.status(400).json({ error: 'shuttleId is required' });
+  if (!shuttleName) {
+    return res.status(400).json({ error: 'shuttleName is required' });
   }
 
   try {
-    await unsubscribeUserFromShuttle(userId, shuttleId);
+    await unsubscribeUserFromShuttle(userId, shuttleName);
 
     res.json({
       success: true,
-      unsubscribed: { shuttleId },
+      unsubscribed: { shuttleName },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

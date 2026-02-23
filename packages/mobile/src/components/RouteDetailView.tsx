@@ -18,12 +18,15 @@ import {
   hasShuttleOptions,
 } from '../services/tripshot';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { subscribeToShuttle, unsubscribeFromShuttle } from '../services/users';
 
 interface RouteDetailViewProps {
   travelMode: TravelMode;
   destinationName: string;
   onOpenInGoogleMaps: () => void;
   onSetTravelMode: (mode: TravelMode) => void;
+  onBack?: () => void; // called when user leaves shuttle route (unsubscribes)
   modeTimes: ModeTimes;
   onReportIssue: () => void;
   tripshotData?: CommutePlanResponse | null;
@@ -36,6 +39,7 @@ export function RouteDetailView({
   destinationName,
   onOpenInGoogleMaps,
   onSetTravelMode,
+  onBack,
   modeTimes,
   onReportIssue,
   tripshotData,
@@ -43,6 +47,34 @@ export function RouteDetailView({
   googleMapsRoute,
 }: RouteDetailViewProps) {
   const { activeTheme } = useTheme();
+  const { userId } = useAuth();
+
+  // Use routeName as shuttle subscription key (matches alert/report system)
+  const shuttleName = tripshotData?.routes?.[0]?.shortName
+    || tripshotData?.routes?.[0]?.name
+    || null;
+
+  const handleStart = async () => {
+    if (userId && shuttleName) {
+      try {
+        await subscribeToShuttle(userId, shuttleName);
+      } catch (err) {
+        console.error('Failed to subscribe to shuttle:', err);
+      }
+    }
+    onOpenInGoogleMaps();
+  };
+
+  const handleBack = async () => {
+    if (userId && shuttleName) {
+      try {
+        await unsubscribeFromShuttle(userId, shuttleName);
+      } catch (err) {
+        console.error('Failed to unsubscribe from shuttle:', err);
+      }
+    }
+    onBack?.();
+  };
   const c = activeTheme.colors;
 
   // Parse TripShot data if available (for shuttle)
@@ -685,7 +717,7 @@ export function RouteDetailView({
         <View style={styles.actionRow}>
           <TouchableOpacity
             style={styles.startButton}
-            onPress={onOpenInGoogleMaps}
+            onPress={travelMode === 'shuttle' ? handleStart : onOpenInGoogleMaps}
           >
             <Text style={styles.startButtonText}>Start</Text>
           </TouchableOpacity>

@@ -31,10 +31,20 @@ export function useMapAlerts(userId: number | null) {
               type: alert.alertType,
             });
           } else if (alert.type === 'shuttle') {
+            // ETA notification from polling job
             await showShuttleNotification({
-              shuttleId: alert.shuttleId,
+              shuttleName: alert.shuttleName,
+              message: alert.message,
               event: alert.event,
               etaMinutes: alert.etaMinutes,
+            });
+          } else if (alert.type === 'shuttle_alert') {
+            // Admin-posted alert (delay, weather, road closure etc.)
+            await showShuttleNotification({
+              shuttleName: alert.shuttleName,
+              message: alert.message,
+              event: alert.alertType,
+              etaMinutes: alert.delayMinutes ?? 0,
             });
           }
         }

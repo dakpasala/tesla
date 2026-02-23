@@ -56,7 +56,7 @@ export async function getShuttleReportsAdmin(
   );
 }
 
-// create alert
+// create alert for a single shuttle
 export async function createShuttleAlertAdmin(
   shuttleName: string,
   alert: {
@@ -68,6 +68,21 @@ export async function createShuttleAlertAdmin(
 ): Promise<ShuttleAlert> {
   return post<ShuttleAlert>(
     `shuttles/admin/${encodeURIComponent(shuttleName)}/alerts`,
+    alert
+  );
+}
+
+// create alert for ALL shuttles
+export async function createShuttleAlertAdminAll(
+  alert: {
+    type: string;
+    reason: string;
+    delayMinutes?: number;
+    clearReports?: boolean;
+  }
+): Promise<ShuttleAlert> {
+  return post<ShuttleAlert>(
+    'shuttles/admin/alerts/all',
     alert
   );
 }

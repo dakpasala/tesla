@@ -3,10 +3,10 @@ import {
   getSetSize,
 } from '../services/redis/cache.js';
 import { getShuttleStatus } from '../services/maps/tripshotService.js';
-import { notifyShuttleEvent, notifyShuttleAlert } from '../services/notifications/notificationRouter.js';
+import { notifyShuttleEvent, notifyShuttleAlert, notifyShuttleAlertAll } from '../services/notifications/notificationRouter.js';
 import { getShuttleAlerts } from '../services/redis/shuttleNotifications.js';
 
-const POLL_INTERVAL_MS = 60_000; // 1 minute
+const POLL_INTERVAL_MS = 5_000; // 1 minute
 
 export async function runShuttlePollingJob() {
   setInterval(async () => {
@@ -44,7 +44,7 @@ export async function runShuttlePollingJob() {
 
         // ── All-routes admin alerts ───────────────────────────────────────
         for (const alert of allRouteAlerts) {
-          await notifyShuttleAlert({ shuttleName, alert });
+          await notifyShuttleAlertAll({ alert });
         }
       }
     } catch (err) {

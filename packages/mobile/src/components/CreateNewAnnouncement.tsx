@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Modalize } from 'react-native-modalize';
 import Svg, { Path } from 'react-native-svg';
-import { createShuttleAlertAdmin } from '../services/shuttleAlerts';
+import { createShuttleAlertAdmin, createShuttleAlertAdminAll } from '../services/shuttleAlerts';
 import { getAllLiveStatus } from '../services/tripshot';
 import { useTheme } from '../context/ThemeContext';
 
@@ -78,16 +78,12 @@ const CreateNewAnnouncement = forwardRef<Modalize, CreateNewAnnouncementProps>(
 
       try {
         if (announcementType === 'all') {
-          await Promise.all(
-            shuttleOptions.map(shuttle =>
-              createShuttleAlertAdmin(shuttle, {
-                type: 'delay',
-                reason: selectedTypeObj.reason,
-                delayMinutes: delay,
-                clearReports,
-              })
-            )
-          );
+          await createShuttleAlertAdminAll({
+            type: 'delay',
+            reason: selectedTypeObj.reason,
+            delayMinutes: delay,
+            clearReports,
+          });
         } else {
           await createShuttleAlertAdmin(selectedShuttle, {
             type: 'delay',

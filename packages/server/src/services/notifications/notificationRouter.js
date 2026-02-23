@@ -79,11 +79,16 @@ export async function routeParkingNotification({
 
 export async function notifyShuttleEvent({
   shuttleId,
+  routeName,
   event,
   etaMinutes,
 }) {
   const userIds = await getSetMembers(`shuttle:${shuttleId}:users`);
   if (userIds.length === 0) return;
+
+  // Human-readable message e.g. "SF - Palo Alto Express arriving in 5 min"
+  const displayName = routeName || 'Your shuttle';
+  const message = `${displayName} arriving in ${etaMinutes} min`;
 
   for (const userId of userIds) {
     if (await cacheExists(`user:${userId}:suppress_notifications`)) {
@@ -94,22 +99,22 @@ export async function notifyShuttleEvent({
     const dedupeKey = `user:${userId}:notified:shuttle:${shuttleId}:${event}`;
     if (await cacheExists(dedupeKey)) continue;
 
-    console.log(
-      `[SHUTTLE NOTIFY] user:${userId} → shuttle ${shuttleId} ${event} (${etaMinutes} min)`
-    );
+    console.log(`[SHUTTLE NOTIFY] user:${userId} → ${message}`);
 
     // Store alert in Redis for mobile app to poll
     await addSetMembers(`user:${userId}:pending_alerts`, [
       JSON.stringify({
         type: 'shuttle',
         shuttleId,
+        routeName: displayName,
+        message,
         event,
         etaMinutes,
         timestamp: Date.now(),
       })
     ]);
 
-    // APNs 
+    // APNs
     await setCache(dedupeKey, '1', 900);
   }
 }

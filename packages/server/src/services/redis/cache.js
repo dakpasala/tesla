@@ -75,14 +75,14 @@ export async function removeUserFromLocation(locationId, userId) {
   await redis.sRem(`location:${locationId}:users`, String(userId));
 }
 
-export async function subscribeUserToShuttle(userId, shuttleId) {
+export async function subscribeUserToShuttle(userId, shuttleName) {
   const redis = await getRedisClient();
-  await redis.sAdd(`shuttle:${shuttleId}:users`, String(userId));
+  await redis.sAdd(`shuttle:${shuttleName}:users`, String(userId));
 }
 
-export async function unsubscribeUserFromShuttle(userId, shuttleId) {
+export async function unsubscribeUserFromShuttle(userId, shuttleName) {
   const redis = await getRedisClient();
-  await redis.sRem(`shuttle:${shuttleId}:users`, String(userId));
+  await redis.sRem(`shuttle:${shuttleName}:users`, String(userId));
 }
 
 export async function suppressUserNotifications(userId) {

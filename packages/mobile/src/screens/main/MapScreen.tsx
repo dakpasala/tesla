@@ -540,16 +540,12 @@ function MapScreen() {
     setIsNavigating(false);
     pauseShuttleTracking();
     // Unsubscribe from shuttle when user taps "All Routes"
-    if (userId && tripshotData?.options?.[0]) {
-      const firstStep = tripshotData.options[0].steps.find(
-        (s: any) => 'OnRouteScheduledStep' in s
+    const shuttleName = tripshotData?.routes?.[0]?.shortName
+      || tripshotData?.routes?.[0]?.name;
+    if (userId && shuttleName) {
+      unsubscribeFromShuttle(userId, shuttleName).catch(err =>
+        console.error('Failed to unsubscribe from shuttle:', err)
       );
-      if (firstStep && 'OnRouteScheduledStep' in firstStep) {
-        const rideId = (firstStep as any).OnRouteScheduledStep.rideId;
-        unsubscribeFromShuttle(userId, rideId).catch(err =>
-          console.error('Failed to unsubscribe from shuttle:', err)
-        );
-      }
     }
   }, [userId, tripshotData]);
 

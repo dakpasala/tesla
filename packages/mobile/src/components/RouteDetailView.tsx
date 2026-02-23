@@ -49,18 +49,15 @@ export function RouteDetailView({
   const { activeTheme } = useTheme();
   const { userId } = useAuth();
 
-  // Extract rideId from first shuttle option for subscription
-  const rideId = (() => {
-    const step = tripshotData?.options?.[0]?.steps?.find(
-      (s: any) => 'OnRouteScheduledStep' in s
-    ) as any;
-    return step?.OnRouteScheduledStep?.rideId ?? null;
-  })();
+  // Use routeName as shuttle subscription key (matches alert/report system)
+  const shuttleName = tripshotData?.routes?.[0]?.shortName
+    || tripshotData?.routes?.[0]?.name
+    || null;
 
   const handleStart = async () => {
-    if (userId && rideId) {
+    if (userId && shuttleName) {
       try {
-        await subscribeToShuttle(userId, rideId);
+        await subscribeToShuttle(userId, shuttleName);
       } catch (err) {
         console.error('Failed to subscribe to shuttle:', err);
       }
@@ -69,9 +66,9 @@ export function RouteDetailView({
   };
 
   const handleBack = async () => {
-    if (userId && rideId) {
+    if (userId && shuttleName) {
       try {
-        await unsubscribeFromShuttle(userId, rideId);
+        await unsubscribeFromShuttle(userId, shuttleName);
       } catch (err) {
         console.error('Failed to unsubscribe from shuttle:', err);
       }

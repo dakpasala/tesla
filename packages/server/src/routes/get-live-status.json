@@ -73060,6 +73060,164 @@
           }
         }
       ]
+    },
+    {
+      "acceptingDeviceId": "64099",
+      "bikeCount": 0,
+      "color": "#FF9500",
+      "deviceMarkedDown": false,
+      "direction": "Inbound",
+      "distanceOffRouteMeters": 0,
+      "driverId": "sf-driver-0001-0000-0000-000000000001",
+      "effectiveNavigationId": "sf-nav-0001-0000-0000-000000000001",
+      "impromptu": false,
+      "lastMonitorUpdate": "2026-02-23T03:00:00.000Z",
+      "liveDataAvailable": true,
+      "navigationId": "sf-nav-0001-0000-0000-000000000001",
+      "obsolete": false,
+      "regionId": "ca558ddc-d7f2-4b48-9cac-deea1134f820",
+      "relatedTo": [],
+      "reservedSeating": false,
+      "rideHistory": [
+        {
+          "StateChange": {
+            "state": {
+              "Active": []
+            },
+            "when": "2026-02-23T03:00:00.000Z"
+          }
+        },
+        {
+          "StateChange": {
+            "state": {
+              "Accepted": []
+            },
+            "when": "2026-02-23T02:00:00.000Z"
+          }
+        },
+        {
+          "StateChange": {
+            "state": {
+              "Scheduled": []
+            },
+            "when": "2026-02-23T01:00:00.000Z"
+          }
+        }
+      ],
+      "rideId": "b1c2d3e4-f5a6-7890-bcde-sf2345678901:2026-02-23",
+      "riderCount": 14,
+      "routeId": "a1b2c3d4-e5f6-7890-abcd-sf1234567890",
+      "routeName": "San Francisco - Palo Alto Express",
+      "shortName": "SF - Palo Alto Express",
+      "routeServiceId": "sf-service-0001-0000-000000000001",
+      "scheduledEnd": "2026-02-23T05:00:00.000Z",
+      "scheduledStart": "2026-02-23T03:00:00.000Z",
+      "shiftId": "sf-shift-0001-0000-0000-000000000001",
+      "state": {
+        "Active": []
+      },
+      "stopStatus": [
+        {
+          "Awaiting": {
+            "stopId": "sf001-4abc-1234-abcd-sf0000000001",
+            "expectedArrivalTime": "2026-02-23T03:08:00.000Z",
+            "scheduledDepartureTime": "2026-02-23T03:08:00.000Z",
+            "riderStatus": "OnTime"
+          }
+        },
+        {
+          "Awaiting": {
+            "stopId": "647f900f-9e4b-4d46-96c5-77bd4ddb6c5f",
+            "expectedArrivalTime": "2026-02-23T04:30:00.000Z",
+            "scheduledDepartureTime": "2026-02-23T04:30:00.000Z",
+            "riderStatus": "OnTime"
+          }
+        }
+      ],
+      "tags": [],
+      "userNavigationId": "sf-nav-0001-0000-0000-000000000001",
+      "userRiderCount": 14,
+      "vehicleCapacity": 54,
+      "vehicleId": "sf-vehicle-0001-0000-000000000001",
+      "vehicleName": "54099",
+      "vehicleShortName": "54099",
+      "lateBySec": 0,
+      "vias": [
+        {
+          "ViaStop": {
+            "arrivalRadiusMeters": 100,
+            "stop": {
+              "address": {
+                "address": "37.776400, -122.394800",
+                "tags": []
+              },
+              "deleted": null,
+              "description": "",
+              "geofence": {
+                "Polygon": []
+              },
+              "groupParent": null,
+              "gtfsId": null,
+              "hasParking": false,
+              "location": {
+                "lg": -122.3948,
+                "lt": 37.7764
+              },
+              "name": "SF Caltrain Station",
+              "onDemand": false,
+              "parentId": null,
+              "photoIds": [],
+              "regionId": "ca558ddc-d7f2-4b48-9cac-deea1134f820",
+              "stopId": "sf001-4abc-1234-abcd-sf0000000001",
+              "tags": [],
+              "terminal": false,
+              "ttsStopName": null,
+              "yard": false,
+              "yardCapacity": null,
+              "yardMiddayParking": null,
+              "yardVendorId": null
+            },
+            "visitType": "DropOffOrPickup"
+          }
+        },
+        {
+          "ViaStop": {
+            "arrivalRadiusMeters": 100,
+            "stop": {
+              "address": {
+                "address": "37.395498, -122.150075",
+                "tags": []
+              },
+              "deleted": null,
+              "description": "",
+              "geofence": {
+                "Polygon": []
+              },
+              "groupParent": null,
+              "gtfsId": null,
+              "hasParking": false,
+              "location": {
+                "lg": -122.150075,
+                "lt": 37.395498
+              },
+              "name": "Deer Creek",
+              "onDemand": false,
+              "parentId": null,
+              "photoIds": [],
+              "regionId": "ca558ddc-d7f2-4b48-9cac-deea1134f820",
+              "stopId": "647f900f-9e4b-4d46-96c5-77bd4ddb6c5f",
+              "tags": [],
+              "terminal": false,
+              "ttsStopName": null,
+              "yard": false,
+              "yardCapacity": null,
+              "yardMiddayParking": null,
+              "yardVendorId": null
+            },
+            "visitType": "DropOffOnly"
+          }
+        }
+      ]
     }
   ],
   "timestamp": "2026-02-23T03:02:02.426Z",

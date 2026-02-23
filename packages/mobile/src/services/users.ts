@@ -100,11 +100,10 @@ export async function setUserLocationState(
 }
 
 // subscribe to shuttle
-export async function subscribeToShuttle(userId: number, shuttleId: string) {
-  return post(`users/${userId}/shuttle`, { shuttleId });
+export async function subscribeToShuttle(userId: number, shuttleName: string) {
+  return post(`users/${userId}/shuttle`, { shuttleName });
 }
 
-// unsubscribe from shuttle
-export async function unsubscribeFromShuttle(userId: number, shuttleId: string) {
-  return del(`users/${userId}/shuttle/${encodeURIComponent(shuttleId)}`);
+export async function unsubscribeFromShuttle(userId: number, shuttleName: string) {
+  return del(`users/${userId}/shuttle/${encodeURIComponent(shuttleName)}`);
 }

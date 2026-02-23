@@ -17,10 +17,7 @@ import {
   getAllReports,
 } from '../../services/shuttleAlerts';
 import {
-  getCommutePlan,
-  getLiveStatus,
-  extractRideIds,
-  hasShuttleOptions,
+  getAllLiveStatus,
   getOccupancyPercentage,
   isRideDelayed,
   getDelayText,
@@ -60,29 +57,6 @@ type ActiveShuttle = {
 };
 
 type DashboardTab = 'reports' | 'alerts' | 'active' | null;
-
-// ── Known campus coords to discover active rideIds ───────────────────────────
-// Two known route pairs cover all current Tesla shuttle routes
-const CAMPUS_QUERIES = [
-  {
-    startLat: 37.4142218, startLng: -122.1492233,
-    endLat: 37.3945701,   endLng: -122.1501086,
-    startName: '1501 Page Mill', endName: '3500 Deer Creek',
-  },
-  {
-    startLat: 37.4142218, startLng: -122.1492233,
-    endLat: 37.394358,    endLng: -122.076307,
-    startName: '1501 Page Mill', endName: 'Mountain View Caltrain',
-  },
-
-  // COMMENT THIS IN IF YOU WANT THE SF SHUTTLE TO SHOW FOR TESTING PURPOSES SINCE XCODE LOCATION IS IN SF
-  {
-    // SF Express route
-    startLat: 37.776400, startLng: -122.394800,
-    endLat: 37.3945701,  endLng: -122.1501086,
-    startName: 'SF Caltrain Station', endName: '3500 Deer Creek',
-  },
-];
 
 function colorFromHex(hex: string, fallback: number): ActiveShuttle['color'] {
   const map: Record<string, ActiveShuttle['color']> = {
@@ -130,42 +104,10 @@ export default function ShuttleDashboardScreen() {
       setAlertsLoading(false);
     }
 
-    // ── Active Shuttles: commutePlan → extract rideIds → liveStatus ──────
+    // ── Active Shuttles: single region-wide liveStatus call ─────────────
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const time = new Date().toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-      });
+      const liveStatus = await getAllLiveStatus();
 
-      // Fan out to all campus queries in parallel, collect unique rideIds
-      const allRideIds: string[] = [];
-      await Promise.allSettled(
-        CAMPUS_QUERIES.map(async (q) => {
-          const plan = await getCommutePlan({
-            day: today, time,
-            startLat: q.startLat, startLng: q.startLng, startName: q.startName,
-            endLat: q.endLat,     endLng: q.endLng,     endName: q.endName,
-            travelMode: 'Walking',
-          });
-          if (hasShuttleOptions(plan)) {
-            extractRideIds(plan).forEach(id => {
-              if (!allRideIds.includes(id)) allRideIds.push(id);
-            });
-          }
-        })
-      );
-
-      if (allRideIds.length === 0) {
-        setActiveShuttles([]);
-        setShuttlesLoading(false);
-        return;
-      }
-
-      const liveStatus = await getLiveStatus(allRideIds);
-
-      // Dedupe by routeId — 2 departure options per route come back,
-      // we only want one card per route in the dashboard
       const seenRouteIds = new Set<string>();
       const shuttlesData: ActiveShuttle[] = [];
       liveStatus.rides.forEach((ride, index) => {

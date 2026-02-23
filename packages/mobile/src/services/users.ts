@@ -98,3 +98,13 @@ export async function setUserLocationState(
     location_id: locationId,
   });
 }
+
+// subscribe to shuttle
+export async function subscribeToShuttle(userId: number, shuttleId: string) {
+  return post(`users/${userId}/shuttle`, { shuttleId });
+}
+
+// unsubscribe from shuttle
+export async function unsubscribeFromShuttle(userId: number, shuttleId: string) {
+  return del(`users/${userId}/shuttle/${encodeURIComponent(shuttleId)}`);
+}

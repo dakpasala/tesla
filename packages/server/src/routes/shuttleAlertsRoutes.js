@@ -3,6 +3,7 @@ import {
   addShuttleReport,
   getShuttleReports,
   createShuttleAlert,
+  createShuttleAlertAll,
   getShuttleAlerts,
   getAllShuttleAlerts,
   getAllShuttleReports
@@ -28,10 +29,7 @@ router.post('/:shuttleName/reports', async (req, res) => {
 // get total count
 router.get('/admin/count', async (req, res) => {
   try {
-    // Get all keys matching the pattern
     const keys = await getKeysByPattern('reports:shuttle:*');
-
-    // Get the length of each list and sum them
     let totalCount = 0;
     for (const key of keys) {
       const len = await getLength(key);
@@ -47,29 +45,42 @@ router.get('/admin/count', async (req, res) => {
 // fetch alerts
 router.get('/:shuttleName/alerts', async (req, res) => {
   const { shuttleName } = req.params;
-
   const alerts = await getShuttleAlerts(shuttleName);
   res.json(alerts);
 });
 
-
 // fetch reports
 router.get('/admin/:shuttleName/reports', async (req, res) => {
   const { shuttleName } = req.params;
-
   const reports = await getShuttleReports(shuttleName);
   res.json(reports);
 });
 
-// create alert
+// !! must be before /admin/:shuttleName/alerts to avoid Express matching "all" as a shuttleName
+router.post('/admin/alerts/all', async (req, res) => {
+  const { type, reason, delayMinutes, clearReports } = req.body;
+
+  if (!type || !reason) {
+    return res.status(400).json({ error: 'type and reason are required' });
+  }
+
+  const alert = await createShuttleAlertAll({
+    type,
+    reason,
+    delayMinutes,
+    clearReports,
+  });
+
+  res.json(alert);
+});
+
+// create alert for a single shuttle
 router.post('/admin/:shuttleName/alerts', async (req, res) => {
   const { shuttleName } = req.params;
   const { type, reason, delayMinutes, clearReports } = req.body;
 
   if (!type || !reason) {
-    return res.status(400).json({
-      error: 'type and reason are required',
-    });
+    return res.status(400).json({ error: 'type and reason are required' });
   }
 
   const alert = await createShuttleAlert({
@@ -83,12 +94,11 @@ router.post('/admin/:shuttleName/alerts', async (req, res) => {
   res.json(alert);
 });
 
-// // get announcements
+// get announcements
 router.get('/admin/announcements', async (req, res) => {
   try {
     const alerts = await getAllShuttleAlerts();
 
-    // Map backend snake_case to frontend camelCase
     const announcements = alerts.map(alert => ({
       id: alert.id,
       shuttleName: alert.shuttleName || 'Unknown Shuttle',
@@ -105,11 +115,10 @@ router.get('/admin/announcements', async (req, res) => {
   }
 });
 
-router.get('/admin/reports', async(req, res) => {
+router.get('/admin/reports', async (req, res) => {
   try {
     const reports = await getAllShuttleReports();
 
-    // Map backend snake_case to frontend camelCase
     const formattedReports = reports.map(report => ({
       id: report.id,
       shuttleName: report.shuttleName || 'Unknown Shuttle',

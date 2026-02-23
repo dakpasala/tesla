@@ -1,6 +1,6 @@
 // packages/mobile/src/services/notifications.ts
 
-import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
+import notifee, { AndroidImportance, AndroidStyle, EventType } from '@notifee/react-native';
 import { AppState } from 'react-native';
 
 export async function requestNotificationPermission() {
@@ -35,17 +35,19 @@ export async function showParkingNotification({
 }
 
 export async function showShuttleNotification({
-  shuttleId,
+  shuttleName,
+  message,
   event,
   etaMinutes,
 }: {
-  shuttleId: string;
+  shuttleName: string;
+  message: string;
   event: string;
   etaMinutes: number;
 }) {
   await notifee.displayNotification({
     title: 'Shuttle Update',
-    body: `Shuttle ${shuttleId}: ${event} (${etaMinutes} min)`,
+    body: message,
     ios: {
       sound: 'default',
     },
@@ -152,6 +154,7 @@ export async function startShuttleTracking(
           isBoardingNow: isBoardingNow,
           previousExpectedArrivalTime: status.expectedArrivalTime || '',
           previousThresholdCrossed5Min: false,
+          isFirstUpdate: false,
         };
       }
 
@@ -221,7 +224,7 @@ export async function startShuttleTracking(
             smallIcon: 'ic_notification',
             color: status.isDelayed ? '#FF3B30' : '#34C759',
             style: {
-              type: 'bigtext',
+              type: AndroidStyle.BIGTEXT,
               text: `${shortStopName}\n${statusText}`,
             },
             progress: {
@@ -240,7 +243,6 @@ export async function startShuttleTracking(
           ios: {
             sound: 'default',
             categoryId: 'shuttle-tracking',
-            badge: 0,
             foregroundPresentationOptions: {
               alert: true,
               badge: false,

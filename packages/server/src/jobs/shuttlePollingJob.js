@@ -3,31 +3,48 @@ import {
   getSetSize,
 } from '../services/redis/cache.js';
 import { getShuttleStatus } from '../services/maps/tripshotService.js';
-import { notifyShuttleEvent } from '../services/notifications/notificationRouter.js';
+import { notifyShuttleEvent, notifyShuttleAlert, notifyShuttleAlertAll } from '../services/notifications/notificationRouter.js';
+import { getShuttleAlerts } from '../services/redis/shuttleNotifications.js';
 
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 5_000; // 1 minute
 
 export async function runShuttlePollingJob() {
   setInterval(async () => {
     try {
       const keys = await getKeysByPattern('shuttle:*:users');
 
+      // Check for any global all-routes alerts first
+      const allRouteAlerts = await getShuttleAlerts('__all__');
+
       for (const key of keys) {
-        const shuttleId = key.split(':')[1];
+        const shuttleName = key.slice('shuttle:'.length, -':users'.length);
+
         const userCount = await getSetSize(key);
         if (userCount === 0) continue;
 
-        const status = await getShuttleStatus(shuttleId);
-        if (!status) continue;
+        // ── ETA check ────────────────────────────────────────────────────
+        const status = await getShuttleStatus(shuttleName);
+        if (status) {
+          const { etaMinutes, routeName } = status;
+          if (etaMinutes !== null && etaMinutes <= 5) {
+            await notifyShuttleEvent({
+              shuttleName,
+              routeName,
+              event: 'ETA_5',
+              etaMinutes,
+            });
+          }
+        }
 
-        const { etaMinutes } = status;
+        // ── Per-shuttle admin alerts ──────────────────────────────────────
+        const alerts = await getShuttleAlerts(shuttleName);
+        for (const alert of alerts) {
+          await notifyShuttleAlert({ shuttleName, alert });
+        }
 
-        if (etaMinutes <= 5) {
-          await notifyShuttleEvent({
-            shuttleId,
-            event: 'ETA_5',
-            etaMinutes,
-          });
+        // ── All-routes admin alerts ───────────────────────────────────────
+        for (const alert of allRouteAlerts) {
+          await notifyShuttleAlertAll({ alert });
         }
       }
     } catch (err) {

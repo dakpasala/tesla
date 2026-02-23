@@ -1,3 +1,5 @@
+// packages/server/src/services/redis/shuttleNotification.js
+
 import { getRedisClient } from './redisClient.js';
 
 export async function addShuttleReport(shuttleName, comment) {
@@ -54,6 +56,39 @@ export async function createShuttleAlert({
   // optionally clear reports
   if (clearReports) {
     await redis.del(reportKey);
+  }
+
+  return alert;
+}
+
+export async function createShuttleAlertAll({
+  type,
+  reason,
+  delayMinutes,
+  clearReports,
+}) {
+  const redis = await getRedisClient();
+
+  const alert = {
+    id: `alert_${Date.now()}`,
+    type,
+    reason,
+    delay_minutes: delayMinutes,
+    created_at: new Date().toISOString(),
+    allRoutes: true,
+  };
+
+  // Store under a global key — polling job fans out to all subscribed shuttles
+  const alertKey = 'alerts:shuttle:__all__';
+  await redis.rPush(alertKey, JSON.stringify(alert));
+  await redis.expire(alertKey, 86400);
+
+  // Optionally clear ALL shuttle reports
+  if (clearReports) {
+    const reportKeys = await redis.keys('reports:shuttle:*');
+    if (reportKeys.length > 0) {
+      await Promise.all(reportKeys.map(k => redis.del(k)));
+    }
   }
 
   return alert;

@@ -196,6 +196,15 @@ export async function getLiveStatus(
   return post<LiveStatusResponse>(`tripshot/liveStatus?${queryParams}`, {});
 }
 
+/**
+ * Get live status for ALL active rides in the region.
+ * No rideIds needed — returns everything TripShot knows about.
+ * Use this for the dashboard instead of querying by individual rideIds.
+ */
+export async function getAllLiveStatus(): Promise<LiveStatusResponse> {
+  return get<LiveStatusResponse>('tripshot/liveStatus');
+}
+
 // Helper Functions
 
 /**

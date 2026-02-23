@@ -6,12 +6,15 @@ import { getShuttleStatus } from '../services/maps/tripshotService.js';
 import { notifyShuttleEvent, notifyShuttleAlert } from '../services/notifications/notificationRouter.js';
 import { getShuttleAlerts } from '../services/redis/shuttleNotifications.js';
 
-const POLL_INTERVAL_MS = 5_000; 
+const POLL_INTERVAL_MS = 60_000; // 1 minute
 
 export async function runShuttlePollingJob() {
   setInterval(async () => {
     try {
       const keys = await getKeysByPattern('shuttle:*:users');
+
+      // Check for any global all-routes alerts first
+      const allRouteAlerts = await getShuttleAlerts('__all__');
 
       for (const key of keys) {
         const shuttleName = key.slice('shuttle:'.length, -':users'.length);
@@ -33,9 +36,14 @@ export async function runShuttlePollingJob() {
           }
         }
 
-        // ── Admin alert check ─────────────────────────────────────────────
+        // ── Per-shuttle admin alerts ──────────────────────────────────────
         const alerts = await getShuttleAlerts(shuttleName);
         for (const alert of alerts) {
+          await notifyShuttleAlert({ shuttleName, alert });
+        }
+
+        // ── All-routes admin alerts ───────────────────────────────────────
+        for (const alert of allRouteAlerts) {
           await notifyShuttleAlert({ shuttleName, alert });
         }
       }

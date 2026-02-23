@@ -83,6 +83,23 @@ router.post('/admin/:shuttleName/alerts', async (req, res) => {
   res.json(alert);
 });
 
+router.post('/admin/alerts/all', async (req, res) => {
+  const { type, reason, delayMinutes, clearReports } = req.body;
+
+  if (!type || !reason) {
+    return res.status(400).json({ error: 'type and reason are required' });
+  }
+
+  const alert = await createShuttleAlertAll({
+    type,
+    reason,
+    delayMinutes,
+    clearReports,
+  });
+
+  res.json(alert);
+});
+
 // // get announcements
 router.get('/admin/announcements', async (req, res) => {
   try {

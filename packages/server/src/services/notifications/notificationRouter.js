@@ -7,6 +7,7 @@ import {
   addSetMembers,
   cacheExists,
   deleteCache,
+  getKeysByPattern,
 } from '../redis/cache.js';
 import { getUsersFavoritingLocationId } from '../db/mssqlPool.js';
 
@@ -155,5 +156,50 @@ export async function notifyShuttleAlert({
   }
 
   // Mark alert as notified for 24h (matches alert expiry)
+  await setCache(dedupeKey, '1', 86400);
+}
+
+export async function notifyShuttleAlertAll({
+  alert,
+}) {
+  // Dedupe per alert id — only notify once across all shuttles
+  const dedupeKey = `notified:alert:${alert.id}`;
+  if (await cacheExists(dedupeKey)) return;
+
+  const reason = alert.reason?.replace('_', ' ') ?? 'update';
+  const delayPart = alert.delay_minutes ? ` — ${alert.delay_minutes} min delay` : '';
+  const message = `All Shuttles: ${reason}${delayPart}`;
+
+  // Fan out to every subscribed user across all shuttles
+  const shuttleKeys = await getKeysByPattern('shuttle:*:users');
+
+  for (const key of shuttleKeys) {
+    const shuttleName = key.slice('shuttle:'.length, -':users'.length);
+    const userIds = await getSetMembers(`shuttle:${shuttleName}:users`);
+
+    for (const userId of userIds) {
+      if (await cacheExists(`user:${userId}:suppress_notifications`)) {
+        console.log(`[SKIP] user:${userId} suppressed`);
+        continue;
+      }
+
+      console.log(`[ALL SHUTTLES ALERT] user:${userId} → ${message}`);
+
+      await addSetMembers(`user:${userId}:pending_alerts`, [
+        JSON.stringify({
+          type: 'shuttle_alert',
+          shuttleName: 'All Shuttles',
+          alertId: alert.id,
+          alertType: alert.type,
+          reason: alert.reason,
+          delayMinutes: alert.delay_minutes,
+          message,
+          timestamp: Date.now(),
+        })
+      ]);
+    }
+  }
+
+  // Mark as notified for 24h
   await setCache(dedupeKey, '1', 86400);
 }

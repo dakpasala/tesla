@@ -4,7 +4,7 @@ import {
 } from '../services/redis/cache.js';
 import { getShuttleStatus } from '../services/maps/tripshotService.js';
 import { notifyShuttleEvent, notifyShuttleAlert } from '../services/notifications/notificationRouter.js';
-import { getShuttleAlerts } from '../services/redis/shuttleNotification.js';
+import { getShuttleAlerts } from '../services/redis/shuttleNotifications.js';
 
 const POLL_INTERVAL_MS = 5_000; 
 

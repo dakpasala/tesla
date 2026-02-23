@@ -33,7 +33,18 @@ export type ShuttleAdminAlert = {
   timestamp: number;
 };
 
-export type Alert = ParkingAlert | ShuttleAlert | ShuttleAdminAlert;
+export type ShuttleAllAlert = {
+  type: 'shuttle_alert';
+  shuttleName: 'All Shuttles';
+  alertId: string;
+  alertType: string;
+  reason: string;
+  delayMinutes: number | null;
+  message: string; 
+  timestamp: number;
+};
+
+export type Alert = ParkingAlert | ShuttleAlert | ShuttleAdminAlert | ShuttleAllAlert;
 
 export type AlertsResponse = {
   alerts: Alert[];

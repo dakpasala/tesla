@@ -1,4 +1,9 @@
-// src/services/db/mssqlPool.js
+// packages/server/src/services/db/mssqlPool.js
+
+// MSSQL connection pool and all database query functions for the Tesla commute app.
+// Covers users, parking lots, locations, admins, favorites, incentives, and addresses.
+// Uses a singleton pool pattern to reuse connections across the entire server process.
+
 import sql from 'mssql';
 import {
   MSSQL_USER,
@@ -67,7 +72,6 @@ export async function getAllLocations({ activeOnly = true } = {}) {
   return result.recordset;
 }
 
-
 // --------------------
 // parking availability
 // --------------------
@@ -94,9 +98,7 @@ export async function fetchParkingAvailability() {
 export async function getLocationIdByName(name) {
   const pool = await getPool();
 
-  const result = await pool.request()
-    .input('name', sql.VarChar, name)
-    .query(`
+  const result = await pool.request().input('name', sql.VarChar, name).query(`
       SELECT id
       FROM locations
       WHERE name = @name
@@ -111,8 +113,7 @@ export async function getParkingAvailabilityByLocationName(locationName) {
 
   const result = await pool
     .request()
-    .input('locationName', sql.VarChar, locationName)
-    .query(`
+    .input('locationName', sql.VarChar, locationName).query(`
       IF NOT EXISTS (SELECT 1 FROM locations WHERE name = @locationName)
       BEGIN
         SELECT 'LOCATION_NOT_FOUND' AS error;
@@ -134,7 +135,12 @@ export async function getParkingAvailabilityByLocationName(locationName) {
   return result.recordset;
 }
 
-export async function updateParkingAvailability(locationName, lotName, availability, statusOverride = null) {
+export async function updateParkingAvailability(
+  locationName,
+  lotName,
+  availability,
+  statusOverride = null
+) {
   const pool = await getPool();
 
   const result = await pool
@@ -177,8 +183,7 @@ export async function addAdmin(username, email) {
   const result = await pool
     .request()
     .input('username', sql.VarChar, username)
-    .input('email', sql.VarChar, email)
-    .query(`
+    .input('email', sql.VarChar, email).query(`
       INSERT INTO admins (username, email)
       VALUES (@username, @email);
 
@@ -188,14 +193,12 @@ export async function addAdmin(username, email) {
   return result.recordset[0].id;
 }
 
-export async function getParkingLotByOfficeAndName(
-  officeName,
-) {
+export async function getParkingLotByOfficeAndName(officeName) {
   const pool = await getPool();
 
-  const result = await pool.request()
-    .input('officeName', sql.VarChar, officeName)
-    .query(`
+  const result = await pool
+    .request()
+    .input('officeName', sql.VarChar, officeName).query(`
       SELECT
         p.id,
         p.name AS parking_lot_name,
@@ -217,11 +220,11 @@ export async function getParkingLotByOfficeAndName(
 export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
   const pool = await getPool();
 
-  const result = await pool.request()
+  const result = await pool
+    .request()
     .input('lat', sql.Float, lat)
     .input('lng', sql.Float, lng)
-    .input('radius', sql.Int, radiusMeters)
-    .query(`
+    .input('radius', sql.Int, radiusMeters).query(`
       SELECT TOP 1 *
       FROM (
         SELECT
@@ -255,8 +258,7 @@ export async function findNearbyOffice(lat, lng, radiusMeters = 200) {
 export async function findOfficeByAddress(address) {
   const pool = await getPool();
 
-  const result = await pool.request()
-    .input('address', sql.VarChar, address)
+  const result = await pool.request().input('address', sql.VarChar, address)
     .query(`
       SELECT
         id,
@@ -275,7 +277,6 @@ export async function findOfficeByAddress(address) {
   return result.recordset[0] || null;
 }
 
-
 // --------------------
 // users
 // --------------------
@@ -289,15 +290,11 @@ export async function getUsers() {
 export async function getUserBalance(userId) {
   const pool = await getPool();
 
-  const result = await pool
-    .request()
-    .input('userId', sql.Int, userId)
-    .query(`
+  const result = await pool.request().input('userId', sql.Int, userId).query(`
       SELECT id, name, balance
       FROM users
       WHERE id = @userId
     `);
-
 
   if (result.recordset.length === 0) {
     return null;
@@ -309,10 +306,7 @@ export async function getUserBalance(userId) {
 export async function getUserIncentives(userId) {
   const pool = await getPool();
 
-  const result = await pool
-    .request()
-    .input('userId', sql.Int, userId)
-    .query(`
+  const result = await pool.request().input('userId', sql.Int, userId).query(`
       SELECT
         id,
         transit_type,
@@ -330,10 +324,10 @@ export async function awardTransitIncentive(userId, transitType) {
   const pool = await getPool();
 
   const INCENTIVES = {
-    shuttle: 5.00,
-    carpool: 3.00,
-    walking: 2.00,
-    biking: 2.00,
+    shuttle: 5.0,
+    carpool: 3.0,
+    walking: 2.0,
+    biking: 2.0,
   };
 
   const amount = INCENTIVES[transitType];
@@ -350,8 +344,7 @@ export async function awardTransitIncentive(userId, transitType) {
     const insertResult = await new sql.Request(transaction)
       .input('userId', sql.Int, userId)
       .input('transitType', sql.VarChar, transitType)
-      .input('amount', sql.Decimal(10, 2), amount)
-      .query(`
+      .input('amount', sql.Decimal(10, 2), amount).query(`
         INSERT INTO user_incentives (user_id, transit_type, amount)
         VALUES (@userId, @transitType, @amount);
 
@@ -364,8 +357,7 @@ export async function awardTransitIncentive(userId, transitType) {
 
     const updateResult = await new sql.Request(transaction)
       .input('userId', sql.Int, userId)
-      .input('amount', sql.Decimal(10, 2), amount)
-      .query(`
+      .input('amount', sql.Decimal(10, 2), amount).query(`
         UPDATE users
         SET balance = balance + @amount
         WHERE id = @userId;
@@ -379,15 +371,12 @@ export async function awardTransitIncentive(userId, transitType) {
 
     await transaction.commit();
 
-    const updated = await pool
-      .request()
-      .input('userId', sql.Int, userId)
+    const updated = await pool.request().input('userId', sql.Int, userId)
       .query(`
         SELECT id, name, balance
         FROM users
         WHERE id = @userId
       `);
-
 
     return {
       userId: updated.recordset[0].id,
@@ -406,9 +395,7 @@ export async function awardTransitIncentive(userId, transitType) {
 export async function getUserHomeAddress(userId) {
   const pool = await getPool();
 
-  const result = await pool.request()
-    .input('userId', sql.Int, userId)
-    .query(`
+  const result = await pool.request().input('userId', sql.Int, userId).query(`
       SELECT home_address
       FROM users
       WHERE id = @userId
@@ -421,10 +408,10 @@ export async function getUserHomeAddress(userId) {
 export async function setUserHomeAddress(userId, homeAddress) {
   const pool = await getPool();
 
-  const result = await pool.request()
+  const result = await pool
+    .request()
     .input('userId', sql.Int, userId)
-    .input('homeAddress', sql.VarChar, homeAddress)
-    .query(`
+    .input('homeAddress', sql.VarChar, homeAddress).query(`
       UPDATE users
       SET home_address = @homeAddress
       WHERE id = @userId;
@@ -439,9 +426,7 @@ export async function setUserHomeAddress(userId, homeAddress) {
 export async function getUserWorkAddress(userId) {
   const pool = await getPool();
 
-  const result = await pool.request()
-    .input('userId', sql.Int, userId)
-    .query(`
+  const result = await pool.request().input('userId', sql.Int, userId).query(`
       SELECT work_address
       FROM users
       WHERE id = @userId
@@ -453,10 +438,10 @@ export async function getUserWorkAddress(userId) {
 export async function setUserWorkAddress(userId, workAddress) {
   const pool = await getPool();
 
-  const result = await pool.request()
+  const result = await pool
+    .request()
     .input('userId', sql.Int, userId)
-    .input('workAddress', sql.VarChar, workAddress)
-    .query(`
+    .input('workAddress', sql.VarChar, workAddress).query(`
       UPDATE users
       SET work_address = @workAddress
       WHERE id = @userId;
@@ -471,9 +456,7 @@ export async function setUserWorkAddress(userId, workAddress) {
 export async function getUserFavorites(userId) {
   const pool = await getPool();
 
-  const result = await pool.request()
-    .input('userId', sql.Int, userId)
-    .query(`
+  const result = await pool.request().input('userId', sql.Int, userId).query(`
       SELECT
         location_id,
         name,
@@ -491,12 +474,12 @@ export async function getUserFavorites(userId) {
 export async function addUserFavoriteRow(userId, locationId, name, address) {
   const pool = await getPool();
 
-  await pool.request()
+  await pool
+    .request()
     .input('userId', sql.Int, userId)
     .input('locationId', sql.Int, locationId)
     .input('name', sql.NVarChar, name)
-    .input('address', sql.NVarChar, address)
-    .query(`
+    .input('address', sql.NVarChar, address).query(`
       INSERT INTO user_favorites (user_id, location_id, name, address)
       VALUES (@userId, @locationId, @name, @address);
     `);
@@ -507,10 +490,10 @@ export async function addUserFavoriteRow(userId, locationId, name, address) {
 export async function removeUserFavoriteRow(userId, locationId) {
   const pool = await getPool();
 
-  await pool.request()
+  await pool
+    .request()
     .input('userId', sql.Int, userId)
-    .input('locationId', sql.Int, locationId)
-    .query(`
+    .input('locationId', sql.Int, locationId).query(`
       DELETE FROM user_favorites
       WHERE user_id = @userId
         AND location_id = @locationId;
@@ -522,14 +505,13 @@ export async function removeUserFavoriteRow(userId, locationId) {
 // check favs n stuff
 export async function getUsersFavoritingLocationId(locationId) {
   const pool = await getPool();
-  const result = await pool.request()
-  .input('locationId', sql.Int, locationId)
-  .query(`
+  const result = await pool.request().input('locationId', sql.Int, locationId)
+    .query(`
   SELECT u.id, u.name, u.email
   FROM user_favorites uf
   JOIN users u ON u.id = uf.user_id
   WHERE uf.location_id = @locationId
   `);
- 
+
   return result.recordset;
 }

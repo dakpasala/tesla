@@ -1,5 +1,10 @@
 // packages/mobile/src/screens/admin/ShuttleDashboardScreen.tsx
 
+// Admin screen for monitoring all shuttle activity in real time.
+// Displays live alerts, user-submitted reports, and active shuttle statuses.
+// Allows admins to send announcements and drill into detailed views per category.
+
+
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,

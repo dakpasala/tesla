@@ -1,3 +1,6 @@
+// Expandable search bar that lists favorited and all campus locations with real-time filtering.
+// Supports toggling favorites via API calls and quick-access Home and Work shortcuts.
+
 // packages/mobile/src/components/SearchBar.tsx
 
 import React, { useState, useCallback, useMemo, memo, useEffect } from 'react';
@@ -73,10 +76,16 @@ const RowItem = memo(function RowItem({
         onPress={() => onPressRow(item.id)}
       >
         <View style={styles.rowTextContainer}>
-          <Text style={[styles.rowText, { color: c.text.primary }]}>{item.title}</Text>
-          <Text style={[styles.placeSub, { color: c.text.secondary }]}>{item.subtitle}</Text>
+          <Text style={[styles.rowText, { color: c.text.primary }]}>
+            {item.title}
+          </Text>
+          <Text style={[styles.placeSub, { color: c.text.secondary }]}>
+            {item.subtitle}
+          </Text>
         </View>
-        <Text style={[styles.milesText, { color: c.text.secondary }]}>{item.miles}</Text>
+        <Text style={[styles.milesText, { color: c.text.secondary }]}>
+          {item.miles}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -163,7 +172,7 @@ function SearchBar({
   useEffect(() => {
     async function fetchAll() {
       if (!userId) return;
-      
+
       try {
         const [homeRes, workRes, favRes, locationsRes] = await Promise.all([
           getUserHomeAddress(userId),
@@ -192,11 +201,11 @@ function SearchBar({
         console.error('Failed to fetch SearchBar data', err);
       }
     }
-      fetchAll();
-    }, [userId]);
+    fetchAll();
+  }, [userId]);
 
-    const handleSearchChange = useCallback((text: string) => {
-      setSearchText(text);
+  const handleSearchChange = useCallback((text: string) => {
+    setSearchText(text);
   }, []);
 
   const handleClearSearch = useCallback(() => {
@@ -319,7 +328,9 @@ function SearchBar({
         />
       </View>
 
-      <Text style={[styles.section, { color: c.text.secondary }]}>My Favorites</Text>
+      <Text style={[styles.section, { color: c.text.secondary }]}>
+        My Favorites
+      </Text>
       {filteredFavorites.length === 0 ? (
         <Text style={[styles.emptyText, { color: c.text.secondary }]}>
           {searchText.trim() ? 'No matching favorites' : 'No favorites yet'}
@@ -336,7 +347,9 @@ function SearchBar({
       )}
 
       <View style={styles.sectionRow}>
-        <Text style={[styles.section, { color: c.text.secondary }]}>All Offices</Text>
+        <Text style={[styles.section, { color: c.text.secondary }]}>
+          All Offices
+        </Text>
         <TouchableOpacity
           style={styles.sortBtn}
           activeOpacity={0.8}

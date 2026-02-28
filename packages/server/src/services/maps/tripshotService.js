@@ -1,5 +1,9 @@
 // packages/server/src/services/maps/tripshotService.js
 
+// Service for querying the TripShot shuttle system via the local backend proxy.
+// Fetches region-wide live status and matches rides by shuttle name.
+// Returns structured ETA, delay, and occupancy data for use in the polling job.
+
 import axios from 'axios';
 
 const TRIPSHOT_BASE_URL =
@@ -8,10 +12,9 @@ const TRIPSHOT_BASE_URL =
 export async function getShuttleStatus(shuttleName) {
   try {
     // Use region-wide GET /liveStatus and find the matching route by name
-    const res = await axios.get(
-      `${TRIPSHOT_BASE_URL}/liveStatus`,
-      { timeout: 5000 }
-    );
+    const res = await axios.get(`${TRIPSHOT_BASE_URL}/liveStatus`, {
+      timeout: 5000,
+    });
 
     const rides = res.data?.rides ?? [];
 
@@ -28,7 +31,8 @@ export async function getShuttleStatus(shuttleName) {
     let etaMinutes = null;
 
     if (nextStop?.Awaiting?.expectedArrivalTime) {
-      const ms = new Date(nextStop.Awaiting.expectedArrivalTime).getTime() - Date.now();
+      const ms =
+        new Date(nextStop.Awaiting.expectedArrivalTime).getTime() - Date.now();
       etaMinutes = Math.max(0, Math.round(ms / 60000));
     } else if (nextStop?.Arrived) {
       etaMinutes = 0;

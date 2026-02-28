@@ -1,5 +1,8 @@
 // packages/mobile/src/components/SplashScreen.tsx
 
+// Full-screen loading screen shown on app launch while authentication and data initialize.
+// Displays the Tesla logo, app title, and a spinner until the app is ready.
+
 import React from 'react';
 import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

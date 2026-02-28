@@ -1,3 +1,8 @@
+// packages/mobile/src/hooks/useParkingData.ts
+
+// Fetches and merges parking lot availability across all campus locations on mount.
+// Lazily loads sublot-level detail when the user selects a specific lot in detail view.
+
 import { useState, useEffect } from 'react';
 import {
   getAllLocations,

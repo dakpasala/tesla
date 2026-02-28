@@ -1,3 +1,8 @@
+// packages/mobile/src/hooks/useMapAlerts.ts
+
+// Polls the server every 30 seconds for pending parking and shuttle alerts for the current user.
+// Dispatches local push notifications for each alert type and clears them after delivery.
+
 import { useEffect } from 'react';
 import { getUserAlerts, clearUserAlerts } from '../services/alerts';
 import {

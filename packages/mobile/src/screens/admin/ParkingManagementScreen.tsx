@@ -1,3 +1,9 @@
+// packages/mobile/src/screens/admin/ParkingManagementScreen.tsx
+
+// Admin screen for viewing and managing parking lot availability across all Tesla locations.
+// Groups parking lots by location and displays utilization via visual cards.
+// Admins can edit individual lot availability and apply status overrides (e.g. Full, Closed).
+
 import React, { useEffect, useState } from 'react';
 import {
   View,

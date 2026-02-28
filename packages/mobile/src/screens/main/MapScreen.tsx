@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/main/MapScreen.tsx
 
+// Primary map screen for planning and navigating commute routes.
+// Supports car, shuttle, transit, and bike modes with live parking and shuttle data.
+// Integrates route planning, parking availability, shuttle tracking, and issue reporting.
+
 import React, {
   useRef,
   useState,

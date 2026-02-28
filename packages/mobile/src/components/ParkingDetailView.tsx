@@ -1,4 +1,8 @@
 // packages/mobile/src/components/ParkingDetailView.tsx
+
+// Detailed parking lot view showing current occupancy, forecast, and selectable sublots.
+// Includes a shuttle suggestion card and action buttons to route via Google Maps or view other lots.
+
 import React from 'react';
 import { View, Text, Image, ActivityIndicator, StyleSheet } from 'react-native';
 import { TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler';
@@ -119,13 +123,13 @@ export function ParkingDetailView({
             if (!isNaN(capacity) && !isNaN(available) && capacity > 0) {
               currentPercent = Math.round(((capacity - available) / capacity) * 100);
             }
-            
+
             if (isClosed || currentPercent >= 100) {
               return null;
             }
-            
+
             const futurePercent = Math.min(currentPercent + 15, 100);
-            
+
             return (
               <View style={styles.statusRow}>
                 <Text style={[styles.statusLabel, { color: c.text.secondary }]}>FORECAST</Text>
@@ -159,11 +163,7 @@ export function ParkingDetailView({
 
                 let fullness = 0;
 
-                if (
-                  !isNaN(capacity) &&
-                  !isNaN(available) &&
-                  capacity > 0
-                ) {
+                if (!isNaN(capacity) && !isNaN(available) && capacity > 0) {
                   fullness = Math.round(
                     ((capacity - available) / capacity) * 100
                   );

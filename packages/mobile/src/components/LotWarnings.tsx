@@ -1,3 +1,6 @@
+// Small inline warning label with an icon used to flag closed or restricted parking lots.
+// Renders a tinted icon alongside a short status text string.
+
 import React from 'react';
 import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

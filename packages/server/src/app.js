@@ -1,3 +1,5 @@
+// packages/server/src/app.js
+
 import express from 'express';
 
 import dummyRoutes from './routes/dummy.js';

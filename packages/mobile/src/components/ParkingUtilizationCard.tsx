@@ -1,3 +1,6 @@
+// Renders a compact card showing parking lot utilization as a circular progress ring.
+// Supports status overrides (e.g. Full, Closed) and color-coded availability indicators.
+
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -73,10 +76,10 @@ export default function ParkingUtilizationCard({
         ) : (
           <View style={{ width: SIZE, height: SIZE }} />
         )}
-        
+
         <View style={styles.percentageContainer}>
           <Text style={[styles.percentageText, { color: getStrokeColor() }]}>
-            {isStatusOnly ? '0%' : (isFull ? 'Full' : `${clampedPercentage}%`)}
+            {isStatusOnly ? '0%' : isFull ? 'Full' : `${clampedPercentage}%`}
           </Text>
         </View>
       </View>

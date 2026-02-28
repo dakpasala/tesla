@@ -1,3 +1,8 @@
+// packages/mobile/src/context/ThemeContext.tsx
+
+// Manages the active color theme (light, dark, or system) with MMKV persistence.
+// Exposes the resolved theme, the full theme object, and helpers to set or toggle the preference.
+
 import React, { createContext, useContext, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { createMMKV } from 'react-native-mmkv';

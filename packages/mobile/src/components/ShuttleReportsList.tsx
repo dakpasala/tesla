@@ -1,3 +1,6 @@
+// Renders a scrollable list of user-submitted shuttle reports with timestamp and status dot.
+// Shows a loading spinner while fetching and an empty state message when no reports exist.
+
 import React from 'react';
 import {
   View,
@@ -35,7 +38,11 @@ export default function ShuttleReportsList({
   }
 
   if (reports.length === 0) {
-    return <Text style={[styles.emptyText, { color: c.text.secondary }]}>No reports found.</Text>;
+    return (
+      <Text style={[styles.emptyText, { color: c.text.secondary }]}>
+        No reports found.
+      </Text>
+    );
   }
 
   return (

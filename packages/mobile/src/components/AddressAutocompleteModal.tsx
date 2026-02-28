@@ -1,3 +1,6 @@
+// Modal with a search input that lets users pick a destination from a list of known campus locations.
+// Filters results in real time and falls back to a full location list when the input is empty.
+
 // packages/mobile/src/components/AddressAutocompleteModal.tsx
 
 import React, { useState, useEffect } from 'react';
@@ -70,7 +73,7 @@ export default function AddressAutocompleteModal({
 
     const query = inputValue.toLowerCase();
     const filtered = locations.filter(
-      (loc) =>
+      loc =>
         loc.name.toLowerCase().includes(query) ||
         loc.address.toLowerCase().includes(query)
     );

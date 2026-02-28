@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/main/RewardsScreen.tsx
 
+// Screen displaying the user's sustainability rewards and incentive history.
+// Shows total points balance earned through eco-friendly commuting choices.
+// Lists past transit activities with CO2 savings earned per trip.
+
 import React from 'react';
 import {
   View,

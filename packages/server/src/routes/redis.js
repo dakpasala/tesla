@@ -1,3 +1,9 @@
+// packages/server/src/routes/redis.js
+
+// Express routes for direct Redis key management (dev/debug use only).
+// Supports setting, getting, and deleting arbitrary keys, plus a connectivity test.
+// Not intended for production use — provides low-level cache inspection during development.
+
 import express from 'express';
 import { getRedisClient } from '../services/redis/redisClient.js';
 
@@ -24,8 +30,6 @@ router.post('/set', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-
 
 router.get('/get/:key', async (req, res) => {
   try {

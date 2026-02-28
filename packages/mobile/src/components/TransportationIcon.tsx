@@ -1,3 +1,6 @@
+// Reusable icon component that renders a tinted transportation image (car, van, bus, bike).
+// Adapts tint color to the active theme and accepts a configurable size and style prop.
+
 import React from 'react';
 import { Image, ImageStyle, StyleProp } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

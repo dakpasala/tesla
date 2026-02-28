@@ -1,3 +1,5 @@
+// packages/mobile/src/screens/theme/theme.ts
+
 const sharedSpacing = {
   xs: 4,
   s: 8,

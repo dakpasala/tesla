@@ -1,3 +1,6 @@
+// Pressable icon that renders a star image tinted to match the active theme.
+// Used to mark or unmark a location as a favorite throughout the app.
+
 import React from 'react';
 import { Image, Pressable, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

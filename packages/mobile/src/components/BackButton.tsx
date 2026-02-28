@@ -1,3 +1,6 @@
+// Reusable chevron back button that calls navigation.goBack() or a custom onPress handler.
+// Stroke color adapts to the active theme or can be overridden via a prop.
+
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';

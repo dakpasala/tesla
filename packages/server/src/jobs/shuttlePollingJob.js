@@ -1,9 +1,16 @@
-import {
-  getKeysByPattern,
-  getSetSize,
-} from '../services/redis/cache.js';
+// packages/server/src/jobs/shuttlePollingJob.js
+
+// Background job that polls live shuttle status for all actively tracked routes.
+// Sends ETA alerts when a shuttle is 5 minutes away from a subscribed user's stop.
+// Also fans out per-shuttle and all-routes admin announcements to subscribed users.
+
+import { getKeysByPattern, getSetSize } from '../services/redis/cache.js';
 import { getShuttleStatus } from '../services/maps/tripshotService.js';
-import { notifyShuttleEvent, notifyShuttleAlert, notifyShuttleAlertAll } from '../services/notifications/notificationRouter.js';
+import {
+  notifyShuttleEvent,
+  notifyShuttleAlert,
+  notifyShuttleAlertAll,
+} from '../services/notifications/notificationRouter.js';
 import { getShuttleAlerts } from '../services/redis/shuttleNotifications.js';
 
 const POLL_INTERVAL_MS = 5_000; // 1 minute

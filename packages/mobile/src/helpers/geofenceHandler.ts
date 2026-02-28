@@ -1,3 +1,8 @@
+// packages/mobile/src/helpers/geofenceHandler.ts
+
+// Registers office geofences with BackgroundGeolocation and listens for entry/exit events.
+// Syncs the user's location state to the backend when they arrive at or leave a campus location.
+
 import BackgroundGeolocation from 'react-native-background-geolocation';
 import { OFFICE_LOCATIONS } from '../config/officeLocations';
 import { setUserLocationState } from '../services/users';

@@ -1,5 +1,9 @@
 // packages/backend/src/services/maps/validation.js
 
+// Validates whether a given address string resolves to a real location via Google Geocoding.
+// Used before saving home addresses to ensure users don't store invalid or empty strings.
+// Returns true if the address resolves to at least one result, false otherwise.
+
 import axios from 'axios';
 import { GOOGLE_MAPS_API_KEY } from '../../config/env.js';
 

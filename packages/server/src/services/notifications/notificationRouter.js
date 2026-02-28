@@ -1,5 +1,9 @@
 // packages/server/src/services/notifications/notificationRouter.js
 
+// Handles routing and fan-out of push notifications for parking and shuttle events.
+// Leverages Redis for caching user subscriptions, deduplication, and storing pending alerts.
+// Supports parking threshold alerts, shuttle ETA events, and shuttle-wide alert broadcasts.
+
 import {
   getCache,
   setCache,
@@ -12,70 +16,69 @@ import {
 import { getUsersFavoritingLocationId } from '../db/mssqlPool.js';
 
 export async function routeParkingNotification({
-    locationId,
-    locationName,
-    lot,
-    threshold,
-    available,
-    type
+  locationId,
+  locationName,
+  lot,
+  threshold,
+  available,
+  type,
 }) {
-    const locationUsersKey = `location:${locationId}:users`;
-    const locationReadyKey = `location:${locationId}:users:ready`;
+  const locationUsersKey = `location:${locationId}:users`;
+  const locationReadyKey = `location:${locationId}:users:ready`;
 
-    let userIds;
+  let userIds;
 
-    // check whether we've pulled from DB, if not then we pull from DB and also the case if people added to favs
-    const isReady = await getCache(locationReadyKey);
-    if (!isReady) {
-      const users = await getUsersFavoritingLocationId(locationId);
-      userIds = users.map(u => String(u.id));
+  // check whether we've pulled from DB, if not then we pull from DB and also the case if people added to favs
+  const isReady = await getCache(locationReadyKey);
+  if (!isReady) {
+    const users = await getUsersFavoritingLocationId(locationId);
+    userIds = users.map(u => String(u.id));
 
-      await addSetMembers(locationUsersKey, userIds);
-      await setCache(locationReadyKey, '1', 3600);
+    await addSetMembers(locationUsersKey, userIds);
+    await setCache(locationReadyKey, '1', 3600);
 
-      console.log('[CACHE BUILD] location users loaded from DB');
+    console.log('[CACHE BUILD] location users loaded from DB');
+  } else {
+    // just get everything from redis ~ we can have an expiry of like a hour or a day it don't matter
+    userIds = await getSetMembers(locationUsersKey);
+    console.log('[CACHE HIT] location favorites from Redis');
+  }
+
+  // fan-out
+  for (const userId of userIds) {
+    // if the user is near an office and stuff u know
+    const suppressKey = `user:${userId}:suppress_notifications`;
+    if (await cacheExists(suppressKey)) continue;
+
+    const dedupeKey = `user:${userId}:notified:${locationId}:${threshold}`;
+    if (type === 'BELOW' && (await cacheExists(dedupeKey))) continue;
+    if (type === 'RECOVERY') await deleteCache(dedupeKey);
+
+    console.log(
+      `[USER NOTIFY] user:${userId} → ${locationName} - ${lot} ` +
+        (type === 'BELOW'
+          ? `below ${threshold} (${available})`
+          : `recovered above ${threshold} (${available})`)
+    );
+
+    // Store alert in Redis for mobile app to poll
+    await addSetMembers(`user:${userId}:pending_alerts`, [
+      JSON.stringify({
+        type: 'parking',
+        locationId,
+        locationName,
+        lot,
+        available,
+        threshold,
+        alertType: type,
+        timestamp: Date.now(),
+      }),
+    ]);
+
+    if (type === 'BELOW') {
+      await setCache(dedupeKey, '1', 86400);
     }
-    else {
-        // just get everything from redis ~ we can have an expiry of like a hour or a day it don't matter
-        userIds = await getSetMembers(locationUsersKey);
-        console.log('[CACHE HIT] location favorites from Redis');
-    }
-
-    // fan-out
-    for (const userId of userIds) {
-        // if the user is near an office and stuff u know
-        const suppressKey = `user:${userId}:suppress_notifications`;
-        if (await cacheExists(suppressKey)) continue;
-
-        const dedupeKey = `user:${userId}:notified:${locationId}:${threshold}`;
-        if (type === 'BELOW' && await cacheExists(dedupeKey)) continue;
-        if (type === 'RECOVERY') await deleteCache(dedupeKey);
-
-        console.log(
-            `[USER NOTIFY] user:${userId} → ${locationName} - ${lot} ` +
-            (type === 'BELOW'
-            ? `below ${threshold} (${available})`
-            : `recovered above ${threshold} (${available})`)
-        );
-        
-        // Store alert in Redis for mobile app to poll
-        await addSetMembers(`user:${userId}:pending_alerts`, [
-          JSON.stringify({
-            type: 'parking',
-            locationId,
-            locationName,
-            lot,
-            available,
-            threshold,
-            alertType: type,
-            timestamp: Date.now(),
-          })
-        ]);
-
-        if (type === 'BELOW') {
-            await setCache(dedupeKey, '1', 86400);
-        }
-    }
+  }
 }
 
 export async function notifyShuttleEvent({
@@ -110,7 +113,7 @@ export async function notifyShuttleEvent({
         event,
         etaMinutes,
         timestamp: Date.now(),
-      })
+      }),
     ]);
 
     // APNs — dedupe for 15 min
@@ -118,10 +121,7 @@ export async function notifyShuttleEvent({
   }
 }
 
-export async function notifyShuttleAlert({
-  shuttleName,
-  alert,
-}) {
+export async function notifyShuttleAlert({ shuttleName, alert }) {
   const userIds = await getSetMembers(`shuttle:${shuttleName}:users`);
   if (userIds.length === 0) return;
 
@@ -130,7 +130,9 @@ export async function notifyShuttleAlert({
   if (await cacheExists(dedupeKey)) return;
 
   const reason = alert.reason?.replace('_', ' ') ?? 'update';
-  const delayPart = alert.delay_minutes ? ` — ${alert.delay_minutes} min delay` : '';
+  const delayPart = alert.delay_minutes
+    ? ` — ${alert.delay_minutes} min delay`
+    : '';
   const message = `${shuttleName}: ${reason}${delayPart}`;
 
   for (const userId of userIds) {
@@ -151,7 +153,7 @@ export async function notifyShuttleAlert({
         delayMinutes: alert.delay_minutes,
         message,
         timestamp: Date.now(),
-      })
+      }),
     ]);
   }
 
@@ -159,15 +161,15 @@ export async function notifyShuttleAlert({
   await setCache(dedupeKey, '1', 86400);
 }
 
-export async function notifyShuttleAlertAll({
-  alert,
-}) {
+export async function notifyShuttleAlertAll({ alert }) {
   // Dedupe per alert id — only notify once across all shuttles
   const dedupeKey = `notified:alert:${alert.id}`;
   if (await cacheExists(dedupeKey)) return;
 
   const reason = alert.reason?.replace('_', ' ') ?? 'update';
-  const delayPart = alert.delay_minutes ? ` — ${alert.delay_minutes} min delay` : '';
+  const delayPart = alert.delay_minutes
+    ? ` — ${alert.delay_minutes} min delay`
+    : '';
   const message = `All Shuttles: ${reason}${delayPart}`;
 
   // Fan out to every subscribed user across all shuttles
@@ -195,7 +197,7 @@ export async function notifyShuttleAlertAll({
           delayMinutes: alert.delay_minutes,
           message,
           timestamp: Date.now(),
-        })
+        }),
       ]);
     }
   }

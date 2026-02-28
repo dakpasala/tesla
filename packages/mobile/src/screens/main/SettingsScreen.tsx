@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/main/SettingsScreen.tsx
 
+// Screen for managing user preferences including location, notifications, and appearance.
+// Allows users to toggle dark mode, live activity notifications, and access rewards.
+// Admins see a reduced menu without the Rewards option.
+
 import React, { useState } from 'react';
 import {
   View,
@@ -25,7 +29,7 @@ export default function SettingsScreen() {
   const [liveActivityEnabled, setLiveActivityEnabled] = useState(true);
 
   const isDark = theme === 'dark';
-  
+
   const c = activeTheme.colors;
   const components = activeTheme.components;
 
@@ -111,9 +115,7 @@ export default function SettingsScreen() {
             <Text style={[styles.itemText, { color: c.text.primary }]}>
               Rewards
             </Text>
-            <Text style={[styles.chevron, { color: components.icon }]}>
-              ›
-            </Text>
+            <Text style={[styles.chevron, { color: components.icon }]}>›</Text>
           </TouchableOpacity>
         )}
 

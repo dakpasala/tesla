@@ -1,3 +1,8 @@
+// packages/mobile/src/helpers/mapUtils.ts
+
+// Utility functions for decoding Google polylines, formatting durations, and computing parking status.
+// Also provides a simple heuristic forecast for how full a lot will be at the next peak hour.
+
 export function decodePolyline(
   encoded: string
 ): { latitude: number; longitude: number }[] {

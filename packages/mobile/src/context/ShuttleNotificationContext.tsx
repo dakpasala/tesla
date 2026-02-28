@@ -1,5 +1,8 @@
 import React, { createContext, useState, useCallback, ReactNode } from 'react';
 
+// Provides global state for shuttle arrival notifications across the app.
+// Exposes showNotification and hideNotification actions consumed by the banner component.
+
 export interface ShuttleNotificationState {
   visible: boolean;
   etaMinutes: number;

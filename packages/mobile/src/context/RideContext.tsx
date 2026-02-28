@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+// Stores the user's selected destination and travel mode for the current trip-planning session.
+// Shared across route, map, and detail screens via a single provider at the navigation root.
+
 export type Coordinate = {
   latitude: number;
   longitude: number;

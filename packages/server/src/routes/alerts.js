@@ -1,6 +1,10 @@
 import express from 'express';
 import { getSetMembers, deleteCache } from '../services/redis/cache.js';
 
+// Express routes for retrieving and clearing user-specific alert queues from Redis.
+// GET returns all pending alerts for a user; DELETE clears them after delivery.
+// Alerts include parking threshold events and shuttle delay notifications.
+
 const router = express.Router();
 
 router.get('/:userId', async (req, res) => {

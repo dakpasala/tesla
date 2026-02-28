@@ -8,6 +8,10 @@ import {
 
 const router = express.Router();
 
+// Express routes for parking lot availability data.
+// Supports fetching all lots, per-location queries, full-lot counts, and admin availability updates.
+// PATCH endpoint allows admins to set availability numbers and string status overrides.
+
 // --------------------
 // locations
 // --------------------

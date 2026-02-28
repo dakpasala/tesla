@@ -163,4 +163,8 @@ router.get('/presence', async (req, res) => {
   }
 });
 
+// Express routes for multi-modal route planning via Google Maps.
+// Handles to-office, go-home, and quick-start routing with Redis caching per origin/destination.
+// Also exposes a presence endpoint to check if a user is near a Tesla office.
+
 export default router;

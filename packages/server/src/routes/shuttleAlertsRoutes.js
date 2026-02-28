@@ -133,4 +133,10 @@ router.get('/admin/reports', async (req, res) => {
   }
 });
 
+/**
+ * Express routes for shuttle reports and admin announcements stored in Redis.
+ * Users can submit reports; admins can create per-shuttle or all-routes alerts.
+ * Includes endpoints for fetching report counts, all reports, and announcement history.
+ */
+
 export default router;

@@ -1,5 +1,9 @@
 import express from 'express';
 
+// Placeholder Express routes used for development and API health checks.
+// Includes a status endpoint, a data echo route, and a test error handler.
+// Safe to remove or ignore in production.
+
 const router = express.Router();
 
 // Simple dummy data

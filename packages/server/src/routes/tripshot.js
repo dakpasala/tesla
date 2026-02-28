@@ -423,4 +423,8 @@ router.post('/liveStatus', (req, res) => {
   });
 });
 
+// Express routes for the TripShot shuttle planning API.
+// POST /commutePlan returns shuttle trip options based on origin/destination coordinates.
+// GET and POST /liveStatus return real-time ride data for active shuttles.
+
 export default router;

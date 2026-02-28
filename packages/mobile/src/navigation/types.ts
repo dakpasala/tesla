@@ -1,3 +1,5 @@
+// packages/mobile/src/navigations/type.ts
+
 // Navigation type definitions and screen name constants for the root stack navigator.
 // Defines all screen params for type-safe navigation throughout the app.
 

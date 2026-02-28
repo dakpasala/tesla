@@ -1,3 +1,5 @@
+// packages/mobile/src/navigation/AppNavigatior.tsx
+
 // Root stack navigator that routes between auth, user, and admin screen stacks.
 // Renders the login screen when unauthenticated and splits admin vs regular user navigation trees.
 

@@ -1,3 +1,5 @@
+// packages/server/src/services/redis/cache.js
+
 // General-purpose Redis cache utilities for get, set, delete, and set operations.
 // Includes helpers for user/location subscriptions, shuttle tracking, and notification suppression.
 // All functions obtain a shared Redis client via getRedisClient to avoid duplicate connections.

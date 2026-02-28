@@ -1,3 +1,5 @@
+// packages/server/src/services/redis/redisClient.js
+
 // Singleton Redis client factory using the ioredis-compatible `redis` package.
 // Lazily connects on first use and reuses the same client across the application.
 // Connection URL is sourced from the REDIS_URL environment variable.

@@ -1,3 +1,5 @@
+// packages/server/src/services/db/normalizeRoute.js
+
 // Utility for normalizing raw Google Maps Directions API responses into a consistent shape.
 // Extracts duration, distance, polyline, fare, and step data from the first route leg.
 // Used by directionsService before caching or returning routes to the client.

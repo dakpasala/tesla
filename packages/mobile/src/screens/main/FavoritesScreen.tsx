@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/main/FavoritesScreen.tsx
 
+// Screen for managing a user's saved favorite locations.
+// Allows users to set and update their Home and Work addresses for quick route access.
+// Displays a list of starred destinations that link directly to the Map screen.
+
 import React, { useState, useEffect } from 'react';
 import {
   View,

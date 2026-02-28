@@ -5,9 +5,6 @@ import React from 'react';
 import { View, StyleSheet, Image, Pressable, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
-// Horizontal icon bar for switching between transport mode screens (car, bus, shuttle, bike).
-// Highlights the active mode and emits the selected screen via a callback.
-
 export type NavScreen = 'car' | 'bike' | 'bus' | 'train' | 'walk';
 
 interface NavBarProps {

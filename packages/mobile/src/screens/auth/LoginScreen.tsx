@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/auth/LoginScreen.tsx
 
+// Authentication screen shown to unauthenticated users on app launch.
+// Validates hardcoded credentials for demo users and the admin account.
+// Calls the AuthContext login method to set session state on success.
+
 import React, { useState } from 'react';
 import {
   View,

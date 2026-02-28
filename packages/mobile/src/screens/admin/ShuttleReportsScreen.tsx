@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/admin/ShuttleReportsScreen.tsx
 
+// Admin screen for viewing user-submitted shuttle reports.
+// Supports viewing reports for a specific shuttle route or all routes at once.
+// Admins can also send announcements directly from this screen.
+
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,

@@ -1,3 +1,5 @@
+// packages/server/src/routes/redis.js
+
 // Express routes for direct Redis key management (dev/debug use only).
 // Supports setting, getting, and deleting arbitrary keys, plus a connectivity test.
 // Not intended for production use — provides low-level cache inspection during development.

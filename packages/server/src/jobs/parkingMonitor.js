@@ -1,3 +1,5 @@
+// packages/server/src/jobs/parkingMonitor.js
+
 // Background job that polls parking availability from the database on a dynamic interval.
 // Compares availability against thresholds and fires notifications for drops and recoveries.
 // Uses Redis to deduplicate alerts so users are only notified once per threshold crossing.

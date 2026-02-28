@@ -1,3 +1,5 @@
+// packages/server/src/routes/db.js
+
 /**
  * Express route for testing the MSSQL database connection.
  * GET /test verifies connectivity to the database and returns success or an error message.

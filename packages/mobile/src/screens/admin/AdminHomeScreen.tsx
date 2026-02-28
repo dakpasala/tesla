@@ -1,5 +1,9 @@
 // packages/mobile/src/screens/admin/AdminHomeScreen.tsx
 
+// Home screen for admin users after login.
+// Provides quick navigation to Shuttle Dashboard, Parking Management, and Settings.
+// Shows live badge counts for new shuttle reports and full parking lots.
+
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,

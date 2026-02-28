@@ -1,4 +1,6 @@
-// doesn't have dark mode implemented
+// Cylindrical 3D scroll wheel for selecting a departure time (hour, minute, AM/PM).
+// Supports a minimum selectable time to prevent picking times in the past.
+// Doesn't have dark mode implemented
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
@@ -78,12 +80,14 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   const isDarkMode = colorScheme === 'dark';
 
   // Min threshold in minutes-since-midnight (0 if no min set)
-  const minTotalMinutes = minHour !== undefined
-    ? toMinutes(minHour, minMinute, minPeriod)
-    : 0;
+  const minTotalMinutes =
+    minHour !== undefined ? toMinutes(minHour, minMinute, minPeriod) : 0;
 
   const baseHours = Array.from({ length: HOUR_CYCLE_LENGTH }, (_, i) => i + 1);
-  const baseMinutes = Array.from({ length: MINUTE_CYCLE_LENGTH }, (_, i) => i * 5);
+  const baseMinutes = Array.from(
+    { length: MINUTE_CYCLE_LENGTH },
+    (_, i) => i * 5
+  );
 
   const hourBaseIndex = baseHours.indexOf(defaultHour);
   const minuteBaseIndex = baseMinutes.indexOf(defaultMinute);
@@ -214,7 +218,8 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
     ) {
       effectiveMinute = minMinute;
       const minMinuteBaseIndex = baseMinutes.indexOf(minMinute);
-      const newMinuteIndex = (minMinuteBaseIndex === -1 ? 0 : minMinuteBaseIndex) + MINUTE_MID_START;
+      const newMinuteIndex =
+        (minMinuteBaseIndex === -1 ? 0 : minMinuteBaseIndex) + MINUTE_MID_START;
       setSelectedMinute(minMinute);
       setSelectedMinuteIndex(newMinuteIndex);
       const y = newMinuteIndex * ITEM_HEIGHT;
@@ -360,7 +365,12 @@ const AtmWheelPicker: React.FC<AtmWheelPickerProps> = ({
   return (
     <View style={[styles.container, isDarkMode && styles.containerDark]}>
       {showSelectionOverlay && (
-        <View style={[styles.selectionOverlay, isDarkMode && styles.selectionOverlayDark]} />
+        <View
+          style={[
+            styles.selectionOverlay,
+            isDarkMode && styles.selectionOverlayDark,
+          ]}
+        />
       )}
 
       <View style={styles.columnsContainer}>

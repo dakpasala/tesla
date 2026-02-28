@@ -1,3 +1,6 @@
+// Selectable card list component for presenting route or parking options with icons and subtitles.
+// Supports an optional confirm button that activates after the user selects an item.
+
 import React, { useMemo, useState } from 'react';
 import {
   View,
@@ -116,15 +119,21 @@ export default function OptionsCard({
             )}
 
             <View style={styles.textCol}>
-              <Text style={[styles.title, { color: c.text.primary }]}>{item.title}</Text>
+              <Text style={[styles.title, { color: c.text.primary }]}>
+                {item.title}
+              </Text>
               <View style={styles.subtitleRow}>
                 <View style={styles.dot} />
-                <Text style={[styles.subtitle, { color: c.text.secondary }]}>{item.subtitle}</Text>
+                <Text style={[styles.subtitle, { color: c.text.secondary }]}>
+                  {item.subtitle}
+                </Text>
               </View>
             </View>
 
             {item.rightText ? (
-              <Text style={[styles.rightText, { color: c.text.secondary }]}>{item.rightText}</Text>
+              <Text style={[styles.rightText, { color: c.text.secondary }]}>
+                {item.rightText}
+              </Text>
             ) : null}
 
             {item.showIncentive && item.incentiveText ? (

@@ -1,3 +1,9 @@
+// packages/server/src/routes/tripshot.js
+
+// Express routes for the TripShot shuttle planning API.
+// POST /commutePlan returns shuttle trip options based on origin/destination coordinates.
+// GET and POST /liveStatus return real-time ride data for active shuttles.
+
 import express from 'express';
 import fs from 'fs';
 import path from 'path';

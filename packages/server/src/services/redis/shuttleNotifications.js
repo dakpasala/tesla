@@ -1,4 +1,8 @@
-// packages/server/src/services/redis/shuttleNotification.js
+// packages/server/src/services/redis/shuttleNotifications.js
+
+// Redis service for storing and retrieving shuttle reports and admin alerts.
+// Supports per-shuttle and all-routes alert creation with optional report clearing.
+// Provides aggregation helpers to fetch all reports and alerts across every shuttle.
 
 import { getRedisClient } from './redisClient.js';
 
@@ -102,7 +106,6 @@ export async function getShuttleAlerts(shuttleName) {
 
   return alerts.map(JSON.parse);
 }
-
 
 export async function getAllShuttleReports() {
   const redis = await getRedisClient();

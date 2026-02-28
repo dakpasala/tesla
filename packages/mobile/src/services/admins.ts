@@ -1,5 +1,9 @@
 // packages/mobile/src/services/admins.ts
 
+// Service for managing admin accounts in the system.
+// Provides functions to fetch the current admin list and add new admins.
+// Used by admin-facing screens to control access and user management.
+
 import { get, post } from './crud';
 
 export type Admin = {

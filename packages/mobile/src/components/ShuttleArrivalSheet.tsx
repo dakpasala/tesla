@@ -1,5 +1,8 @@
 // packages/mobile/src/components/ShuttleArrivalSheet.tsx
 
+// Full-screen bottom sheet showing real-time shuttle arrival info, route progress, and occupancy.
+// Supports multiple departure options via tab pills and includes an inline issue reporting flow.
+
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -65,7 +68,7 @@ function RouteProgressMap({
     return 'Unknown';
   };
 
-  const reachedStops = stopStatus.map((stop) => {
+  const reachedStops = stopStatus.map(stop => {
     const state = getStopState(stop);
     return state === 'Arrived' || state === 'Departed' || state === 'Skipped';
   });
@@ -76,7 +79,9 @@ function RouteProgressMap({
   };
 
   const totalSegments = Math.max(stopStatus.length - 1, 1);
-  const currentStopIndex = stopStatus.findIndex(s => getStopState(s) === 'Awaiting');
+  const currentStopIndex = stopStatus.findIndex(
+    s => getStopState(s) === 'Awaiting'
+  );
   const previousIndex = currentStopIndex > 0 ? currentStopIndex - 1 : 0;
 
   let SEGMENT_PROGRESS = 0;
@@ -117,7 +122,12 @@ function RouteProgressMap({
         <View style={[styles.progressVertical, { height: VERTICAL_LENGTH * verticalProgress, backgroundColor: BLUE }]} />
         {reachedCorner && <View style={[styles.progressCurve, { borderColor: BLUE }]} />}
 
-        <View style={[styles.car, { backgroundColor: c.card, right: carRight, top: carTop }]}>
+        <View
+          style={[
+            styles.car,
+            { backgroundColor: c.card, right: carRight, top: carTop },
+          ]}
+        >
           <Image
             source={newShuttleIcon}
             style={[styles.carImage, { tintColor: c.text.primary }]}
@@ -205,7 +215,9 @@ export function ShuttleArrivalSheet({
         <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 8, color: c.text.primary }}>
           Thanks for reporting
         </Text>
-        <Text style={{ fontSize: 13, color: c.text.secondary, marginBottom: 16 }}>
+        <Text
+          style={{ fontSize: 13, color: c.text.secondary, marginBottom: 16 }}
+        >
           We'll look into it as soon as possible.
         </Text>
         <TouchableOpacity
@@ -225,10 +237,16 @@ export function ShuttleArrivalSheet({
       <View style={[styles.container, { backgroundColor: c.background }]}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
-          <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
+          <Text style={[styles.backText, { color: c.text.primary }]}>
+            All Routes
+          </Text>
         </TouchableOpacity>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <Text style={{ color: c.text.secondary, fontSize: 14 }}>Loading shuttle info...</Text>
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <Text style={{ color: c.text.secondary, fontSize: 14 }}>
+            Loading shuttle info...
+          </Text>
         </View>
       </View>
     );
@@ -241,7 +259,9 @@ export function ShuttleArrivalSheet({
       <View style={[styles.container, { backgroundColor: c.background }]}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
-          <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
+          <Text style={[styles.backText, { color: c.text.primary }]}>
+            All Routes
+          </Text>
         </TouchableOpacity>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ fontSize: 28, marginBottom: 12 }}>🚌</Text>
@@ -265,10 +285,14 @@ export function ShuttleArrivalSheet({
 
   const shuttleCards = options.map((option, idx) => {
     const onRouteStep = option.steps.find(s => 'OnRouteScheduledStep' in s);
-    const rideId = onRouteStep && 'OnRouteScheduledStep' in onRouteStep
-      ? onRouteStep.OnRouteScheduledStep.rideId : null;
-    const routeId = onRouteStep && 'OnRouteScheduledStep' in onRouteStep
-      ? onRouteStep.OnRouteScheduledStep.routeId : null;
+    const rideId =
+      onRouteStep && 'OnRouteScheduledStep' in onRouteStep
+        ? onRouteStep.OnRouteScheduledStep.rideId
+        : null;
+    const routeId =
+      onRouteStep && 'OnRouteScheduledStep' in onRouteStep
+        ? onRouteStep.OnRouteScheduledStep.routeId
+        : null;
 
     const liveRide = rides.find(r => r.rideId === rideId) ?? rides[0] ?? null;
     const route = routes.find(r => r.routeId === routeId) ?? routes[0];
@@ -277,7 +301,9 @@ export function ShuttleArrivalSheet({
     const etaTime = formatTime(option.travelEnd);
     const lateSec = liveRide?.lateBySec ?? 0;
     const isDelayed = lateSec > 60;
-    const statusText = isDelayed ? `Late by ${Math.ceil(lateSec / 60)} Min` : 'On Time';
+    const statusText = isDelayed
+      ? `Late by ${Math.ceil(lateSec / 60)} Min`
+      : 'On Time';
     const statusColor = isDelayed ? '#FF3B30' : '#34C759';
 
     const stopStatus = liveRide?.stopStatus ?? [];
@@ -288,7 +314,8 @@ export function ShuttleArrivalSheet({
         s.Awaiting?.stopId ??
         s.Arrived?.stopId ??
         s.Departed?.stopId ??
-        s.Skipped?.stopId ?? '';
+        s.Skipped?.stopId ??
+        '';
       return stops.find(st => st.stopId === stopId)?.name ?? '';
     });
     while (nextStopNames.length < 3) nextStopNames.push('');
@@ -316,7 +343,9 @@ export function ShuttleArrivalSheet({
       {/* Back */}
       <TouchableOpacity style={styles.backButton} onPress={onBack}>
         <Text style={[styles.backIcon, { color: c.text.primary }]}>‹</Text>
-        <Text style={[styles.backText, { color: c.text.primary }]}>All Routes</Text>
+        <Text style={[styles.backText, { color: c.text.primary }]}>
+          All Routes
+        </Text>
       </TouchableOpacity>
 
       {/* Departure time selector tabs — only shown when multiple options */}
@@ -372,7 +401,10 @@ export function ShuttleArrivalSheet({
             </View>
           )}
 
-          <TouchableOpacity style={styles.reportContainer} onPress={() => setPage('report')}>
+          <TouchableOpacity
+            style={styles.reportContainer}
+            onPress={() => setPage('report')}
+          >
             <Text style={[styles.reportText, { color: c.text.secondary }]}>
               See something off?{' '}
               <Text style={styles.reportLink}>Report it</Text>
@@ -534,7 +566,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-  dotTop:    { top: 12, right: 73 },
+  dotTop: { top: 12, right: 73 },
   dotMiddle: { top: 52, right: 73 },
   dotBottom: { top: 92, right: 73 },
   labelsCol: { paddingLeft: 12, paddingTop: 20 },

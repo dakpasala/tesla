@@ -12,6 +12,8 @@ interface AdminStatsCardProps {
   style?: any;
 }
 
+// Compact stats card used on admin dashboards to surface a single metric with an optional trend indicator.
+// Supports up, down, and neutral trend directions with corresponding color cues.
 export default function AdminStatsCard({
   title,
   value,

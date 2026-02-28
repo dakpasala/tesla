@@ -1,3 +1,9 @@
+// packages/server/src/routes/users.js
+
+// Express routes for user data including balance, incentives, addresses, and favorites.
+// Also handles shuttle subscriptions and location-state updates for geofence tracking.
+// Validates addresses via Google Maps before saving and syncs user/location state in Redis.
+
 import express from 'express';
 import {
   awardTransitIncentive,
@@ -10,9 +16,9 @@ import {
   getUserFavorites,
   addUserFavoriteRow,
   removeUserFavoriteRow,
-  getLocationIdByName
+  getLocationIdByName,
 } from '../services/db/mssqlPool.js';
-import { 
+import {
   addUserToLocation,
   removeUserFromLocation,
   subscribeUserToShuttle,
@@ -21,7 +27,7 @@ import {
   unsuppressUserNotifications,
 } from '../services/redis/cache.js';
 
-import { isValidAddress } from '../services/maps/validation.js'
+import { isValidAddress } from '../services/maps/validation.js';
 
 const router = express.Router();
 
@@ -113,7 +119,9 @@ router.get('/:id/home_address', async (req, res) => {
     const homeAddress = await getUserHomeAddress(userId);
 
     if (!homeAddress) {
-      return res.status(404).json({ error: 'User not found or no address set' });
+      return res
+        .status(404)
+        .json({ error: 'User not found or no address set' });
     }
 
     res.json({
@@ -140,8 +148,8 @@ router.put('/:id/home_address', async (req, res) => {
   // Validate it's a real address (can be anywhere, not just Tesla offices)
   const isValid = await isValidAddress(homeAddress);
   if (!isValid) {
-    return res.status(400).json({ 
-      error: 'Invalid address. Please enter a valid address.' 
+    return res.status(400).json({
+      error: 'Invalid address. Please enter a valid address.',
     });
   }
 
@@ -172,12 +180,14 @@ router.get('/:id/work_address', async (req, res) => {
   if (Number.isNaN(userId)) {
     return res.status(400).json({ error: 'Invalid user ID' });
   }
- 
+
   try {
     const workAddress = await getUserWorkAddress(userId);
 
     if (!workAddress) {
-      return res.status(404).json({ error: 'User not found or no address set' });
+      return res
+        .status(404)
+        .json({ error: 'User not found or no address set' });
     }
 
     res.json({
@@ -306,7 +316,7 @@ router.delete('/:id/favorites/:name', async (req, res) => {
 // location-state
 // --------------------
 
-router.post("/:id/location-state", async (req, res) => {
+router.post('/:id/location-state', async (req, res) => {
   const userId = parseInt(req.params.id, 10);
   const { state } = req.body;
 
@@ -323,12 +333,12 @@ router.post("/:id/location-state", async (req, res) => {
       await suppressUserNotifications(userId);
     } else if (state === 'LEFT_LOCATION') {
       await unsuppressUserNotifications(userId);
+    } else {
+      return res.status(404).json({ error: 'Please provide a correct state' });
     }
-    else { return res.status(404).json({ error: 'Please provide a correct state'} )}
 
     res.json({ success: true });
-  }
-  catch {
+  } catch {
     res.status(500).json({ error: err.message });
   }
 });

@@ -1,11 +1,11 @@
+// Bottom sheet modal that allows admins to manually adjust parking lot occupancy and status.
+// Supports percentage stepper input and override presets like Full, Reserved, or Closed.
+// Integrates with the Vision Model for real-time availability updates.
+// Designed for ease of use with touch-friendly controls and clear visual feedback.
+// Follows accessibility best practices for modal dialogs.
+
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { ParkingRow } from '../services/parkings';
 import { useTheme } from '../context/ThemeContext';
 
@@ -43,18 +43,18 @@ export default function ParkingEditModal({
 
   const adjustOccupancy = (val: number) => {
     setLocalStatus(null); // Stepper clears manual status
-    setTempOccupancy((prev) => Math.min(100, Math.max(0, prev + val)));
+    setTempOccupancy(prev => Math.min(100, Math.max(0, prev + val)));
   };
 
   const handleInternalSave = () => {
     // Math: Convert percentage back to available spots using the REAL capacity
     let newAvailable = Math.round(totalCapacity * (1 - tempOccupancy / 100));
-    
+
     // Force 0 if explicitly marked Full or Closed
     if (localStatus === 'FULL' || localStatus === 'Lot closed') {
       newAvailable = 0;
     }
-    
+
     onSave(newAvailable, localStatus);
   };
 
@@ -87,7 +87,7 @@ export default function ParkingEditModal({
               { label: 'Mark as full', val: 'FULL' },
               { label: 'Reserved for event', val: 'Reserved for event' },
               { label: 'Lot closed', val: 'Lot closed' },
-            ].map((item) => (
+            ].map(item => (
               <TouchableOpacity
                 key={item.val}
                 style={[
@@ -108,11 +108,16 @@ export default function ParkingEditModal({
             ))}
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleInternalSave}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleInternalSave}
+          >
             <Text style={styles.saveButtonText}>Save</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-            <Text style={[styles.cancelText, { color: c.text.secondary }]}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: c.text.secondary }]}>
+              Cancel
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

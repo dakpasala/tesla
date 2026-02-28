@@ -1,5 +1,9 @@
 // packages/mobile/src/components/ActionRequiredCard.tsx
 
+// Admin card that surfaces shuttle routes with unresolved user reports and a severity badge.
+// Color-coded high, medium, and low severity states help prioritize operational response.
+
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

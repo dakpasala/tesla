@@ -1,5 +1,8 @@
 // packages/mobile/src/components/RouteHeader.tsx
 
+// Transport mode tab bar with estimated travel times and a departure time picker.
+// Opens an AtmWheelPicker modal to let users schedule future departures for car and shuttle modes.
+
 import React, { useState } from 'react';
 import {
   View,
@@ -66,7 +69,11 @@ export function RouteHeader({
   const c = activeTheme.colors;
 
   const [pickerVisible, setPickerVisible] = useState(false);
-  const [pendingTime, setPendingTime] = useState<{ hour: number; minute: number; period: 'am' | 'pm' } | null>(null);
+  const [pendingTime, setPendingTime] = useState<{
+    hour: number;
+    minute: number;
+    period: 'am' | 'pm';
+  } | null>(null);
 
   const modes: TransportMode[] = ['car', 'shuttle', 'transit', 'bike'];
   const isNow = !departureTime;
@@ -134,11 +141,13 @@ export function RouteHeader({
                 ]}
                 resizeMode="contain"
               />
-              <Text style={[
-                styles.tabTime,
-                { color: c.text.primary },
-                isActive && styles.activeTabTime,
-              ]}>
+              <Text
+                style={[
+                  styles.tabTime,
+                  { color: c.text.primary },
+                  isActive && styles.activeTabTime,
+                ]}
+              >
                 {time}
               </Text>
             </TouchableOpacity>
@@ -169,9 +178,13 @@ export function RouteHeader({
           <View style={[styles.modalSheet, { backgroundColor: c.background }]}>
             <View style={styles.modalHeader}>
               <TouchableOpacity onPress={() => setPickerVisible(false)}>
-                <Text style={[styles.modalCancel, { color: c.text.secondary }]}>Cancel</Text>
+                <Text style={[styles.modalCancel, { color: c.text.secondary }]}>
+                  Cancel
+                </Text>
               </TouchableOpacity>
-              <Text style={[styles.modalTitle, { color: c.text.primary }]}>Departure Time</Text>
+              <Text style={[styles.modalTitle, { color: c.text.primary }]}>
+                Departure Time
+              </Text>
               <TouchableOpacity onPress={handleConfirm}>
                 <Text style={styles.modalDone}>Done</Text>
               </TouchableOpacity>
@@ -181,11 +194,19 @@ export function RouteHeader({
             <TouchableOpacity
               style={[
                 styles.nowPill,
-                { borderColor: c.border, backgroundColor: isNow ? '#007AFF' : c.backgroundAlt },
+                {
+                  borderColor: c.border,
+                  backgroundColor: isNow ? '#007AFF' : c.backgroundAlt,
+                },
               ]}
               onPress={handleNow}
             >
-              <Text style={[styles.nowPillText, { color: isNow ? '#fff' : c.text.primary }]}>
+              <Text
+                style={[
+                  styles.nowPillText,
+                  { color: isNow ? '#fff' : c.text.primary },
+                ]}
+              >
                 Leave Now
               </Text>
             </TouchableOpacity>

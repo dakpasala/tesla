@@ -1,3 +1,9 @@
+// packages/server/src/services/db/directionsService.js
+
+// Service for fetching route directions from the Google Maps Directions API.
+// Supports driving, walking, bicycling, and transit modes with optional departure times.
+// getAllTransportOptions fetches all four modes in sequence and returns normalized results.
+
 import fetch from 'node-fetch';
 import { GOOGLE_MAPS_API_KEY } from '../../config/env.js';
 import { normalizeGoogleRoute } from "./normalizeRoute.js";

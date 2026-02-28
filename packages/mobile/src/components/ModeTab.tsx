@@ -1,3 +1,5 @@
+// Renders a pressable image-based tab that switches between selected and default icon states.
+// Used in transport mode selectors where each mode is represented by an asset image.
 // no dark mode
 
 import React from 'react';

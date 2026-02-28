@@ -1,3 +1,6 @@
+// Displays a scrollable list of currently active shuttles with name, route, and status color.
+// Tapping a shuttle navigates to its detailed reports screen.
+
 import { ScrollView, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import ShuttleListItem from './ShuttleListItem';

@@ -1,3 +1,9 @@
+// packages/server/src/routes/admins.js
+
+// Express routes for managing admin accounts.
+// GET returns all admins; POST adds a new admin by username and email.
+// Used by the admin management interface to control system access.
+
 import express from 'express';
 import {
   getAllAdmins,

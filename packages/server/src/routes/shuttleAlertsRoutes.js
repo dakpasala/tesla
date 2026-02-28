@@ -1,3 +1,11 @@
+// packages/server/src/routes/shuttleAlertRoutes.js
+
+/**
+ * Express routes for shuttle reports and admin announcements stored in Redis.
+ * Users can submit reports; admins can create per-shuttle or all-routes alerts.
+ * Includes endpoints for fetching report counts, all reports, and announcement history.
+ */
+
 import express from 'express';
 import {
   addShuttleReport,

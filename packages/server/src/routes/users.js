@@ -1,3 +1,9 @@
+// packages/server/src/routes/users.js
+
+// Express routes for user data including balance, incentives, addresses, and favorites.
+// Also handles shuttle subscriptions and location-state updates for geofence tracking.
+// Validates addresses via Google Maps before saving and syncs user/location state in Redis.
+
 import express from 'express';
 import {
   awardTransitIncentive,

@@ -1,3 +1,5 @@
+// packages/mobile/src/helpers/AdminHelper.ts
+
 // Static mock data and type definitions for admin dashboard stats and live alert cards.
 // Provides seed values for shuttle counts, rider totals, parking occupancy, and alert messages.
 

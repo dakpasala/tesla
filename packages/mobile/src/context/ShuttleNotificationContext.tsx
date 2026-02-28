@@ -1,7 +1,9 @@
-import React, { createContext, useState, useCallback, ReactNode } from 'react';
+// packages/mobile/src/context/ShuttleNotificationContext.tsx
 
 // Provides global state for shuttle arrival notifications across the app.
 // Exposes showNotification and hideNotification actions consumed by the banner component.
+
+import React, { createContext, useState, useCallback, ReactNode } from 'react';
 
 export interface ShuttleNotificationState {
   visible: boolean;

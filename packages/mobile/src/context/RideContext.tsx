@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+// packages/mobile/src/context/RideContext.tsx
 
 // Stores the user's selected destination and travel mode for the current trip-planning session.
 // Shared across route, map, and detail screens via a single provider at the navigation root.
+
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type Coordinate = {
   latitude: number;

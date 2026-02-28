@@ -1,3 +1,5 @@
+// packages/mobile/src/helpers/geofenceHandler.ts
+
 // Registers office geofences with BackgroundGeolocation and listens for entry/exit events.
 // Syncs the user's location state to the backend when they arrive at or leave a campus location.
 

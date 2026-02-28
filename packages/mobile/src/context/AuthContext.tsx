@@ -1,6 +1,5 @@
 // packages/mobile/src/context/AuthContext.tsx
 
-
 // Manages authentication state (userId, isAdmin) with AsyncStorage persistence across sessions.
 // Provides login and logout actions and blocks rendering until the stored auth state is loaded.
 

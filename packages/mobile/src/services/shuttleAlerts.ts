@@ -28,10 +28,9 @@ export async function submitShuttleReport(
   shuttleName: string,
   comment: string
 ): Promise<Report> {
-  return post<Report>(
-    `shuttles/${encodeURIComponent(shuttleName)}/reports`,
-    { comment }
-  );
+  return post<Report>(`shuttles/${encodeURIComponent(shuttleName)}/reports`, {
+    comment,
+  });
 }
 
 // fetch alerts
@@ -77,18 +76,13 @@ export async function createShuttleAlertAdmin(
 }
 
 // create alert for ALL shuttles
-export async function createShuttleAlertAdminAll(
-  alert: {
-    type: string;
-    reason: string;
-    delayMinutes?: number;
-    clearReports?: boolean;
-  }
-): Promise<ShuttleAlert> {
-  return post<ShuttleAlert>(
-    'shuttles/admin/alerts/all',
-    alert
-  );
+export async function createShuttleAlertAdminAll(alert: {
+  type: string;
+  reason: string;
+  delayMinutes?: number;
+  clearReports?: boolean;
+}): Promise<ShuttleAlert> {
+  return post<ShuttleAlert>('shuttles/admin/alerts/all', alert);
 }
 
 export type Announcement = {
@@ -104,7 +98,9 @@ export type AnnouncementsResponse = {
 
 // alerts = announcements
 export async function getAnnouncements(): Promise<Announcement[]> {
-  const response = await get<AnnouncementsResponse>('shuttles/admin/announcements');
+  const response = await get<AnnouncementsResponse>(
+    'shuttles/admin/announcements'
+  );
   return response.announcements;
 }
 

@@ -1,3 +1,7 @@
+// Express routes for multi-modal route planning via Google Maps.
+// Handles to-office, go-home, and quick-start routing with Redis caching per origin/destination.
+// Also exposes a presence endpoint to check if a user is near a Tesla office.
+
 import express from 'express';
 import { getAllTransportOptions } from '../services/maps/directionsService.js';
 import { getCache, setCache } from '../services/redis/cache.js';
@@ -162,9 +166,5 @@ router.get('/presence', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// Express routes for multi-modal route planning via Google Maps.
-// Handles to-office, go-home, and quick-start routing with Redis caching per origin/destination.
-// Also exposes a presence endpoint to check if a user is near a Tesla office.
 
 export default router;

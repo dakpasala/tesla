@@ -110,4 +110,7 @@ export async function checkPresence(origin: LatLng): Promise<PresenceResponse> {
   return get<PresenceResponse>(endpoint);
 }
 
-export type RouteResponse = GoHomeResponse | ToOfficeResponse | ToOfficeQuickStartResponse;
+export type RouteResponse =
+  | GoHomeResponse
+  | ToOfficeResponse
+  | ToOfficeQuickStartResponse;

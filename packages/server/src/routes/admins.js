@@ -1,3 +1,7 @@
+// Express routes for managing admin accounts.
+// GET returns all admins; POST adds a new admin by username and email.
+// Used by the admin management interface to control system access.
+
 import express from 'express';
 import {
   getAllAdmins,
@@ -9,10 +13,6 @@ const router = express.Router();
 // --------------------
 // admins
 // --------------------
-
-// Express routes for managing admin accounts.
-// GET returns all admins; POST adds a new admin by username and email.
-// Used by the admin management interface to control system access.
 
 // get the admins
 router.get('/', async (req, res) => {

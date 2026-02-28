@@ -24,7 +24,7 @@ export type OffRouteStep = {
     travelMode: string;
     departureTime: string;
     arrivalTime: string;
-    legRef?: string;          // added — present in real data
+    legRef?: string; // added — present in real data
     departFrom: LocationPoint;
     arriveAt: LocationPoint;
   };
@@ -48,10 +48,10 @@ export type TripOption = {
   departureStopId: string;
   travelStart: string;
   travelEnd: string;
-  earliestToArrive?: string;   // added
-  latestToDepart?: string;     // added
-  optionKey?: number;          // added
-  toArrivalTimeSec?: number;   // added
+  earliestToArrive?: string; // added
+  latestToDepart?: string; // added
+  optionKey?: number; // added
+  toArrivalTimeSec?: number; // added
   toDepartureTimeSec?: number; // added
   steps: TripStep[];
 };
@@ -97,17 +97,17 @@ export type Stop = {
 };
 
 export type CommutePlanResponse = {
-  directOnly?: boolean;          // added
+  directOnly?: boolean; // added
   startPoint: LocationPoint;
   endPoint: LocationPoint;
-  options: TripOption[];         // [] when no shuttle route exists
-  routes: Route[];               // [] when no shuttle route exists
-  stops?: Stop[];                // [] when no shuttle route exists
-  legMap?: Record<string, any>;  // added
-  parkingReservations?: any[];   // added
-  reservationStatuses?: any[];   // added
-  reservations?: any[];          // added
-  retrieved_at?: string;         // added
+  options: TripOption[]; // [] when no shuttle route exists
+  routes: Route[]; // [] when no shuttle route exists
+  stops?: Stop[]; // [] when no shuttle route exists
+  legMap?: Record<string, any>; // added
+  parkingReservations?: any[]; // added
+  reservationStatuses?: any[]; // added
+  reservations?: any[]; // added
+  retrieved_at?: string; // added
 };
 
 // StopStatus covers all real states from TripShot
@@ -185,7 +185,7 @@ export async function getCommutePlan(params: {
   });
 
   if (params.startName) queryParams.append('startName', params.startName);
-  if (params.endName)   queryParams.append('endName', params.endName);
+  if (params.endName) queryParams.append('endName', params.endName);
 
   return post<CommutePlanResponse>(
     `tripshot/commutePlan?${queryParams.toString()}`,
@@ -196,7 +196,9 @@ export async function getCommutePlan(params: {
 export async function getLiveStatus(
   rideIds: string[]
 ): Promise<LiveStatusResponse> {
-  const queryParams = rideIds.map(id => `rideIds=${encodeURIComponent(id)}`).join('&');
+  const queryParams = rideIds
+    .map(id => `rideIds=${encodeURIComponent(id)}`)
+    .join('&');
   return post<LiveStatusResponse>(`tripshot/liveStatus?${queryParams}`, {});
 }
 
@@ -216,7 +218,9 @@ export async function getAllLiveStatus(): Promise<LiveStatusResponse> {
  * Always check this before rendering route details — server returns
  * options: [] when no shuttle services the requested origin/destination.
  */
-export function hasShuttleOptions(data: CommutePlanResponse | null | undefined): boolean {
+export function hasShuttleOptions(
+  data: CommutePlanResponse | null | undefined
+): boolean {
   return !!(data && data.options.length > 0 && data.routes.length > 0);
 }
 

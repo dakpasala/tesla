@@ -45,11 +45,15 @@ export type ShuttleAllAlert = {
   alertType: string;
   reason: string;
   delayMinutes: number | null;
-  message: string; 
+  message: string;
   timestamp: number;
 };
 
-export type Alert = ParkingAlert | ShuttleAlert | ShuttleAdminAlert | ShuttleAllAlert;
+export type Alert =
+  | ParkingAlert
+  | ShuttleAlert
+  | ShuttleAdminAlert
+  | ShuttleAllAlert;
 
 export type AlertsResponse = {
   alerts: Alert[];

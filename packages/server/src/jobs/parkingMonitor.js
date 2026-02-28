@@ -2,11 +2,7 @@
 // Compares availability against thresholds and fires notifications for drops and recoveries.
 // Uses Redis to deduplicate alerts so users are only notified once per threshold crossing.
 
-import {
-  cacheExists,
-  deleteCache,
-  setCache,
-} from '../services/redis/cache.js';
+import { cacheExists, deleteCache, setCache } from '../services/redis/cache.js';
 import { fetchParkingAvailability } from '../services/db/mssqlPool.js';
 import { routeParkingNotification } from '../services/notifications/notificationRouter.js';
 
@@ -41,7 +37,6 @@ async function checkParkingAvailability() {
 
     let highestRecoveredThreshold = null;
 
-
     for (const threshold of THRESHOLDS) {
       const key = `parking:below:${locationId}:${lot}:${threshold}`;
       const isCached = await cacheExists(key);
@@ -68,9 +63,7 @@ async function checkParkingAvailability() {
       });
     }
 
-    const crossedThresholds = THRESHOLDS.filter(
-      t => available <= t
-    );
+    const crossedThresholds = THRESHOLDS.filter(t => available <= t);
 
     if (crossedThresholds.length > 0) {
       const lowestThreshold = Math.min(...crossedThresholds);

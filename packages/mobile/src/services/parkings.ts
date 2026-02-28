@@ -11,10 +11,10 @@ export type ParkingRow = {
   location_name: string;
   lot_id: number;
   lot_name: string;
-  availability: number;     
-  capacity: number;        
-  status_override: string | null; 
-  current_available?: number; 
+  availability: number;
+  capacity: number;
+  status_override: string | null;
+  current_available?: number;
   error?: string;
 };
 
@@ -35,7 +35,6 @@ export interface ParkingLot {
   fullness: number;
   coordinate: { latitude: number; longitude: number };
 }
-
 
 export async function getParkingForLocation(
   locationName: string
@@ -66,11 +65,9 @@ export async function updateParkingAvailability(params: {
   }>('parkings', params);
 }
 
-
 export async function getAllLocations(): Promise<Location[]> {
   return get<Location[]>('parkings/locations');
 }
-
 
 export async function getAllParkingAvailability(): Promise<ParkingRow[]> {
   return get<ParkingRow[]>('parkings/all');

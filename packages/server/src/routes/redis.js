@@ -1,11 +1,11 @@
+// Express routes for direct Redis key management (dev/debug use only).
+// Supports setting, getting, and deleting arbitrary keys, plus a connectivity test.
+// Not intended for production use — provides low-level cache inspection during development.
+
 import express from 'express';
 import { getRedisClient } from '../services/redis/redisClient.js';
 
 const router = express.Router();
-
-// Express routes for direct Redis key management (dev/debug use only).
-// Supports setting, getting, and deleting arbitrary keys, plus a connectivity test.
-// Not intended for production use — provides low-level cache inspection during development.
 
 router.post('/set', async (req, res) => {
   try {

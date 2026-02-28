@@ -1,3 +1,7 @@
+// Express routes for parking lot availability data.
+// Supports fetching all lots, per-location queries, full-lot counts, and admin availability updates.
+// PATCH endpoint allows admins to set availability numbers and string status overrides.
+
 import express from 'express';
 import {
   getParkingAvailabilityByLocationName,
@@ -7,10 +11,6 @@ import {
 } from '../services/db/mssqlPool.js';
 
 const router = express.Router();
-
-// Express routes for parking lot availability data.
-// Supports fetching all lots, per-location queries, full-lot counts, and admin availability updates.
-// PATCH endpoint allows admins to set availability numbers and string status overrides.
 
 // --------------------
 // locations

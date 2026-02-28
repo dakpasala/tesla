@@ -4,7 +4,11 @@
 // Handles parking alerts, shuttle status updates, and persistent background shuttle tracking.
 // Tracks meaningful state changes to avoid redundant notification pops during live tracking.
 
-import notifee, { AndroidImportance, AndroidStyle, EventType } from '@notifee/react-native';
+import notifee, {
+  AndroidImportance,
+  AndroidStyle,
+  EventType,
+} from '@notifee/react-native';
 import { AppState } from 'react-native';
 
 export async function requestNotificationPermission() {

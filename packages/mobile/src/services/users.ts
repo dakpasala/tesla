@@ -37,10 +37,11 @@ export async function awardTransitIncentive(
 // --------------------
 
 // get home address
-export async function getUserHomeAddress(userId: number): Promise<{ userId: number; home_address: string }> {
+export async function getUserHomeAddress(
+  userId: number
+): Promise<{ userId: number; home_address: string }> {
   return get(`users/${userId}/home_address`);
 }
-
 
 // set home address
 export async function setUserHomeAddress(userId: number, homeAddress: string) {
@@ -52,7 +53,9 @@ export async function setUserHomeAddress(userId: number, homeAddress: string) {
 // --------------------
 
 // get work address
-export async function getUserWorkAddress(userId: number): Promise<{ userId: number; work_address: string }> {
+export async function getUserWorkAddress(
+  userId: number
+): Promise<{ userId: number; work_address: string }> {
   return get(`users/${userId}/work_address`);
 }
 
@@ -66,21 +69,14 @@ export async function setUserWorkAddress(userId: number, workAddress: string) {
 // --------------------
 
 // get favorites
-export async function getUserFavorites(
-  userId: number
-): Promise<Favorite[]> {
+export async function getUserFavorites(userId: number): Promise<Favorite[]> {
   return get(`users/${userId}/favorites`);
 }
 
-
 // add favorite
-export async function addUserFavorite(
-  userId: number,
-  favorite: Favorite
-) {
+export async function addUserFavorite(userId: number, favorite: Favorite) {
   return post(`users/${userId}/favorites`, favorite);
 }
-
 
 // remove favorite by name
 export async function removeUserFavorite(userId: number, name: string) {
@@ -108,6 +104,9 @@ export async function subscribeToShuttle(userId: number, shuttleName: string) {
   return post(`users/${userId}/shuttle`, { shuttleName });
 }
 
-export async function unsubscribeFromShuttle(userId: number, shuttleName: string) {
+export async function unsubscribeFromShuttle(
+  userId: number,
+  shuttleName: string
+) {
   return del(`users/${userId}/shuttle/${encodeURIComponent(shuttleName)}`);
 }

@@ -1,5 +1,8 @@
 // packages/mobile/src/hooks/useRoutePlanning.ts
 
+// Fetches Google Maps and TripShot route data for a given destination and travel mode.
+// Polls live shuttle status every 10 seconds when shuttle mode is active.
+
 import { useState, useEffect } from 'react';
 import { Alert } from 'react-native';
 import {
@@ -70,8 +73,11 @@ export function useRoutePlanning({
   onBackToSearch,
   departureTime,
 }: UseRoutePlanningProps) {
-  const [fetchedRouteData, setFetchedRouteData] = useState<RouteResponse | null>(null);
-  const [tripshotData, setTripshotData] = useState<CommutePlanResponse | null>(null);
+  const [fetchedRouteData, setFetchedRouteData] =
+    useState<RouteResponse | null>(null);
+  const [tripshotData, setTripshotData] = useState<CommutePlanResponse | null>(
+    null
+  );
   const [liveStatus, setLiveStatus] = useState<LiveStatusResponse | null>(null);
   const [routesLoading, setRoutesLoading] = useState(false);
   const [routesError, setRoutesError] = useState<string | null>(null);
@@ -176,7 +182,10 @@ export function useRoutePlanning({
 
     fetchLiveStatus();
     const interval = setInterval(fetchLiveStatus, 10000);
-    return () => { cancelled = true; clearInterval(interval); };
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [tripshotData, travelMode]);
 
   return {

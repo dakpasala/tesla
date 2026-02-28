@@ -1,5 +1,8 @@
 // packages/mobile/src/components/ReportSheet.tsx
 
+// In-line sheet for submitting a shuttle issue report with a predefined set of issue types.
+// Requires an issue selection before the submit button is enabled.
+
 import React, { useState } from 'react';
 import {
   View,
@@ -52,7 +55,9 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
       </TouchableOpacity>
 
       {/* Title */}
-      <Text style={[styles.title, { color: c.text.primary }]}>Report An Issue</Text>
+      <Text style={[styles.title, { color: c.text.primary }]}>
+        Report An Issue
+      </Text>
       <Text style={[styles.subtitle, { color: c.text.secondary }]}>
         Something not right? Select an issue below so we can look into it
       </Text>
@@ -106,7 +111,10 @@ export function ReportSheet({ onBack, onSubmit }: ReportSheetProps) {
 
       {/* Details */}
       <TextInput
-        style={[styles.detailsInput, { borderColor: c.border, color: c.text.primary }]}
+        style={[
+          styles.detailsInput,
+          { borderColor: c.border, color: c.text.primary },
+        ]}
         placeholder="Add more details"
         placeholderTextColor={c.text.secondary}
         value={details}

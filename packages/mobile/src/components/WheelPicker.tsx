@@ -1,4 +1,5 @@
-// no dark mode
+// Cylindrical 3D scroll wheel supporting time, datetime, and timer selection modes.
+// Adapts column layout and minute granularity based on the active mode prop.
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {

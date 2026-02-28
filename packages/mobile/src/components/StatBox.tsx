@@ -1,5 +1,8 @@
 // packages/mobile/src/components/StatBox.tsx
 
+// Displays a single statistic value and label in a compact rounded box.
+// Supports light and dark variants and an active/highlighted state for selected filters.
+
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -29,7 +32,11 @@ export default function StatBox({
       style={[
         styles.box,
         {
-          backgroundColor: isDark ? '#1C1C1E' : active ? '#F2F8FF' : c.backgroundAlt,
+          backgroundColor: isDark
+            ? '#1C1C1E'
+            : active
+              ? '#F2F8FF'
+              : c.backgroundAlt,
           borderColor: active ? '#007AFF' : 'transparent',
           borderWidth: active ? 1 : 0,
         },
@@ -37,12 +44,7 @@ export default function StatBox({
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >
-      <Text
-        style={[
-          styles.value,
-          { color: isDark ? '#fff' : c.text.primary },
-        ]}
-      >
+      <Text style={[styles.value, { color: isDark ? '#fff' : c.text.primary }]}>
         {value}
       </Text>
       <Text

@@ -1,3 +1,9 @@
+// Renders a scrollable list of active shuttle delay alerts with shuttle name and send time.
+// Shows a loading spinner while data is fetching and an empty state when no alerts exist.
+// Each alert item displays the shuttle name, the time the alert was sent, and the delay duration.
+// The list is scrollable and has a loading indicator at the center when data is being fetched.
+// If there are no active alerts, a message is displayed in the center of the screen.
+
 import React from 'react';
 import {
   View,
@@ -37,7 +43,11 @@ export default function LiveAlertsList({
   }
 
   if (!alerts || alerts.length === 0) {
-    return <Text style={[styles.emptyText, { color: c.text.secondary }]}>No active alerts.</Text>;
+    return (
+      <Text style={[styles.emptyText, { color: c.text.secondary }]}>
+        No active alerts.
+      </Text>
+    );
   }
 
   return (

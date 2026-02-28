@@ -1,7 +1,11 @@
+/**
+ * Input card with two text fields for entering a current location and a destination.
+ * Used as the primary navigation input UI on route-planning screens.
+ */
+
 import React from 'react';
 import { View, StyleSheet, Image, Pressable, Text, TextInput } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-
 
 interface NavBoxProps {
     currentLocation: string;

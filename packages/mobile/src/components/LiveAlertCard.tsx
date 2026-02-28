@@ -1,5 +1,8 @@
 // packages/mobile/src/components/LiveAlertCard.tsx
 
+// Card component displaying a single live shuttle alert with shuttle name, delay info, and send time.
+// Supports an optional press handler for navigating to alert details.
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -28,11 +31,20 @@ export default function LiveAlertCard({
       {...(onPress ? { onPress, activeOpacity: 0.7 } : {})}
     >
       {/* 14 medium */}
-      <Text style={[styles.shuttleName, { color: c.text.primary }]} numberOfLines={1}>{shuttleName}</Text>
+      <Text
+        style={[styles.shuttleName, { color: c.text.primary }]}
+        numberOfLines={1}
+      >
+        {shuttleName}
+      </Text>
       {/* 12 regular */}
-      <Text style={[styles.delayText, { color: c.text.primary }]}>{delayText}</Text>
+      <Text style={[styles.delayText, { color: c.text.primary }]}>
+        {delayText}
+      </Text>
       {/* 12 regular */}
-      <Text style={[styles.timeText, { color: c.text.secondary }]}>{timeText}</Text>
+      <Text style={[styles.timeText, { color: c.text.secondary }]}>
+        {timeText}
+      </Text>
     </Wrapper>
   );
 }

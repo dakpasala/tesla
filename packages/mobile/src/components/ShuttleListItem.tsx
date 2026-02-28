@@ -1,5 +1,8 @@
 // packages/mobile/src/components/ShuttleListItem.tsx
 
+// Reusable list row displaying a shuttle or report entry with title, subtitle, status dot, and optional right text.
+// Supports an optional press handler and a hairline separator between items.
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';

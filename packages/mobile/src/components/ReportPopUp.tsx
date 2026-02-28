@@ -1,5 +1,8 @@
 // packages/mobile/src/components/ReportPopUp.tsx
 
+// Pill-style option selector used inside report flows to let users pick a report category.
+// Supports both column and wrapping flex layouts with a controlled or uncontrolled selection state.
+
 import React from 'react';
 import {
   View,
@@ -64,8 +67,14 @@ export default function ReportPopupInputs({
             style={[
               styles.pill,
               isSelected
-                ? [styles.pillSelected, { backgroundColor: c.backgroundAlt, borderColor: c.border }]
-                : [styles.pillUnselected, { backgroundColor: c.card, borderColor: c.border }],
+                ? [
+                    styles.pillSelected,
+                    { backgroundColor: c.backgroundAlt, borderColor: c.border },
+                  ]
+                : [
+                    styles.pillUnselected,
+                    { backgroundColor: c.card, borderColor: c.border },
+                  ],
             ]}
           >
             <Text

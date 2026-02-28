@@ -1,5 +1,10 @@
 // packages/mobile/src/components/LocationBox.tsx
 
+/**
+ * Floating card overlay that displays the current location and destination with map pin icons.
+ * Positioned absolutely over the map view for use during active route planning.
+ */
+
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import Svg, { Circle, Path, G } from 'react-native-svg';
@@ -11,10 +16,6 @@ interface LocationBoxProps {
   style?: ViewStyle;
 }
 
-/**
- * A reusable component that displays the current location and destination
- * in a card format with appropriate icons.
- */
 export function LocationBox({
   currentLocation = 'Current',
   destination,
@@ -33,7 +34,9 @@ export function LocationBox({
               <Circle cx={8} cy={8} r={6} fill="#007AFF" />
             </Svg>
           </View>
-          <Text style={[styles.locationText, { color: c.text.primary }]}>{currentLocation}</Text>
+          <Text style={[styles.locationText, { color: c.text.primary }]}>
+            {currentLocation}
+          </Text>
         </View>
 
         {/* Divider */}
@@ -52,7 +55,9 @@ export function LocationBox({
               </G>
             </Svg>
           </View>
-          <Text style={[styles.locationText, { color: c.text.primary }]}>{destination}</Text>
+          <Text style={[styles.locationText, { color: c.text.primary }]}>
+            {destination}
+          </Text>
         </View>
       </View>
     </View>

@@ -1,3 +1,7 @@
+// Displays a dismissible animated banner when a shuttle is approaching or arriving.
+// Shows real-time route progress, ETA, and on-time status pulled from live shuttle data.
+// Auto-dismisses after 10 seconds and supports slide-in/out animations.
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -188,7 +192,11 @@ const ShuttleNotificationBanner: React.FC = () => {
 
           {/* Stop Name (full) */}
           <Text
-            style={[styles.stopName, styles.stopNamePrimary, { color: c.text.primary }]}
+            style={[
+              styles.stopName,
+              styles.stopNamePrimary,
+              { color: c.text.primary },
+            ]}
             numberOfLines={1}
           >
             {stopName || ''}
@@ -211,7 +219,11 @@ const ShuttleNotificationBanner: React.FC = () => {
 
               {/* Shuttle icon (animated along L-path) */}
               <Animated.View
-                style={[styles.car, { backgroundColor: c.card }, { right: carRightAnim, top: carTopAnim }]}
+                style={[
+                  styles.car,
+                  { backgroundColor: c.card },
+                  { right: carRightAnim, top: carTopAnim },
+                ]}
               >
                 <Text style={styles.carIcon}>🚐</Text>
               </Animated.View>

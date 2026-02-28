@@ -1,3 +1,6 @@
+// Dropdown button that lets admins choose between alerting a single shuttle route or all routes.
+// Toggles a menu with two options and emits the selection back to the parent via a callback.
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Svg, { Path } from 'react-native-svg';

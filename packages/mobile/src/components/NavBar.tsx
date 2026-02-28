@@ -1,6 +1,12 @@
+// Horizontal icon bar for switching between transport mode screens (car, bus, shuttle, bike).
+// Highlights the active mode and emits the selected screen via a callback.
+
 import React from 'react';
 import { View, StyleSheet, Image, Pressable, Text } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+
+// Horizontal icon bar for switching between transport mode screens (car, bus, shuttle, bike).
+// Highlights the active mode and emits the selected screen via a callback.
 
 export type NavScreen = 'car' | 'bike' | 'bus' | 'train' | 'walk';
 
@@ -40,9 +46,7 @@ export default function NavBar({ currentScreen, onScreenChange }: NavBarProps) {
       activeIcon: require('../assets/icons/new/newBike.png'),
       inactiveIcon: require('../assets/icons/new/newBike.png'),
       placeholder: 4,
-    }
-
-
+    },
 
     // {
     //   screen: 'walk',
@@ -73,9 +77,8 @@ export default function NavBar({ currentScreen, onScreenChange }: NavBarProps) {
       
     </View>
 
-  <View style={[styles.divider, { backgroundColor: c.border }]} /> 
-  </View>
-    
+      <View style={[styles.divider, { backgroundColor: c.border }]} />
+    </View>
   );
 }
 
@@ -85,7 +88,6 @@ const styles = StyleSheet.create({
     marginTop: 15,
     alignItems: 'center',
     paddingHorizontal: 30,
-
 
     // borderBottomWidth: 1,
     // borderBottomColor: '#555',

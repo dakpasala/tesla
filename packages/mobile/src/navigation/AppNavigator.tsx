@@ -1,3 +1,6 @@
+// Root stack navigator that routes between auth, user, and admin screen stacks.
+// Renders the login screen when unauthenticated and splits admin vs regular user navigation trees.
+
 import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import React from 'react';

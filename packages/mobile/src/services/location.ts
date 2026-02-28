@@ -1,5 +1,9 @@
 // packages/mobile/src/services/location.ts
 
+// Service for retrieving the user's current GPS coordinates.
+// Attempts high-accuracy location first, then falls back to low-accuracy on failure.
+// Used throughout the app to determine origin for route planning and presence checks.
+
 import Geolocation from '@react-native-community/geolocation';
 import type { LatLng } from './maps';
 

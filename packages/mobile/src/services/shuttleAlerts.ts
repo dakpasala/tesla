@@ -1,5 +1,9 @@
 // packages/mobile/src/services/shuttleAlerts.ts
 
+// Service for submitting and fetching shuttle reports and announcements.
+// Provides both user-facing report submission and admin-only routes for managing alerts.
+// Includes helpers for fetching all reports, counts, and region-wide announcements.
+
 import { get, post } from './crud';
 
 export type Report = {

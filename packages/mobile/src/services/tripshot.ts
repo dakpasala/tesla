@@ -1,5 +1,9 @@
 // packages/mobile/src/services/tripshot.ts
 
+// Service for interacting with the TripShot shuttle API.
+// Fetches commute plans, live ride statuses, and stop/route metadata.
+// Includes helper utilities for parsing delays, occupancy, ETAs, and trip steps.
+
 import { get, post } from './crud';
 
 // Types

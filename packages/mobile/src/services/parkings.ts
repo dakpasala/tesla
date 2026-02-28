@@ -1,5 +1,9 @@
 // packages/mobile/src/services/parkings.ts
 
+// Service for fetching and updating parking lot availability across Tesla locations.
+// Supports per-location queries, admin availability updates, and status overrides.
+// Also exposes a count of currently full lots for admin dashboard badges.
+
 import { get, patch } from './crud';
 
 export type ParkingRow = {

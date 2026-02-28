@@ -1,5 +1,9 @@
 // packages/mobile/src/services/crud.ts
 
+// Base HTTP utility layer providing typed get, post, put, patch, and delete methods.
+// All requests are routed through the configured API base URL with consistent error handling.
+// Used by all other service files as the single source of truth for API communication.
+
 import { CONFIG } from '../config/base_url';
 const { API_BASE_URL } = CONFIG;
 

@@ -1,5 +1,9 @@
 // packages/mobile/src/services/notifications.ts
 
+// Service for managing local push notifications via Notifee.
+// Handles parking alerts, shuttle status updates, and persistent background shuttle tracking.
+// Tracks meaningful state changes to avoid redundant notification pops during live tracking.
+
 import notifee, { AndroidImportance, AndroidStyle, EventType } from '@notifee/react-native';
 import { AppState } from 'react-native';
 

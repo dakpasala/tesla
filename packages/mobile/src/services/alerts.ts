@@ -1,4 +1,9 @@
 // packages/mobile/src/services/alerts.ts
+
+// Service for fetching and clearing user-specific alerts from the backend.
+// Covers parking threshold alerts, shuttle delay alerts, and admin announcements.
+// Alerts are polled on the map screen and shown as in-app banners to the user.
+
 import { get, del } from './crud';
 
 export type ParkingAlert = {

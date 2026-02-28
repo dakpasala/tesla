@@ -1,5 +1,9 @@
 // packages/mobile/src/services/users.ts
 
+// Service for managing user data including balance, incentives, and saved addresses.
+// Handles CRUD operations for home/work addresses, favorites, and shuttle subscriptions.
+// Also tracks user location state for geofence-based features at Tesla offices.
+
 import { get, post, put, del } from './crud';
 
 export type Favorite = { label: string; name: string; address: string };

@@ -1,5 +1,9 @@
 // packages/mobile/src/services/maps.ts
 
+// Service for fetching driving, transit, walking, and cycling routes via the backend.
+// Supports to-office, go-home, and quick-start routing with optional departure times.
+// Also provides a presence check to determine if the user is near a Tesla office.
+
 import { get } from './crud';
 
 export type LatLng = {
